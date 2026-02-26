@@ -32,8 +32,8 @@
             },
             {
               "type": "anyComponentStyle",
-              "maximumWarning": "4kb",
-              "maximumError": "8kb"
+              "maximumWarning": "12kb",
+              "maximumError": "20kb"
             }
           ],
           "outputHashing": "all"
@@ -57,7 +57,11 @@
           "buildTarget": "dashboard:build:development"
         }
       },
-      "defaultConfiguration": "development"
+      "defaultConfiguration": "development",
+      "dependsOn": ["api:serve"],
+      "options": {
+        "proxyConfig": "apps/dashboard/proxy.conf.json"
+      }
     },
     "lint": {
       "executor": "@nx/eslint:lint"

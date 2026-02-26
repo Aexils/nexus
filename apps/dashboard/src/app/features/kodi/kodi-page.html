@@ -1,0 +1,200 @@
+<!-- ── Header ── -->
+<div class="page-header">
+  <div class="brand">
+    <div class="brand-logo kodi-logo">K</div>
+    <div>
+      <div class="brand-name">Kodi Media Center</div>
+      <div class="brand-meta">
+        @if (kodiStatus().version) { v{{ kodiStatus().version }} · }
+        JSON-RPC
+      </div>
+    </div>
+  </div>
+  <div>
+    @if (kodiConnected) {
+      @if (np) {
+        <app-status-badge [status]="isPlaying ? 'playing' : 'paused'"></app-status-badge>
+      } @else {
+        <app-status-badge status="running"></app-status-badge>
+      }
+    } @else {
+      <app-status-badge status="error"></app-status-badge>
+    }
+  </div>
+</div>
+
+<!-- ── Content ── -->
+
+@if (!kodiConnected) {
+
+  <div class="state-view">
+    <div class="offline-icon">
+      <lucide-icon [img]="icons.WifiOff" [size]="52" strokeWidth="1.2"></lucide-icon>
+    </div>
+    <p class="state-title">Kodi n'est pas accessible</p>
+    <span class="state-sub">Vérifiez que Kodi est en cours d'exécution<br>et que l'interface JSON-RPC est activée (port 8080).</span>
+  </div>
+
+} @else if (np) {
+
+  <!-- ── Now Playing ── -->
+  <div class="now-playing-card">
+
+    <!-- Cover -->
+    <div class="np-art" [class.has-art]="artLoaded()">
+      @if (artUrl(np); as url) {
+        <img class="np-art-img" [src]="url" [alt]="np.title"
+             (load)="onArtLoad()" (error)="onArtError()">
+      }
+      @if (!artLoaded()) {
+        <span class="np-art-initial">{{ np.title.charAt(0) }}</span>
+      }
+    </div>
+
+    <div class="np-info">
+      <div class="np-type">{{ typeLabel(np.type) }}</div>
+      <div class="np-title">{{ np.title }}</div>
+
+      @if (np.tagline) {
+        <div class="np-tagline">{{ np.tagline }}</div>
+      } @else if (np.year) {
+        <div class="np-year">{{ np.year }}</div>
+      }
+
+      <!-- Progress -->
+      <div class="progress-section">
+        <div class="progress-bg" (click)="seekClick($event)">
+          <div class="progress-fill" [style.width.%]="progressPercent"></div>
+        </div>
+        <div class="progress-times">
+          <span>{{ formatTime(positionSec()) }}</span>
+          <span>{{ formatTime(np.durationSec) }}</span>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="controls-row">
+        <button class="ctrl-btn" (click)="stop()" title="Stop">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+          </svg>
+        </button>
+        <button class="ctrl-btn play-btn" (click)="togglePlayback()">
+          @if (isPlaying) {
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <rect x="6" y="4" width="4" height="16"/>
+              <rect x="14" y="4" width="4" height="16"/>
+            </svg>
+          } @else {
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <polygon points="5,3 19,12 5,21"/>
+            </svg>
+          }
+        </button>
+      </div>
+
+      <!-- Volume -->
+      <div class="volume-row">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+          @if (volume > 50) {
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
+          } @else if (volume > 0) {
+            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+          }
+        </svg>
+        <div class="volume-track">
+          <div class="volume-fill" [style.width.%]="volume"></div>
+        </div>
+        <span class="volume-label">{{ volume }}%</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Detail section ── -->
+  @if (np.plot || np.rating || np.genres?.length || np.directors?.length || np.cast?.length || np.artist || np.studio?.length) {
+    <div class="detail-card">
+
+      <!-- Rating + genres row -->
+      @if (np.rating || np.genres?.length) {
+        <div class="detail-top">
+          @if (np.rating) {
+            <div class="rating">
+              @for (s of ratingStars(np.rating); track $index) {
+                <lucide-icon [img]="icons.Star" [size]="13" strokeWidth="0"
+                  [style.fill]="s ? 'var(--kodi)' : 'var(--border2)'"
+                  [style.color]="s ? 'var(--kodi)' : 'var(--border2)'">
+                </lucide-icon>
+              }
+              <span class="rating-val">{{ np.rating.toFixed(1) }}/10</span>
+            </div>
+          }
+          @if (np.genres?.length) {
+            <div class="genres">
+              @for (g of np.genres!; track g) {
+                <span class="genre-tag">{{ g }}</span>
+              }
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Plot -->
+      @if (np.plot) {
+        <p class="np-plot">{{ np.plot }}</p>
+      }
+
+      <!-- Meta rows -->
+      <div class="meta-grid">
+        @if (np.directors?.length) {
+          <div class="meta-row">
+            <div class="meta-label">
+              <lucide-icon [img]="icons.Clapperboard" [size]="13" strokeWidth="2"></lucide-icon>
+              Réalisateur
+            </div>
+            <div class="meta-value">{{ np.directors!.join(', ') }}</div>
+          </div>
+        }
+        @if (np.cast?.length) {
+          <div class="meta-row">
+            <div class="meta-label">
+              <lucide-icon [img]="icons.Users" [size]="13" strokeWidth="2"></lucide-icon>
+              Cast
+            </div>
+            <div class="meta-value">{{ np.cast!.join(' · ') }}</div>
+          </div>
+        }
+        @if (np.studio?.length) {
+          <div class="meta-row">
+            <div class="meta-label">
+              <lucide-icon [img]="icons.Building2" [size]="13" strokeWidth="2"></lucide-icon>
+              Studio
+            </div>
+            <div class="meta-value">{{ np.studio!.join(', ') }}</div>
+          </div>
+        }
+        @if (np.artist) {
+          <div class="meta-row">
+            <div class="meta-label">
+              <lucide-icon [img]="icons.Music2" [size]="13" strokeWidth="2"></lucide-icon>
+              Artiste
+            </div>
+            <div class="meta-value">{{ np.artist }}@if (np.album) { · {{ np.album }} }</div>
+          </div>
+        }
+      </div>
+
+    </div>
+  }
+
+} @else {
+
+  <!-- ── Idle ── -->
+  <div class="state-view">
+    <lucide-icon [img]="icons.Tv" [size]="52" strokeWidth="1" class="idle-icon"></lucide-icon>
+    <p class="state-title">Kodi connecté</p>
+    <span class="state-sub">Aucune lecture en cours</span>
+  </div>
+
+}

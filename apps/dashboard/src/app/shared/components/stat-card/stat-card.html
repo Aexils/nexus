@@ -1,0 +1,7 @@
+<div class="stat-card" [style.--top-accent]="topAccent">
+  <div class="stat-label">{{ label }}</div>
+  <div class="stat-value" [class]="valueColor">{{ value }}</div>
+  @if (change) {
+    <div class="stat-change">{{ change }}</div>
+  }
+</div>

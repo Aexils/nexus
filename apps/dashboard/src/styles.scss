@@ -1,1 +1,279 @@
-/* You can add global styles to this file, and also import other style files */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Roboto+Mono:wght@400;500&display=swap');
+
+/* ════════════════════════════════════════════════════════════════════════════
+   THEME: ZINC  (default — true black + pure white)
+   ════════════════════════════════════════════════════════════════════════════ */
+:root {
+  --bg:         #0a0a0a;
+  --surface:    #141414;
+  --surface2:   #1e1e1e;
+  --border:     #2a2a2a;
+  --border2:    #383838;
+  --accent:     #f4f4f5;
+  --accent-rgb: 244, 244, 245;
+  --accent2:    #71717a;
+  --text:       #fafafa;
+  --text2:      #a1a1aa;
+  --text3:      #52525b;
+  --green:      #4ade80;
+  --red:        #f87171;
+  --yellow:     #fbbf24;
+  --kodi:       #38bdf8;
+  --abs:        #fb923c;
+  --psn:        #0070cc;
+}
+
+/* explicit selector so ThemeService can select it */
+[data-theme="zinc"] {
+  --bg:         #0a0a0a;
+  --surface:    #141414;
+  --surface2:   #1e1e1e;
+  --border:     #2a2a2a;
+  --border2:    #383838;
+  --accent:     #f4f4f5;
+  --accent-rgb: 244, 244, 245;
+  --accent2:    #71717a;
+  --text:       #fafafa;
+  --text2:      #a1a1aa;
+  --text3:      #52525b;
+  --green:      #4ade80;
+  --red:        #f87171;
+  --yellow:     #fbbf24;
+  --kodi:       #38bdf8;
+  --abs:        #fb923c;
+  --psn:        #0070cc;
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   THEME: MIDNIGHT  (deep navy + cyan)
+   ════════════════════════════════════════════════════════════════════════════ */
+[data-theme="dark"] {
+  --bg:         #060c14;
+  --surface:    #0d1525;
+  --surface2:   #131e30;
+  --border:     #1c2e46;
+  --border2:    #243a56;
+  --accent:     #38d0ff;
+  --accent-rgb: 56, 208, 255;
+  --accent2:    #ff7043;
+  --text:       #e2eeff;
+  --text2:      #7090b0;
+  --text3:      #38506a;
+  --green:      #00e5a0;
+  --red:        #ff4560;
+  --yellow:     #ffc840;
+  --kodi:       #17b2e8;
+  --abs:        #f59e0b;
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   THEME: SYNTHWAVE  (deep purple + pink/violet)
+   ════════════════════════════════════════════════════════════════════════════ */
+[data-theme="neon"] {
+  --bg:         #080412;
+  --surface:    #120720;
+  --surface2:   #1a0a2e;
+  --border:     #2c1052;
+  --border2:    #3c1468;
+  --accent:     #c453fb;
+  --accent-rgb: 196, 83, 251;
+  --accent2:    #ff2d9b;
+  --text:       #ecdeff;
+  --text2:      #9568bc;
+  --text3:      #4e2878;
+  --green:      #00e5a0;
+  --red:        #ff4560;
+  --yellow:     #ffd060;
+  --kodi:       #7c4dff;
+  --abs:        #f59e0b;
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   THEME: TERMINAL  (pitch black + phosphor green)
+   ════════════════════════════════════════════════════════════════════════════ */
+[data-theme="matrix"] {
+  --bg:         #000900;
+  --surface:    #010f02;
+  --surface2:   #011602;
+  --border:     #022a03;
+  --border2:    #043604;
+  --accent:     #00e040;
+  --accent-rgb: 0, 224, 64;
+  --accent2:    #00ff9d;
+  --text:       #c8ffc8;
+  --text2:      #52b852;
+  --text3:      #1e621e;
+  --green:      #00e040;
+  --red:        #ff4040;
+  --yellow:     #ccff00;
+  --kodi:       #00e040;
+  --abs:        #f59e0b;
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   THEME: RETRO CRT  (warm black + amber phosphor)
+   ════════════════════════════════════════════════════════════════════════════ */
+[data-theme="amber"] {
+  --bg:         #0d0600;
+  --surface:    #1a0c00;
+  --surface2:   #221200;
+  --border:     #3e1e00;
+  --border2:    #522800;
+  --accent:     #ff9800;
+  --accent-rgb: 255, 152, 0;
+  --accent2:    #ff4d00;
+  --text:       #fff3cc;
+  --text2:      #cc8c30;
+  --text3:      #6a4818;
+  --green:      #00e5a0;
+  --red:        #ff4040;
+  --yellow:     #ff9800;
+  --kodi:       #ff9800;
+  --abs:        #f59e0b;
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   THEME: KODI  (auto-applied on /kodi)  — fixed text contrast
+   ════════════════════════════════════════════════════════════════════════════ */
+[data-theme="kodi"] {
+  --bg:         #020810;
+  --surface:    #060f1e;
+  --surface2:   #0a1628;
+  --border:     #102840;
+  --border2:    #163554;
+  --accent:     #38bdf8;
+  --accent-rgb: 56, 189, 248;
+  --accent2:    #0ea5e9;
+  --text:       #f0f8ff;
+  --text2:      #90bcd8;   /* was #5080a8 — too dark, lifted for readability */
+  --text3:      #4e7a98;   /* was #28486a — was barely visible              */
+  --green:      #4ade80;
+  --red:        #f87171;
+  --yellow:     #fbbf24;
+  --kodi:       #38bdf8;
+  --abs:        #fb923c;
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   THEME: ABS  (auto-applied on /audiobookshelf)
+   ════════════════════════════════════════════════════════════════════════════ */
+[data-theme="abs"] {
+  --bg:         #0a0400;
+  --surface:    #180a00;
+  --surface2:   #221000;
+  --border:     #3a1e00;
+  --border2:    #4e2800;
+  --accent:     #f97316;
+  --accent-rgb: 249, 115, 22;
+  --accent2:    #ea580c;
+  --text:       #fff0d0;
+  --text2:      #d4915a;   /* was #c07838 — slightly lifted */
+  --text3:      #8a5530;   /* was #684018 — lifted for readability */
+  --green:      #4ade80;
+  --red:        #f87171;
+  --yellow:     #ffd060;
+  --kodi:       #38bdf8;
+  --abs:        #f97316;
+  --psn:        #0070cc;
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   THEME: PS5  (auto-applied on /playstation)
+   ════════════════════════════════════════════════════════════════════════════ */
+[data-theme="ps5"] {
+  --bg:         #020810;
+  --surface:    #060f1e;
+  --surface2:   #0c1a30;
+  --border:     #132a48;
+  --border2:    #1e3f6e;
+  --accent:     #0070cc;
+  --accent-rgb: 0, 112, 204;
+  --accent2:    #00aaff;
+  --text:       #e8f4ff;
+  --text2:      #7aaed4;
+  --text3:      #3a6484;
+  --green:      #4ade80;
+  --red:        #f87171;
+  --yellow:     #fbbf24;
+  --kodi:       #38bdf8;
+  --abs:        #fb923c;
+  --psn:        #0070cc;
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   RESET & BASE
+   ════════════════════════════════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+
+body {
+  font-family: 'Roboto', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.5;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   ANIMATED BACKGROUND
+   ════════════════════════════════════════════════════════════════════════════ */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 48px 48px;
+  opacity: 0.2;
+  pointer-events: none; z-index: 0;
+}
+
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background: radial-gradient(ellipse 80% 50% at 50% 0%,
+    rgba(var(--accent-rgb), 0.05) 0%, transparent 65%);
+  pointer-events: none; z-index: 0;
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   BUTTONS
+   ════════════════════════════════════════════════════════════════════════════ */
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 9px 16px; border-radius: 8px;
+  font-family: 'Roboto', sans-serif; font-size: 13px; font-weight: 500;
+  cursor: pointer; letter-spacing: 0.02em; transition: all 0.18s;
+  border: 1px solid transparent; text-decoration: none;
+  white-space: nowrap; user-select: none;
+}
+.btn-sm { padding: 6px 12px; font-size: 12px; }
+.btn-xs { padding: 3px 10px; font-size: 11px; }
+
+.btn-ghost { background: transparent; border-color: var(--border2); color: var(--text2); }
+.btn-ghost:hover { border-color: var(--text2); color: var(--text); background: color-mix(in srgb, var(--text) 4%, transparent); }
+
+.btn-primary { background: var(--accent); color: var(--bg); font-weight: 600; border-color: var(--accent); }
+.btn-primary:hover { filter: brightness(1.1); transform: translateY(-1px); box-shadow: 0 6px 24px rgba(var(--accent-rgb), 0.3); }
+
+.btn-danger  { background: transparent; border-color: rgba(255,69,96,.35); color: var(--red); }
+.btn-danger:hover  { background: rgba(255,69,96,.12); border-color: var(--red); }
+
+.btn-success { background: transparent; border-color: rgba(74,222,128,.3); color: var(--green); }
+.btn-success:hover { background: rgba(74,222,128,.1); border-color: var(--green); }
+
+/* ════════════════════════════════════════════════════════════════════════════
+   LUCIDE ICONS — prevent inline baseline gap inside flex containers
+   ════════════════════════════════════════════════════════════════════════════ */
+lucide-icon { display: flex; }
+
+/* ════════════════════════════════════════════════════════════════════════════
+   SCROLLBAR
+   ════════════════════════════════════════════════════════════════════════════ */
+::-webkit-scrollbar         { width: 5px; height: 5px; }
+::-webkit-scrollbar-track   { background: transparent; }
+::-webkit-scrollbar-thumb   { background: var(--border2); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text3); }

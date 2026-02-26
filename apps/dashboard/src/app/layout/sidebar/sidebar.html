@@ -1,0 +1,32 @@
+<nav class="sidebar">
+
+  <div class="nav-section">
+    <span class="section-label">Navigation</span>
+    @for (item of navMain; track item.route) {
+      <a class="nav-item" [routerLink]="item.route" routerLinkActive="active">
+        <lucide-icon [img]="item.icon" [size]="16" strokeWidth="2" class="nav-icon"></lucide-icon>
+        {{ item.label }}
+      </a>
+    }
+  </div>
+
+  <div class="nav-section">
+    <span class="section-label">Applications</span>
+    @for (item of navApps; track item.route) {
+      <a class="nav-item" [routerLink]="item.route" routerLinkActive="active">
+        <lucide-icon [img]="item.icon" [size]="16" strokeWidth="2" class="nav-icon"></lucide-icon>
+        {{ item.label }}
+        @if (item.route === '/kodi') {
+          <span class="app-status" [class.running]="kodiRunning" [class.stopped]="!kodiRunning"></span>
+        }
+        @if (item.route === '/audiobookshelf') {
+          <span class="app-status abs" [class.running]="absRunning" [class.stopped]="!absRunning"></span>
+        }
+        @if (item.route === '/playstation') {
+          <span class="app-status psn" [class.running]="psnRunning" [class.stopped]="!psnRunning"></span>
+        }
+      </a>
+    }
+  </div>
+
+</nav>

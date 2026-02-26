@@ -1,0 +1,158 @@
+<!-- ── Page Header ── -->
+<div class="page-header">
+  <div class="brand">
+    <div class="brand-logo psn-logo">PS</div>
+    <div>
+      <div class="brand-name">PlayStation</div>
+      <div class="brand-meta">
+        @if (psn().profile) {
+          {{ psn().profile!.onlineId }} · PSN Network
+        } @else {
+          PSN Network
+        }
+      </div>
+    </div>
+  </div>
+  <app-status-badge [status]="badgeStatus()"></app-status-badge>
+</div>
+
+<!-- ── Not configured (no data at all) ── -->
+@if (!psn().profile && !psn().recentGames?.length) {
+  <div class="state-view">
+    <lucide-icon [img]="icons.WifiOff" [size]="48" strokeWidth="1.5" class="offline-icon"></lucide-icon>
+    <div class="state-title">PlayStation Network non configuré</div>
+    <div class="state-sub">
+      Ajoutez <code>PSN_NPSSO</code> dans votre fichier <code>.env</code> pour activer
+      l'intégration PlayStation. Récupérez votre NPSSO depuis les cookies PSN
+      après vous être connecté sur playstation.com.
+    </div>
+  </div>
+
+} @else {
+
+  <!-- ── Currently Playing ── -->
+  @if (psn().currentGame; as game) {
+    <div class="now-playing-card">
+      <div class="now-playing-label">
+        <lucide-icon [img]="icons.Gamepad2" [size]="11" strokeWidth="2.5"></lucide-icon>
+        En train de jouer
+      </div>
+      <div class="now-playing-inner">
+        <div class="game-art-lg" [class.has-img]="!!game.imageUrl">
+          @if (game.imageUrl) {
+            <img class="game-art-img" [src]="game.imageUrl" [alt]="game.name" (error)="onImgError($event)">
+          } @else {
+            <lucide-icon [img]="icons.Gamepad2" [size]="52" strokeWidth="1" class="game-art-icon"></lucide-icon>
+          }
+        </div>
+        <div class="np-info">
+          <div class="np-title">{{ game.name }}</div>
+          <div class="np-badges">
+            @if (game.platform) {
+              <span class="platform-badge">{{ game.platform }}</span>
+            }
+            <span class="ingame-pill">● En jeu</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ── Profile + Trophy ── -->
+  <div class="info-row">
+
+    @if (psn().profile; as profile) {
+      <div class="profile-card">
+        <div class="avatar-wrap">
+          @if (profile.avatarUrl) {
+            <img class="avatar-img" [src]="profile.avatarUrl" [alt]="profile.onlineId" (error)="onImgError($event)">
+          } @else {
+            <div class="avatar-initial">{{ profile.onlineId[0].toUpperCase() }}</div>
+          }
+          <span class="presence-dot" [class]="profile.presence"></span>
+        </div>
+        <div class="profile-info">
+          <div class="online-id">{{ profile.onlineId }}</div>
+          <div class="presence-label" [class]="profile.presence">
+            {{ presenceLabel(profile.presence) }}
+          </div>
+        </div>
+      </div>
+    }
+
+    @if (psn().trophySummary; as t) {
+      <div class="trophy-card">
+        <div class="trophy-title">
+          <lucide-icon [img]="icons.Trophy" [size]="14" strokeWidth="2" class="trophy-icon"></lucide-icon>
+          Trophées
+        </div>
+        <div class="trophy-level-row">
+          <span class="trophy-level-num">Niveau {{ t.level }}</span>
+          <div class="trophy-progress-track">
+            <div class="trophy-progress-fill" [style.width.%]="t.progress"></div>
+          </div>
+          <span class="trophy-pct">{{ t.progress }}%</span>
+        </div>
+        <div class="medals-row">
+          <div class="medal platinum">
+            <div class="medal-gem"></div>
+            <div class="medal-count">{{ t.platinum }}</div>
+            <div class="medal-label">Platine</div>
+          </div>
+          <div class="medal gold">
+            <div class="medal-gem"></div>
+            <div class="medal-count">{{ t.gold }}</div>
+            <div class="medal-label">Or</div>
+          </div>
+          <div class="medal silver">
+            <div class="medal-gem"></div>
+            <div class="medal-count">{{ t.silver }}</div>
+            <div class="medal-label">Argent</div>
+          </div>
+          <div class="medal bronze">
+            <div class="medal-gem"></div>
+            <div class="medal-count">{{ t.bronze }}</div>
+            <div class="medal-label">Bronze</div>
+          </div>
+        </div>
+      </div>
+    }
+
+  </div>
+
+  <!-- ── Recent Games ── -->
+  @if (psn().recentGames?.length) {
+    <div class="section-title">
+      <lucide-icon [img]="icons.Clock" [size]="13" strokeWidth="2"></lucide-icon>
+      Jeux récents
+    </div>
+    <div class="games-grid">
+      @for (game of psn().recentGames; track game.titleId) {
+        <div class="game-card">
+          <div class="game-cover" [class.has-img]="!!game.imageUrl">
+            @if (game.imageUrl) {
+              <img class="game-cover-img" [src]="game.imageUrl" [alt]="game.name" (error)="onImgError($event)">
+            } @else {
+              <lucide-icon [img]="icons.Gamepad2" [size]="28" strokeWidth="1.2" class="game-cover-icon"></lucide-icon>
+            }
+          </div>
+          <div class="game-info">
+            <div class="game-name">{{ game.name }}</div>
+            <div class="game-meta">
+              @if (game.platform) {
+                <span class="platform-badge-sm">{{ game.platform }}</span>
+              }
+              @if (game.playDuration) {
+                <span class="play-time">{{ formatDuration(game.playDuration) }}</span>
+              }
+            </div>
+            @if (game.lastPlayedAt) {
+              <div class="last-played">{{ formatDate(game.lastPlayedAt) }}</div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+}

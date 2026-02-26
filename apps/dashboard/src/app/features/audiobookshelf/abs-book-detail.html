@@ -1,0 +1,135 @@
+<!-- Back -->
+<a class="back-btn" routerLink="/audiobookshelf">
+  <lucide-icon [img]="icons.ArrowLeft" [size]="16" strokeWidth="2.5"></lucide-icon>
+  Bibliothèque
+</a>
+
+<!-- Loading -->
+@if (loading() && !book()) {
+  <div class="detail-skeleton">
+    <div class="sk-cover shimmer"></div>
+    <div class="sk-info">
+      <div class="sk-line shimmer" style="width:70%;height:28px"></div>
+      <div class="sk-line shimmer" style="width:45%;height:16px;margin-top:10px"></div>
+      <div class="sk-line shimmer" style="width:55%;height:14px;margin-top:8px"></div>
+    </div>
+  </div>
+}
+
+<!-- Not found -->
+@if (!loading() && !book()) {
+  <div class="not-found">
+    <lucide-icon [img]="icons.BookOpen" [size]="40" strokeWidth="1.2"></lucide-icon>
+    <p>Livre introuvable.</p>
+  </div>
+}
+
+<!-- Detail -->
+@if (book(); as b) {
+  <div class="detail-page" [@.disabled]="true">
+
+    <!-- Hero -->
+    <div class="hero">
+
+      <!-- Cover -->
+      <div class="hero-cover" [style.background]="getGradient(b.title)">
+        <span class="hero-initials">{{ getInitials(b.title) }}</span>
+        @if (b.hasCover) {
+          <img loading="eager" class="hero-cover-img"
+               [src]="coverUrl(b.id)" [alt]="b.title"
+               (error)="onImgError($event)">
+        }
+        @if (b.progress?.isFinished) {
+          <div class="hero-done-ribbon">
+            <lucide-icon [img]="icons.CheckCheck" [size]="12" strokeWidth="3" color="#000"></lucide-icon>
+            Terminé
+          </div>
+        }
+      </div>
+
+      <!-- Info -->
+      <div class="hero-info">
+        @if (b.series) {
+          <div class="series-badge">
+            {{ b.series }}@if (b.seriesSequence) { &nbsp;·&nbsp;#{{ b.seriesSequence }} }
+          </div>
+        }
+
+        <h1 class="book-title">{{ b.title }}</h1>
+        @if (b.subtitle) { <p class="book-subtitle">{{ b.subtitle }}</p> }
+
+        <div class="meta-rows">
+          @if (b.author) {
+            <div class="meta-row">
+              <lucide-icon [img]="icons.BookOpen" [size]="14" strokeWidth="2"></lucide-icon>
+              <span>{{ b.author }}</span>
+            </div>
+          }
+          @if (b.narrator) {
+            <div class="meta-row">
+              <lucide-icon [img]="icons.Mic" [size]="14" strokeWidth="2"></lucide-icon>
+              <span>{{ b.narrator }}</span>
+            </div>
+          }
+          @if (b.publishedYear) {
+            <div class="meta-row">
+              <lucide-icon [img]="icons.CalendarDays" [size]="14" strokeWidth="2"></lucide-icon>
+              <span>{{ b.publishedYear }}</span>
+            </div>
+          }
+          <div class="meta-row">
+            <lucide-icon [img]="icons.Clock3" [size]="14" strokeWidth="2"></lucide-icon>
+            <span>{{ formatDuration(b.duration) }}</span>
+          </div>
+        </div>
+
+        @if (b.genres.length > 0) {
+          <div class="genres">
+            @for (g of b.genres; track g) {
+              <span class="genre-tag">{{ g }}</span>
+            }
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Progress -->
+    @if (b.progress && !b.progress.isFinished && b.progress.progress > 0) {
+      <section class="progress-section">
+        <div class="section-title">
+          <lucide-icon [img]="icons.TrendingUp" [size]="14" strokeWidth="2"></lucide-icon>
+          Progression
+        </div>
+        <div class="prog-bar-track">
+          <div class="prog-bar-fill" [style.width.%]="b.progress.progress * 100"></div>
+        </div>
+        <div class="prog-meta">
+          <span class="prog-pct">{{ (b.progress.progress * 100).toFixed(1) }}%</span>
+          <span class="prog-times mono">
+            {{ formatTime(b.progress.currentTime) }} / {{ formatTime(b.duration) }}
+          </span>
+          <span class="prog-remaining">{{ remaining(b.progress.currentTime, b.duration) }}</span>
+        </div>
+      </section>
+    }
+
+    @if (b.progress?.isFinished) {
+      <section class="finished-banner">
+        <lucide-icon [img]="icons.CheckCheck" [size]="16" strokeWidth="2.5"></lucide-icon>
+        Livre terminé · {{ formatDuration(b.duration) }} écoutées
+      </section>
+    }
+
+    <!-- Description -->
+    @if (b.description) {
+      <section class="description-section">
+        <div class="section-title">
+          <lucide-icon [img]="icons.BookOpen" [size]="14" strokeWidth="2"></lucide-icon>
+          Synopsis
+        </div>
+        <p class="description-text">{{ b.description }}</p>
+      </section>
+    }
+
+  </div>
+}

@@ -1,0 +1,230 @@
+:host { display: block; height: 100%; }
+
+.metrics-panel {
+  height: 100%;
+  padding: 20px 16px;
+  border-left: 1px solid var(--border);
+  background: color-mix(in srgb, var(--bg) 95%, var(--surface));
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  transition: border-color 0.4s, background 0.4s;
+}
+
+/* ── Section ── */
+.mp-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mp-section-label {
+  font-family: 'Roboto', sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 2px;
+}
+
+/* ── Bars ── */
+.mp-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mp-label {
+  font-family: 'Roboto', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text3);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  width: 28px;
+  flex-shrink: 0;
+
+  &--disk {
+    font-family: 'Roboto Mono', monospace;
+    letter-spacing: 0;
+    width: auto;
+    min-width: 28px;
+    max-width: 52px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.mp-bar-bg {
+  flex: 1;
+  height: 5px;
+  background: var(--surface2);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.mp-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.6s ease;
+}
+
+.mp-bar-fill.cpu  { background: linear-gradient(90deg, var(--accent), var(--kodi)); }
+.mp-bar-fill.ram  { background: linear-gradient(90deg, var(--accent2), #ff9a5c); }
+.mp-bar-fill.vram { background: linear-gradient(90deg, #8b5cf6, #a78bfa); }
+
+.mp-bar-fill.disk,
+.mp-bar-fill.gpu {
+  &.ok   { background: linear-gradient(90deg, #22c55e, #4ade80); }
+  &.warn { background: linear-gradient(90deg, var(--yellow), #fbbf24); }
+  &.crit { background: linear-gradient(90deg, var(--red), #f87171); }
+}
+
+.mp-value {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 10px;
+  color: var(--text2);
+  width: 30px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.mp-sub {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 10px;
+  color: var(--text3);
+  text-align: right;
+  margin-top: -4px;
+}
+
+/* ── Network ── */
+.mp-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 0 -2px;
+}
+
+.mp-net-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mp-net-label {
+  font-family: 'Roboto', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text3);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  width: 18px;
+  flex-shrink: 0;
+}
+
+.mp-net-value {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 10px;
+  color: var(--text2);
+  margin-left: auto;
+}
+
+/* ── Temperature badge ── */
+.mp-temp-badge {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 4px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  margin-left: 2px;
+
+  &.ok   { color: #4ade80; background: rgba(34, 197, 94, 0.12); }
+  &.warn { color: var(--yellow); background: rgba(251, 191, 36, 0.12); }
+  &.crit { color: var(--red); background: rgba(239, 68, 68, 0.15); }
+}
+
+/* ── VRAM row ── */
+.mp-vram-row { margin-top: 4px; }
+
+.mp-label--sub {
+  color: var(--text3);
+  font-size: 9px;
+}
+
+.mp-vram-value {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 9px;
+  color: var(--text3);
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-left: 4px;
+}
+
+/* ── Disk ── */
+.mp-disk-entry {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  & + & { margin-top: 4px; }
+}
+
+/* ── Apps ── */
+.mp-app-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mp-app-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--text3);
+  flex-shrink: 0;
+  transition: background 0.3s;
+
+  &.on {
+    background: var(--kodi);
+    box-shadow: 0 0 6px var(--kodi);
+    animation: dot-pulse 2.5s ease infinite;
+  }
+
+  &.abs.on {
+    background: var(--abs);
+    box-shadow: 0 0 6px var(--abs);
+  }
+}
+
+@keyframes dot-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.5; }
+}
+
+.mp-app-name {
+  font-family: 'Roboto', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text2);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mp-app-status {
+  font-family: 'Roboto', sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text3);
+  flex-shrink: 0;
+
+  &.on { color: var(--green); }
+}

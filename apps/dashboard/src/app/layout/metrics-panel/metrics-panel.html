@@ -1,0 +1,109 @@
+<aside class="metrics-panel">
+
+  <!-- System -->
+  <div class="mp-section">
+    <div class="mp-section-label">Système</div>
+
+    <div class="mp-row">
+      <span class="mp-label">CPU</span>
+      <div class="mp-bar-bg">
+        <div class="mp-bar-fill cpu" [style.width.%]="cpu"></div>
+      </div>
+      <span class="mp-value">{{ cpu }}%</span>
+      <span *ngIf="cpuTemp !== null"
+            class="mp-temp-badge"
+            [class]="'mp-temp-badge ' + tempClass(cpuTemp!)">
+        {{ cpuTemp }}°
+      </span>
+    </div>
+
+    <div class="mp-row">
+      <span class="mp-label">RAM</span>
+      <div class="mp-bar-bg">
+        <div class="mp-bar-fill ram" [style.width.%]="ramPct"></div>
+      </div>
+      <span class="mp-value">{{ ramPct }}%</span>
+    </div>
+
+    <div class="mp-sub">{{ ramUsed }} / {{ ramTotal }} GB</div>
+
+    <div class="mp-divider"></div>
+
+    <div class="mp-net-row">
+      <lucide-icon [img]="icons.Download" [size]="10" strokeWidth="2.5" color="var(--text3)"></lucide-icon>
+      <span class="mp-net-label">RX</span>
+      <span class="mp-net-value">{{ rx }}</span>
+    </div>
+
+    <div class="mp-net-row">
+      <lucide-icon [img]="icons.Upload" [size]="10" strokeWidth="2.5" color="var(--text3)"></lucide-icon>
+      <span class="mp-net-label">TX</span>
+      <span class="mp-net-value">{{ tx }}</span>
+    </div>
+  </div>
+
+  <!-- GPU -->
+  <div class="mp-section" *ngIf="gpus.length > 0">
+    <div class="mp-section-label">GPU</div>
+
+    <div class="mp-disk-entry" *ngFor="let g of gpus">
+      <div class="mp-row">
+        <span class="mp-label mp-label--disk">{{ gpuLabel(g) }}</span>
+        <div class="mp-bar-bg">
+          <div [class]="'mp-bar-fill gpu ' + (g.usedPercent >= 90 ? 'crit' : g.usedPercent >= 75 ? 'warn' : 'ok')"
+               [style.width.%]="g.usedPercent"></div>
+        </div>
+        <span class="mp-value">{{ g.usedPercent }}%</span>
+        <span *ngIf="g.tempCelsius !== null"
+              class="mp-temp-badge"
+              [class]="'mp-temp-badge ' + tempClass(g.tempCelsius!)">
+          {{ g.tempCelsius }}°
+        </span>
+      </div>
+
+      <div class="mp-row mp-vram-row" *ngIf="g.vramTotalGB > 0">
+        <span class="mp-label mp-label--disk mp-label--sub">VRAM</span>
+        <div class="mp-bar-bg">
+          <div class="mp-bar-fill vram"
+               [style.width.%]="(g.vramUsedGB / g.vramTotalGB) * 100"></div>
+        </div>
+        <span class="mp-sub mp-vram-value">{{ g.vramUsedGB | number:'1.1-1' }} / {{ g.vramTotalGB | number:'1.0-0' }} GB</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Storage -->
+  <div class="mp-section" *ngIf="disks.length > 0">
+    <div class="mp-section-label">Stockage</div>
+
+    <div class="mp-disk-entry" *ngFor="let d of disks">
+      <div class="mp-row">
+        <span class="mp-label mp-label--disk">{{ d.mount }}</span>
+        <div class="mp-bar-bg">
+          <div [class]="'mp-bar-fill disk ' + diskClass(d)"
+               [style.width.%]="d.usedPercent"></div>
+        </div>
+        <span class="mp-value">{{ d.usedPercent }}%</span>
+      </div>
+      <div class="mp-sub">{{ formatDisk(d.usedGB) }} / {{ formatDisk(d.totalGB) }}</div>
+    </div>
+  </div>
+
+  <!-- Apps -->
+  <div class="mp-section">
+    <div class="mp-section-label">Applications</div>
+
+    <div class="mp-app-row">
+      <span class="mp-app-dot" [class.on]="kodiOk"></span>
+      <span class="mp-app-name">Kodi</span>
+      <span class="mp-app-status" [class.on]="kodiOk">{{ kodiOk ? 'Connecté' : 'Hors ligne' }}</span>
+    </div>
+
+    <div class="mp-app-row">
+      <span class="mp-app-dot abs" [class.on]="absOk"></span>
+      <span class="mp-app-name">Audiobookshelf</span>
+      <span class="mp-app-status" [class.on]="absOk">{{ absOk ? 'Connecté' : 'Hors ligne' }}</span>
+    </div>
+  </div>
+
+</aside>

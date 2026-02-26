@@ -1,0 +1,24 @@
+.app-shell {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-rows: 68px 1fr;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.shell-body {
+  display: grid;
+  grid-template-columns: 256px 1fr 220px;
+  overflow: hidden;
+  height: 100%;
+}
+
+.main-content {
+  overflow-y: auto;
+  padding: 28px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  background: var(--bg);
+}

@@ -1,0 +1,19 @@
+@use 'variables';
+@use 'typography';
+@use 'animations';
+@use 'mixins';
+
+// Charger tous les thèmes (sélecteurs [data-theme="x"])
+@use 'themes/theme-dark';
+@use 'themes/theme-neon';
+@use 'themes/theme-matrix';
+
+// Reset & base
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}

@@ -1,0 +1,321 @@
+<!-- ── Header ── -->
+<div class="page-header">
+  <div>
+    <div class="page-title">App <span>Control</span> Center</div>
+    <div class="page-subtitle">Vue d'ensemble de vos services · {{ connectedCount }}/3 connectés</div>
+  </div>
+  <div class="ws-indicator" [class.connected]="anyConnected">
+    <span class="ws-dot"></span>
+    {{ anyConnected ? 'WebSocket OK' : 'En attente...' }}
+  </div>
+</div>
+
+<!-- ── Service Cards ── -->
+<div class="services-grid">
+
+  <!-- Kodi -->
+  <div class="service-card kodi-card" [class.offline]="!kodiConnected" (click)="openKodi()" role="button" tabindex="0">
+    <div class="service-card-inner">
+      <div class="service-top">
+        <div class="service-logo kodi-logo">K</div>
+        <div class="service-info">
+          <div class="service-name">Kodi Media Center</div>
+          <div class="service-meta">
+            @if (kodiStatus().version) { v{{ kodiStatus().version }} · }
+            JSON-RPC · Port 8080
+          </div>
+        </div>
+        <div class="service-badge-wrap">
+          @if (kodiConnected) {
+            @if (kodiStatus().nowPlaying) {
+              <app-status-badge [status]="isPlaying ? 'playing' : 'paused'"></app-status-badge>
+            } @else {
+              <app-status-badge status="stopped"></app-status-badge>
+            }
+          } @else {
+            <app-status-badge status="error"></app-status-badge>
+          }
+        </div>
+      </div>
+
+      <div class="service-preview">
+        @if (!kodiConnected) {
+          <div class="preview-offline">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M1 1l22 22M16.72 11.06A10.94 10.94 0 0 1 19 12.55M5 12.55a10.94 10.94 0 0 1 5.17-2.39M10.71 5.05A16 16 0 0 1 22.56 9M1.42 9a15.91 15.91 0 0 1 4.7-2.88M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01"/>
+            </svg>
+            Kodi n'est pas accessible
+          </div>
+        } @else if (kodiStatus().nowPlaying; as np) {
+          <div class="preview-playing">
+            <div class="kodi-cover">
+              @if (kodiArtUrl(np)) {
+                <img class="kodi-cover-img"
+                     [src]="kodiArtUrl(np)!" [alt]="np.title"
+                     (error)="onKodiArtError($event)">
+              } @else {
+                <div class="preview-disc" [class.paused]="np.paused"></div>
+              }
+            </div>
+            <div class="preview-media">
+              <div class="preview-title">{{ np.title }}</div>
+              <div class="preview-sub">
+                @if (np.year) { {{ np.year }} · }
+                {{ np.type === 'movie' ? 'Film' : np.type === 'episode' ? 'Série' : 'Musique' }}
+              </div>
+              <div class="preview-progress-bg">
+                <div class="preview-progress-fill kodi" [style.width.%]="progressPercent"></div>
+              </div>
+            </div>
+          </div>
+        } @else {
+          <div class="preview-idle">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <polygon points="23 7 16 12 23 17 23 7"/>
+              <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+            </svg>
+            Aucune lecture en cours
+          </div>
+        }
+      </div>
+
+      <div class="service-footer">
+        <span class="open-hint">Ouvrir Kodi →</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Audiobookshelf -->
+  <div class="service-card abs-card" [class.offline]="!absConnected" (click)="openAbs()" role="button" tabindex="0">
+    <div class="service-card-inner">
+      <div class="service-top">
+        <div class="service-logo abs-logo">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+            <path d="M3 18v-6a9 9 0 0 1 18 0v6"/>
+            <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>
+          </svg>
+        </div>
+        <div class="service-info">
+          <div class="service-name">Audiobookshelf</div>
+          <div class="service-meta">REST API · Port 13378</div>
+        </div>
+        <div class="service-badge-wrap">
+          @if (absConnected) {
+            @if (absSessionCount > 0) {
+              <app-status-badge status="playing"></app-status-badge>
+            } @else {
+              <app-status-badge status="stopped"></app-status-badge>
+            }
+          } @else {
+            <app-status-badge status="error"></app-status-badge>
+          }
+        </div>
+      </div>
+
+      <div class="service-preview">
+        @if (!absConnected) {
+          <div class="preview-offline">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M1 1l22 22M16.72 11.06A10.94 10.94 0 0 1 19 12.55M5 12.55a10.94 10.94 0 0 1 5.17-2.39M10.71 5.05A16 16 0 0 1 22.56 9M1.42 9a15.91 15.91 0 0 1 4.7-2.88M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01"/>
+            </svg>
+            Audiobookshelf n'est pas accessible
+          </div>
+        } @else if (absSessionCount > 0) {
+          <div class="preview-sessions">
+            @for (s of absStatus().activeSessions.slice(0, 2); track s.id) {
+              <div class="preview-session">
+                <div class="session-cover" [style.background]="sessionGradient(s.title)">
+                  <img class="session-cover-img"
+                       [src]="coverUrl(s.libraryItemId)" [alt]="s.title"
+                       (error)="onImgError($event)">
+                </div>
+                <div class="session-details">
+                  <div class="session-title">{{ s.title }}</div>
+                  @if (s.author) { <div class="session-author">{{ s.author }}</div> }
+                  <div class="preview-progress-bg">
+                    <div class="preview-progress-fill abs"
+                         [style.width.%]="s.duration ? (s.currentTime / s.duration) * 100 : 0">
+                    </div>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="preview-idle">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M3 18v-6a9 9 0 0 1 18 0v6"/>
+              <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>
+            </svg>
+            Aucune écoute en cours
+          </div>
+        }
+      </div>
+
+      <div class="service-footer">
+        <span class="open-hint">Ouvrir Audiobookshelf →</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- PlayStation -->
+  <div class="service-card psn-card" [class.offline]="!psnHasData" (click)="openPsn()" role="button" tabindex="0">
+    <div class="service-card-inner">
+      <div class="service-top">
+        <div class="service-logo psn-logo">PS</div>
+        <div class="service-info">
+          <div class="service-name">PlayStation Network</div>
+          <div class="service-meta">PSN API · Compte {{ psnStatus().profile?.onlineId ?? '—' }}</div>
+        </div>
+        <div class="service-badge-wrap">
+          @if (psnHasData) {
+            @if (psnStatus().profile?.presence === 'ingame') {
+              <app-status-badge status="playing"></app-status-badge>
+            } @else if (psnStatus().profile?.presence === 'online') {
+              <app-status-badge status="running"></app-status-badge>
+            } @else {
+              <app-status-badge status="stopped"></app-status-badge>
+            }
+          } @else {
+            <app-status-badge status="error"></app-status-badge>
+          }
+        </div>
+      </div>
+
+      <div class="service-preview">
+        @if (!psnHasData) {
+          <div class="preview-offline">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M21.5 2L2 22M8.5 8.5A7 7 0 0 0 5 14m14 0a7 7 0 0 0-3.37-6"/><circle cx="12" cy="14" r="2"/>
+            </svg>
+            PSN non configuré
+          </div>
+        } @else if (psnStatus().currentGame; as game) {
+          <div class="preview-playing">
+            <div class="psn-game-cover" [class.has-img]="!!game.imageUrl">
+              @if (game.imageUrl) {
+                <img class="psn-cover-img" [src]="game.imageUrl" [alt]="game.name" (error)="onImgError($event)">
+              } @else {
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M12 12h.01M8 12h.01M16 12h.01"/></svg>
+              }
+            </div>
+            <div class="preview-media">
+              <div class="preview-title">{{ game.name }}</div>
+              <div class="preview-sub">
+                @if (game.platform) { {{ game.platform }} · }En jeu
+              </div>
+              @if (psnStatus().trophySummary; as t) {
+                <div class="psn-trophy-mini">
+                  <span class="trophy-lvl">Niv. {{ t.level }}</span>
+                  <div class="trophy-bar-bg">
+                    <div class="trophy-bar-fill" [style.width.%]="t.progress"></div>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        } @else if (psnStatus().recentGames?.[0]; as lastGame) {
+          <!-- Not playing — show last played game -->
+          <div class="preview-playing">
+            <div class="psn-game-cover" [class.has-img]="!!lastGame.imageUrl">
+              @if (lastGame.imageUrl) {
+                <img class="psn-cover-img" [src]="lastGame.imageUrl" [alt]="lastGame.name" (error)="onImgError($event)">
+              } @else {
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M12 12h.01M8 12h.01M16 12h.01"/></svg>
+              }
+            </div>
+            <div class="preview-media">
+              <div class="preview-title">{{ lastGame.name }}</div>
+              <div class="preview-sub">
+                @if (lastGame.platform) { {{ lastGame.platform }} · }
+                @if (lastGame.lastPlayedAt) { {{ formatRelativeDate(lastGame.lastPlayedAt) }} }
+              </div>
+              @if (psnStatus().trophySummary; as t) {
+                <div class="psn-trophy-mini">
+                  <span class="trophy-lvl">Niv. {{ t.level }}</span>
+                  <div class="trophy-bar-bg">
+                    <div class="trophy-bar-fill" [style.width.%]="t.progress"></div>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        } @else if (psnStatus().profile; as profile) {
+          <div class="preview-playing">
+            <div class="psn-avatar-sm" [class.has-img]="!!profile.avatarUrl">
+              @if (profile.avatarUrl) {
+                <img [src]="profile.avatarUrl" [alt]="profile.onlineId" class="psn-cover-img">
+              } @else {
+                <span>{{ profile.onlineId[0].toUpperCase() }}</span>
+              }
+            </div>
+            <div class="preview-media">
+              <div class="preview-title">{{ profile.onlineId }}</div>
+              <div class="preview-sub">{{ profile.presence === 'online' ? 'En ligne' : 'Hors ligne' }}</div>
+              @if (psnStatus().trophySummary; as t) {
+                <div class="psn-trophy-mini">
+                  <span class="trophy-lvl">Niv. {{ t.level }}</span>
+                  <div class="trophy-bar-bg">
+                    <div class="trophy-bar-fill" [style.width.%]="t.progress"></div>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+
+      <div class="service-footer">
+        <span class="open-hint">Ouvrir PlayStation →</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Event Log ── -->
+<div class="panel">
+  <div class="panel-header">
+    <span class="panel-title">Journal d'Événements</span>
+    <div class="log-controls">
+      <!-- Source filter -->
+      <div class="filter-group">
+        <button class="filter-chip" [class.active]="filterSource() === 'all'"    (click)="setFilterSource('all')">Tous</button>
+        <button class="filter-chip" [class.active]="filterSource() === 'kodi'"   (click)="setFilterSource('kodi')">Kodi</button>
+        <button class="filter-chip" [class.active]="filterSource() === 'abs'"    (click)="setFilterSource('abs')">ABS</button>
+        <button class="filter-chip" [class.active]="filterSource() === 'psn'"    (click)="setFilterSource('psn')">PSN</button>
+        <button class="filter-chip" [class.active]="filterSource() === 'nexus'"  (click)="setFilterSource('nexus')">Nexus</button>
+      </div>
+      <!-- Level filter -->
+      <div class="filter-group">
+        <button class="filter-chip" [class.active]="filterLevel() === 'all'"   (click)="setFilterLevel('all')">Tous</button>
+        <button class="filter-chip ok"    [class.active]="filterLevel() === 'ok'"    (click)="setFilterLevel('ok')">OK</button>
+        <button class="filter-chip info"  [class.active]="filterLevel() === 'info'"  (click)="setFilterLevel('info')">Info</button>
+        <button class="filter-chip warn"  [class.active]="filterLevel() === 'warn'"  (click)="setFilterLevel('warn')">Warn</button>
+        <button class="filter-chip error" [class.active]="filterLevel() === 'error'" (click)="setFilterLevel('error')">Error</button>
+      </div>
+      <button class="btn btn-ghost btn-xs debug-toggle" [class.active]="showDebug()" (click)="toggleDebug()" title="Afficher les logs serveur internes">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Serveur
+      </button>
+      <button class="btn btn-ghost btn-xs" (click)="clearLogs()">Clear</button>
+    </div>
+  </div>
+  <div class="panel-body">
+    <div class="log-list">
+      @for (entry of filteredLogs(); track entry.id) {
+        <div class="log-entry" [class.is-debug]="entry.level === 'debug'">
+          <span class="log-time">{{ formatTime(entry.timestamp) }}</span>
+          <span class="log-source">{{ entry.source }}</span>
+          <span class="log-level" [class]="logLevelClass(entry.level)">
+            {{ logLevelLabel(entry.level) }}
+          </span>
+          <span class="log-msg">{{ entry.message }}</span>
+        </div>
+      }
+      @if (filteredLogs().length === 0) {
+        <p class="log-empty">Aucun événement</p>
+      }
+    </div>
+  </div>
+</div>

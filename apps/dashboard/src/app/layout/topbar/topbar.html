@@ -1,0 +1,50 @@
+<header class="topbar">
+
+  <div class="logo">
+    <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
+      <rect x="2" y="2" width="12" height="12" rx="2" stroke="var(--accent)" stroke-width="1.5"/>
+      <rect x="18" y="2" width="12" height="12" rx="2" stroke="var(--accent)" stroke-width="1.5" opacity="0.5"/>
+      <rect x="2" y="18" width="12" height="12" rx="2" stroke="var(--accent)" stroke-width="1.5" opacity="0.5"/>
+      <rect x="18" y="18" width="12" height="12" rx="2" stroke="var(--accent)" stroke-width="1.5" opacity="0.3"/>
+      <circle cx="8" cy="8" r="2" fill="var(--accent)"/>
+    </svg>
+    <span class="logo-text">NEX<span>US</span></span>
+  </div>
+
+  <div class="status-center">
+    <span class="status-dot"></span>
+    SYSTEM ONLINE
+  </div>
+
+  <div class="topbar-right">
+    <span class="clock">{{ currentTime | date:'HH:mm:ss' }}</span>
+
+    <div class="theme-picker-wrap">
+      <button class="icon-btn" (click)="toggleThemePicker()" title="Changer de thème">
+        <lucide-icon [img]="icons.Palette" [size]="15" strokeWidth="2"></lucide-icon>
+      </button>
+
+      @if (themePickerOpen) {
+        <div class="theme-dropdown">
+          @for (t of themes; track t.id) {
+            <button
+              class="theme-option"
+              [class.active]="themeService.activeTheme() === t.id"
+              (click)="selectTheme(t.id)"
+            >
+              <span class="dot" [style.background]="t.accent"></span>
+              <span class="dot" [style.background]="t.accent2"></span>
+              {{ t.label }}
+            </button>
+          }
+        </div>
+      }
+    </div>
+
+    <button class="icon-btn notif-btn">
+      <lucide-icon [img]="icons.Bell" [size]="15" strokeWidth="2"></lucide-icon>
+      <span class="badge"></span>
+    </button>
+  </div>
+
+</header>

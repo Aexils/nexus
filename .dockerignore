@@ -1,0 +1,10 @@
+node_modules
+dist
+.nx/cache
+.nx/workspace-data
+.angular
+.git
+*.md
+.env
+.env.local
+coverage

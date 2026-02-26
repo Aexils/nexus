@@ -1,0 +1,174 @@
+<!-- ══ Header ══ -->
+<header class="page-header">
+  <div class="brand">
+    <div class="brand-logo">
+      <lucide-icon [img]="icons.Headphones" [size]="22" strokeWidth="2" color="white"></lucide-icon>
+    </div>
+    <div>
+      <div class="brand-name">Audiobookshelf</div>
+      <div class="brand-meta">
+        @if (absConnected) {
+          {{ sessions.length > 0 ? sessions.length + ' session' + (sessions.length > 1 ? 's actives' : ' active') : 'Connecté · aucune lecture' }}
+        } @else { Hors ligne }
+      </div>
+    </div>
+  </div>
+  <div class="header-status">
+    @if (absConnected) {
+      <app-status-badge [status]="sessions.length > 0 ? 'playing' : 'stopped'"></app-status-badge>
+    } @else {
+      <app-status-badge status="error"></app-status-badge>
+    }
+  </div>
+</header>
+
+<!-- ══ Offline ══ -->
+@if (!absConnected) {
+  <div class="empty-state">
+    <div class="empty-icon"><lucide-icon [img]="icons.WifiOff" [size]="48" strokeWidth="1.2"></lucide-icon></div>
+    <p class="empty-title">Audiobookshelf n'est pas accessible</p>
+    <p class="empty-sub">Vérifiez que le service est en cours d'exécution et que <code>ABS_URL</code> est correctement configuré.</p>
+  </div>
+} @else {
+
+  <!-- ══ Now Playing ══ -->
+  @if (sessions.length > 0) {
+    <section class="now-playing">
+      <div class="section-eyebrow">
+        <span class="live-dot"></span>
+        En cours d'écoute
+      </div>
+
+      @for (s of sessions; track s.id) {
+        <a class="np-card" [class.podcast]="s.mediaType === 'podcast'"
+           [routerLink]="['/audiobookshelf', s.libraryItemId]">
+
+          <div class="np-cover" [style.background]="getGradient(s.title)">
+            <lucide-icon class="np-cover-icon"
+              [img]="s.mediaType === 'podcast' ? icons.Headphones : icons.BookOpen"
+              [size]="28" strokeWidth="1.5" color="rgba(255,255,255,0.35)">
+            </lucide-icon>
+            <img loading="lazy" class="np-cover-img"
+                 [src]="coverUrl(s.libraryItemId)" [alt]="s.title"
+                 (error)="onImgError($event)">
+          </div>
+
+          <div class="np-body">
+            <div class="np-type" [class.podcast]="s.mediaType === 'podcast'">
+              {{ s.mediaType === 'podcast' ? 'Podcast' : 'Audiobook' }}
+            </div>
+            <div class="np-title">{{ s.title }}</div>
+            @if (s.author) {
+              <div class="np-author">
+                <lucide-icon [img]="icons.Mic" [size]="12" strokeWidth="2"></lucide-icon>
+                {{ s.author }}
+              </div>
+            }
+            <div class="np-progress">
+              <div class="np-bar-track">
+                <div class="np-bar-fill" [class.podcast]="s.mediaType === 'podcast'"
+                     [style.width.%]="progressPct(s.currentTime, s.duration)"></div>
+              </div>
+              <div class="np-times">
+                <span class="mono">{{ formatTime(s.currentTime) }}</span>
+                <span class="np-pct">{{ progressPct(s.currentTime, s.duration).toFixed(0) }}%</span>
+                <span class="mono muted">{{ remaining(s.currentTime, s.duration) }}</span>
+              </div>
+            </div>
+          </div>
+
+          <lucide-icon [img]="icons.ChevronRight" [size]="18" strokeWidth="2" class="np-arrow"></lucide-icon>
+        </a>
+      }
+    </section>
+  }
+
+  <!-- ══ Library ══ -->
+  <section class="library">
+    <div class="section-eyebrow">
+      <lucide-icon [img]="icons.LibraryBig" [size]="13" strokeWidth="2.5"></lucide-icon>
+      Bibliothèque
+      @if (!libraryLoading() && library().length > 0) {
+        <span class="lib-pill">{{ library().length }}</span>
+      }
+    </div>
+
+    @if (libraryLoading()) {
+      <div class="skeleton-grid">
+        @for (n of [1,2,3,4,5,6,7,8]; track n) {
+          <div class="skeleton-card">
+            <div class="skeleton-cover shimmer"></div>
+            <div class="skeleton-line shimmer" style="width:80%"></div>
+            <div class="skeleton-line shimmer" style="width:55%"></div>
+          </div>
+        }
+      </div>
+    } @else if (library().length === 0) {
+      <div class="empty-state small">
+        <lucide-icon [img]="icons.BookMarked" [size]="32" strokeWidth="1.2"></lucide-icon>
+        <p>Aucun livre dans la bibliothèque</p>
+      </div>
+    } @else {
+
+      @for (group of seriesGroups(); track group.name) {
+        <div class="series-group">
+          <div class="series-header">
+            <span class="series-name">{{ group.name }}</span>
+            <span class="series-divider"></span>
+            <span class="series-count">{{ group.items.length }} livre{{ group.items.length > 1 ? 's' : '' }}</span>
+          </div>
+
+          <div class="books-grid">
+            @for (book of group.items; track book.id) {
+              <a class="book-card"
+                 [routerLink]="['/audiobookshelf', book.id]"
+                 [class.is-finished]="book.progress?.isFinished"
+                 [class.in-progress]="book.progress && !book.progress.isFinished && book.progress.progress > 0">
+
+                <div class="book-cover" [style.background]="getGradient(book.title)">
+                  <span class="book-initials">{{ getInitials(book.title) }}</span>
+
+                  @if (book.hasCover) {
+                    <img loading="lazy" class="book-cover-img"
+                         [src]="coverUrl(book.id)" [alt]="book.title"
+                         (error)="onImgError($event)">
+                  }
+
+                  @if (book.seriesSequence) {
+                    <span class="badge-seq">#{{ book.seriesSequence }}</span>
+                  }
+
+                  @if (book.progress?.isFinished) {
+                    <span class="badge-done">
+                      <lucide-icon [img]="icons.CheckCheck" [size]="10" strokeWidth="3" color="#000"></lucide-icon>
+                    </span>
+                  }
+
+                  @if (book.progress && !book.progress.isFinished && book.progress.progress > 0) {
+                    <div class="cover-progress-track">
+                      <div class="cover-progress-fill" [style.width.%]="book.progress.progress * 100"></div>
+                    </div>
+                  }
+                </div>
+
+                <div class="book-info">
+                  <div class="book-title">{{ book.title }}</div>
+                  @if (book.author) { <div class="book-author">{{ book.author }}</div> }
+                  @if (book.progress && !book.progress.isFinished && book.progress.progress > 0) {
+                    <div class="book-prog">
+                      <div class="book-prog-track">
+                        <div class="book-prog-fill" [style.width.%]="book.progress.progress * 100"></div>
+                      </div>
+                      <span class="book-prog-pct">{{ (book.progress.progress * 100).toFixed(0) }}%</span>
+                    </div>
+                  }
+                </div>
+
+              </a>
+            }
+          </div>
+        </div>
+      }
+    }
+  </section>
+}
