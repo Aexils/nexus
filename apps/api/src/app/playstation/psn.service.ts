@@ -116,13 +116,18 @@ export class PsnService implements OnModuleInit {
       const avatarUrl = profileData?.avatarUrls?.[0]?.avatarUrl;
 
       // presence → nécessite onlineId réel
-      const presenceRes = await getBasicPresence(auth, this.onlineId);
+      const presenceRes = await getBasicPresence(auth, 'me');
 
       const basicPresence = (presenceRes as any)?.basicPresence;
       const availability = basicPresence?.availability ?? 'availabilityOffline';
 
       const gameList = basicPresence?.gameTitleInfoList ?? [];
       const isIngame = Array.isArray(gameList) && gameList.length > 0;
+
+      const lastOnline: string | undefined =
+        basicPresence?.primaryPlatformInfo?.lastOnlineDate ??
+        basicPresence?.lastAvailableDate ??
+        undefined;
 
       const psnPresence =
         availability === 'availabilityOffline'
@@ -180,7 +185,7 @@ export class PsnService implements OnModuleInit {
         : undefined;
 
       this.warnFetchEmitted = false;
-      this.cachedProfile      = { onlineId: this.onlineId, avatarUrl, presence: psnPresence as any };
+      this.cachedProfile      = { onlineId: this.onlineId, avatarUrl, presence: psnPresence as any, lastOnline };
       this.cachedRecentGames  = recentGames.length ? recentGames : undefined;
       this.cachedTrophySummary = trophySummary;
       return {

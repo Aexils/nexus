@@ -37,9 +37,10 @@ export class Dashboard implements OnInit, OnDestroy {
   readonly nexus = inject(NexusService);
   private intervals: ReturnType<typeof setInterval>[] = [];
 
-  readonly kodiStatus = this.nexus.kodiStatus;
-  readonly absStatus  = this.nexus.absStatus;
-  readonly psnStatus  = this.nexus.psnStatus;
+  readonly kodiStatus       = this.nexus.kodiStatus;
+  readonly absStatus        = this.nexus.absStatus;
+  readonly psnStatus        = this.nexus.psnStatus;
+  readonly sideloadlyStatus = this.nexus.sideloadlyStatus;
 
   positionSec = signal(0);
   private lastWsPositionSec = 0;
@@ -68,7 +69,21 @@ export class Dashboard implements OnInit, OnDestroy {
   get psnConnected():   boolean { return this.psnStatus().connected; }
   get psnHasData():     boolean { return !!(this.psnStatus().profile || this.psnStatus().recentGames?.length); }
   get absSessionCount(): number { return this.absStatus().activeSessions.length; }
-  get connectedCount():  number { return (this.kodiConnected ? 1 : 0) + (this.absConnected ? 1 : 0) + (this.psnConnected ? 1 : 0); }
+
+  get sdlyConnected():    boolean      { return this.sideloadlyStatus().connected; }
+  get sdlyDaemonAlive():  boolean      { return this.sideloadlyStatus().daemon.alive; }
+  get sdlyAppCount():     number       { return this.sideloadlyStatus().apps.length; }
+  get sdlyExpiringCount(): number      { return this.sideloadlyStatus().apps.filter(a => a.status === 'expiring' || a.status === 'expired').length; }
+  get sdlyRamMB():        number | null { return this.sideloadlyStatus().daemon.ramMB; }
+  get sdlyUptimeSec():    number | null { return this.sideloadlyStatus().daemon.uptimeSec; }
+  get sdlyNearestMs():    number | null {
+    const accs = this.sideloadlyStatus().accounts;
+    if (!accs.length) return null;
+    const min = Math.min(...accs.map(a => a.nextRenewalMs));
+    return min;
+  }
+
+  get connectedCount():  number { return (this.kodiConnected ? 1 : 0) + (this.absConnected ? 1 : 0) + (this.psnConnected ? 1 : 0) + (this.sdlyConnected ? 1 : 0); }
   get anyConnected():   boolean { return this.connectedCount > 0; }
   get isPlaying():      boolean { const np = this.kodiStatus().nowPlaying; return !!np && !np.paused; }
 
@@ -80,9 +95,10 @@ export class Dashboard implements OnInit, OnDestroy {
 
   // ── Navigation ────────────────────────────────────────────────────────────
 
-  openKodi(): void { this.router.navigate(['/kodi']); }
-  openAbs():  void { this.router.navigate(['/audiobookshelf']); }
-  openPsn():  void { this.router.navigate(['/playstation']); }
+  openKodi():  void { this.router.navigate(['/kodi']); }
+  openAbs():   void { this.router.navigate(['/audiobookshelf']); }
+  openPsn():   void { this.router.navigate(['/playstation']); }
+  openSdly():  void { this.router.navigate(['/sideloadly']); }
 
   coverUrl(libraryItemId: string): string { return `/api/abs/cover/${libraryItemId}`; }
   onImgError(e: Event): void { (e.target as HTMLImageElement).style.display = 'none'; }
@@ -117,6 +133,45 @@ export class Dashboard implements OnInit, OnDestroy {
 
   logLevelLabel(level: LogLevel): string {
     return level === 'ok' ? 'OK' : level === 'debug' ? 'DBG' : level.toUpperCase();
+  }
+
+  formatDuration(iso: string): string {
+    const m = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+    if (!m) return iso;
+    const h  = parseInt(m[1] ?? '0', 10);
+    const mn = parseInt(m[2] ?? '0', 10);
+    if (h > 0) return mn > 0 ? `${h}h ${mn}min` : `${h}h`;
+    if (mn > 0) return `${mn} min`;
+    return '<1 min';
+  }
+
+  formatPlatform(platform?: string): string {
+    if (!platform) return '';
+    const p = platform.toLowerCase();
+    if (p.startsWith('ps5')) return 'PS5';
+    if (p.startsWith('ps4')) return 'PS4';
+    if (p.startsWith('ps3')) return 'PS3';
+    if (p.startsWith('ps2')) return 'PS2';
+    if (p.startsWith('ps1') || p === 'ps_game') return 'PS1';
+    if (p.includes('vita')) return 'PS Vita';
+    return platform.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  }
+
+  formatUptime(sec: number | null): string {
+    if (sec === null) return '—';
+    if (sec < 60)   return `${sec}s`;
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    return h > 0 ? `${h}h ${m}min` : `${m}min`;
+  }
+
+  formatCountdownShort(ms: number | null): string {
+    if (ms === null) return '—';
+    if (ms < 0) return 'Expiré';
+    const h = Math.floor(ms / 3_600_000);
+    const m = Math.floor((ms % 3_600_000) / 60_000);
+    if (h >= 24) return `${Math.floor(h / 24)}j`;
+    return h > 0 ? `${h}h ${m}min` : `${m}min`;
   }
 
   formatTime(ts: number): string {

@@ -7,7 +7,7 @@ import {
 } from '@nestjs/websockets';
 import { Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
-import { KodiStatus, SystemMetrics, AbsStatus, PsnStatus, WS_EVENTS, LogEntry, LogLevel, LogSource } from '@nexus/shared-types';
+import { KodiStatus, SystemMetrics, AbsStatus, PsnStatus, SideloadlyStatus, WS_EVENTS, LogEntry, LogLevel, LogSource } from '@nexus/shared-types';
 
 const LOG_BUFFER_MAX = 500;
 
@@ -60,6 +60,11 @@ export class NexusGateway
   emitPsnStatus(payload: PsnStatus): void {
     if (!this.server) return;
     this.server.emit(WS_EVENTS.PSN_STATUS_UPDATE, payload);
+  }
+
+  emitSideloadlyStatus(payload: SideloadlyStatus): void {
+    if (!this.server) return;
+    this.server.emit(WS_EVENTS.SIDELOADLY_STATUS_UPDATE, payload);
   }
 
   // ── Logging ───────────────────────────────────────────────────────────────

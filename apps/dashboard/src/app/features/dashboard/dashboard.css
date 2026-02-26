@@ -162,9 +162,113 @@
   transition: width 0.9s ease;
 }
 
+.service-card.sdly-card { border-top-color: #7c3aed; }
+.service-card.sdly-card:hover { box-shadow: 0 8px 32px rgba(124, 58, 237, 0.18); }
+
+.sdly-logo {
+  background: linear-gradient(135deg, #7c3aed, #5b21b6);
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.35);
+}
+
+/* Sideloadly preview area */
+.sdly-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.sdly-daemon-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.sdly-daemon-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 20px;
+  border: 1px solid transparent;
+}
+
+.sdly-daemon-badge.alive {
+  color: var(--green);
+  background: color-mix(in srgb, var(--green) 10%, transparent);
+  border-color: color-mix(in srgb, var(--green) 25%, transparent);
+}
+
+.sdly-daemon-badge.dead {
+  color: var(--red);
+  background: color-mix(in srgb, var(--red) 10%, transparent);
+  border-color: color-mix(in srgb, var(--red) 25%, transparent);
+}
+
+.sdly-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+.sdly-daemon-badge.alive .sdly-dot {
+  animation: blink 2s ease infinite;
+}
+
+.sdly-ram,
+.sdly-uptime {
+  font-size: 11px;
+  color: var(--text3);
+  font-weight: 500;
+}
+
+.sdly-stats-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.sdly-stat {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.sdly-stat.ok    { color: var(--green); }
+.sdly-stat.warn  { color: var(--yellow); }
+.sdly-stat.muted { color: var(--text3); }
+
+.sdly-account-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--border);
+}
+.sdly-account-row:last-child { border-bottom: none; }
+
+.sdly-account-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text2);
+}
+.sdly-account-name.muted { color: var(--text3); }
+
+.sdly-account-renew {
+  font-size: 11px;
+  color: var(--text3);
+}
+.sdly-account-renew.urgent { color: var(--yellow); }
+
 .service-card.offline { opacity: 0.75; }
 
-.service-card-inner { display: flex; flex-direction: column; }
+.service-card-inner { display: flex; flex-direction: column; height: 100%; }
 
 /* Top row */
 .service-top {
@@ -210,6 +314,7 @@
 .service-preview {
   padding: 16px 20px;
   min-height: 80px;
+  flex: 1;
   display: flex;
   align-items: center;
 }
@@ -453,7 +558,10 @@
   text-transform: uppercase;
   color: var(--text3);
   flex-shrink: 0;
-  width: 36px;
+  width: 72px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .log-level {

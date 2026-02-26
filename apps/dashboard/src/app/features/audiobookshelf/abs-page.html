@@ -83,6 +83,46 @@
     </section>
   }
 
+  <!-- ══ Last Session (when idle) ══ -->
+  @if (sessions.length === 0 && absStatus().lastSession; as ls) {
+    <section class="last-session">
+      <div class="section-eyebrow muted">
+        <lucide-icon [img]="icons.Clock3" [size]="13" strokeWidth="2.5"></lucide-icon>
+        Dernière écoute · {{ formatRelative(ls.stoppedAt) }}
+      </div>
+      <div class="ls-card">
+        <div class="np-cover" [style.background]="getGradient(ls.title)">
+          <lucide-icon class="np-cover-icon"
+            [img]="ls.mediaType === 'podcast' ? icons.Headphones : icons.BookOpen"
+            [size]="28" strokeWidth="1.5" color="rgba(255,255,255,0.35)">
+          </lucide-icon>
+          <img loading="lazy" class="np-cover-img"
+               [src]="coverUrl(ls.libraryItemId)" [alt]="ls.title"
+               (error)="onImgError($event)">
+        </div>
+        <div class="ls-body">
+          <div class="np-type" [class.podcast]="ls.mediaType === 'podcast'">
+            {{ ls.mediaType === 'podcast' ? 'Podcast' : 'Audiobook' }}
+          </div>
+          <div class="ls-title">{{ ls.title }}</div>
+          @if (ls.author) {
+            <div class="np-author">
+              <lucide-icon [img]="icons.Mic" [size]="12" strokeWidth="2"></lucide-icon>
+              {{ ls.author }}
+            </div>
+          }
+          <div class="ls-progress">
+            <div class="np-bar-track">
+              <div class="np-bar-fill" [class.podcast]="ls.mediaType === 'podcast'"
+                   [style.width.%]="progressPct(ls.currentTime, ls.duration)"></div>
+            </div>
+            <span class="ls-pct">{{ progressPct(ls.currentTime, ls.duration).toFixed(0) }}% écouté</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  }
+
   <!-- ══ Library ══ -->
   <section class="library">
     <div class="section-eyebrow">

@@ -188,6 +188,61 @@
   border-radius: 4px;
 }
 
+/* ── Last Played card ── */
+.last-played-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-top: 3px solid #0070cc;
+  border-radius: 16px;
+  padding: 24px 28px;
+  margin-bottom: 14px;
+  animation: fadeUp 0.4s 0.06s ease both;
+}
+
+.last-played-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text3);
+  background: color-mix(in srgb, var(--text3) 10%, transparent);
+  padding: 3px 10px;
+  border-radius: 4px;
+  margin-bottom: 16px;
+}
+
+.last-ago-pill {
+  font-size: 11px;
+  font-weight: 600;
+  color: #0070cc;
+  background: color-mix(in srgb, #0070cc 10%, transparent);
+  border: 1px solid color-mix(in srgb, #0070cc 25%, transparent);
+  padding: 2px 9px;
+  border-radius: 4px;
+}
+
+.np-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text3);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.last-online-hint {
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 4px;
+}
+
 /* ── Info row (profile + trophy side-by-side) ── */
 .info-row {
   display: grid;

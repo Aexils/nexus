@@ -2,7 +2,7 @@ import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import {
   LucideAngularModule, LucideIconData,
-  LayoutDashboard, MonitorPlay, Headphones, Gamepad2,
+  LayoutDashboard, MonitorPlay, Headphones, Gamepad2, Smartphone,
 } from 'lucide-angular';
 import { NexusService } from '../../core/services/nexus.service';
 
@@ -25,7 +25,8 @@ export class SidebarComponent {
 
   get kodiRunning() { return this.nexus.kodiStatus().connected; }
   get absRunning()  { return this.nexus.absStatus().connected; }
-  get psnRunning()  { return this.nexus.psnStatus().connected; }
+  get psnRunning()  { const s = this.nexus.psnStatus(); return s.connected || !!(s.profile || s.recentGames?.length); }
+  get sdlyRunning() { return this.nexus.sideloadlyStatus().connected; }
 
   readonly navMain: NavItem[] = [
     { label: 'Dashboard', route: '/dashboard', icon: LayoutDashboard },
@@ -35,5 +36,6 @@ export class SidebarComponent {
     { label: 'Kodi',           route: '/kodi',           icon: MonitorPlay },
     { label: 'Audiobookshelf', route: '/audiobookshelf', icon: Headphones  },
     { label: 'PlayStation',    route: '/playstation',    icon: Gamepad2    },
+    { label: 'Sideloadly',     route: '/sideloadly',     icon: Smartphone  },
   ];
 }

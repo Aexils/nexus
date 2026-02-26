@@ -5,6 +5,7 @@ import { KodiModule } from './kodi/kodi.module';
 import { MetricsModule } from './metrics/metrics.module';
 import { AbsModule } from './audiobookshelf/abs.module';
 import { PsnModule } from './playstation/psn.module';
+import { SideloadlyModule } from './sideloadly/sideloadly.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { PsnModule } from './playstation/psn.module';
     MetricsModule,
     AbsModule,
     PsnModule,
+    SideloadlyModule,
   ],
 })
 export class AppModule {}

@@ -9,9 +9,20 @@ export interface AbsSession {
   duration: number;    // seconds
 }
 
+export interface AbsLastSession {
+  title:         string;
+  author?:       string;
+  libraryItemId: string;
+  mediaType:     'book' | 'podcast';
+  currentTime:   number;
+  duration:      number;
+  stoppedAt:     string; // ISO timestamp
+}
+
 export interface AbsStatus {
-  connected: boolean;
+  connected:      boolean;
   activeSessions: AbsSession[];
+  lastSession?:   AbsLastSession | null;
 }
 
 export interface AbsBookProgress {

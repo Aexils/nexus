@@ -13,7 +13,7 @@
       </div>
     </div>
   </div>
-  <app-status-badge [status]="badgeStatus()"></app-status-badge>
+  <app-status-badge [status]="badgeStatus()" [customLabel]="badgeStatus() === 'running' ? 'Connecté' : undefined"></app-status-badge>
 </div>
 
 <!-- ── Not configured (no data at all) ── -->
@@ -49,9 +49,59 @@
           <div class="np-title">{{ game.name }}</div>
           <div class="np-badges">
             @if (game.platform) {
-              <span class="platform-badge">{{ game.platform }}</span>
+              <span class="platform-badge">{{ formatPlatform(game.platform) }}</span>
             }
             <span class="ingame-pill">● En jeu</span>
+            @if (currentGameStats(); as stats) {
+              @if (stats.playDuration) {
+                <span class="np-stat">
+                  <lucide-icon [img]="icons.Clock" [size]="10" strokeWidth="2"></lucide-icon>
+                  {{ formatDuration(stats.playDuration) }}
+                </span>
+              }
+              @if (stats.playCount) {
+                <span class="np-stat">{{ stats.playCount }}× joué</span>
+              }
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ── Last Played (when not in-game) ── -->
+  @if (!psn().currentGame && psn().recentGames?.[0]; as lastGame) {
+    <div class="last-played-card">
+      <div class="last-played-label">
+        <lucide-icon [img]="icons.Clock" [size]="11" strokeWidth="2.5"></lucide-icon>
+        Dernier jeu joué
+      </div>
+      <div class="now-playing-inner">
+        <div class="game-art-lg" [class.has-img]="!!lastGame.imageUrl">
+          @if (lastGame.imageUrl) {
+            <img class="game-art-img" [src]="lastGame.imageUrl" [alt]="lastGame.name" (error)="onImgError($event)">
+          } @else {
+            <lucide-icon [img]="icons.Gamepad2" [size]="52" strokeWidth="1" class="game-art-icon"></lucide-icon>
+          }
+        </div>
+        <div class="np-info">
+          <div class="np-title">{{ lastGame.name }}</div>
+          <div class="np-badges">
+            @if (lastGame.platform) {
+              <span class="platform-badge">{{ formatPlatform(lastGame.platform) }}</span>
+            }
+            @if (lastGame.lastPlayedAt) {
+              <span class="last-ago-pill">{{ formatRelative(lastGame.lastPlayedAt) }}</span>
+            }
+            @if (lastGame.playDuration) {
+              <span class="np-stat">
+                <lucide-icon [img]="icons.Clock" [size]="10" strokeWidth="2"></lucide-icon>
+                {{ formatDuration(lastGame.playDuration) }}
+              </span>
+            }
+            @if (lastGame.playCount) {
+              <span class="np-stat">{{ lastGame.playCount }}× joué</span>
+            }
           </div>
         </div>
       </div>
@@ -76,6 +126,9 @@
           <div class="presence-label" [class]="profile.presence">
             {{ presenceLabel(profile.presence) }}
           </div>
+          @if (profile.presence === 'offline' && profile.lastOnline) {
+            <div class="last-online-hint">{{ formatRelative(profile.lastOnline) }}</div>
+          }
         </div>
       </div>
     }
@@ -140,7 +193,7 @@
             <div class="game-name">{{ game.name }}</div>
             <div class="game-meta">
               @if (game.platform) {
-                <span class="platform-badge-sm">{{ game.platform }}</span>
+                <span class="platform-badge-sm">{{ formatPlatform(game.platform) }}</span>
               }
               @if (game.playDuration) {
                 <span class="play-time">{{ formatDuration(game.playDuration) }}</span>

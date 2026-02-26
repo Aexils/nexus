@@ -85,6 +85,48 @@
   animation: fadeUp 0.4s 0.06s ease both;
 }
 
+/* ── Last Played card ── */
+.last-played-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--text3);
+  border-radius: 16px;
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  animation: fadeUp 0.4s 0.06s ease both;
+  opacity: 0.9;
+}
+
+.last-played-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text3);
+  background: color-mix(in srgb, var(--text3) 10%, transparent);
+  padding: 3px 10px;
+  border-radius: 4px;
+  width: fit-content;
+}
+
+.lp-body {
+  display: flex;
+  gap: 28px;
+  align-items: flex-start;
+}
+
+.lp-art {
+  width: 100px !important;
+  height: 100px !important;
+}
+
+.lp-title { font-size: 20px !important; }
+
 /* Album art / Cover */
 .np-art {
   flex-shrink: 0;

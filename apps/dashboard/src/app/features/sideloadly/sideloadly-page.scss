@@ -1,0 +1,209 @@
+/* ── Page Header ── */
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  animation: fadeUp 0.4s ease both;
+  padding-bottom: 14px;
+}
+
+.brand { display: flex; align-items: center; gap: 14px; }
+
+.brand-logo {
+  width: 48px; height: 48px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 14px; color: white; flex-shrink: 0;
+}
+
+.sdly-logo {
+  background: linear-gradient(135deg, #6c3fc5, #3b1fa8);
+  box-shadow: 0 6px 20px rgba(108, 63, 197, 0.4);
+}
+
+.brand-name  { font-size: 24px; font-weight: 700; color: var(--text); }
+.brand-meta  { font-size: 12px; color: var(--text3); margin-top: 3px; }
+
+/* ── Summary pills ── */
+.summary-pills { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+.pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px;
+}
+.pill-error   { color: var(--red);    background: color-mix(in srgb, var(--red)    10%, transparent); border: 1px solid color-mix(in srgb, var(--red)    22%, transparent); }
+.pill-expired { color: var(--text3);  background: color-mix(in srgb, var(--text3)  10%, transparent); border: 1px solid color-mix(in srgb, var(--text3)  22%, transparent); }
+.pill-expiring{ color: var(--yellow); background: color-mix(in srgb, var(--yellow) 10%, transparent); border: 1px solid color-mix(in srgb, var(--yellow) 22%, transparent); }
+
+/* ── Offline state ── */
+.state-view {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 14px; padding: 72px 32px; text-align: center;
+  animation: fadeUp 0.4s 0.1s ease both;
+}
+.offline-icon  { color: var(--red); opacity: 0.65; }
+.state-title   { font-size: 20px; font-weight: 600; color: var(--text2); }
+.state-sub {
+  font-size: 14px; color: var(--text3); line-height: 1.8; max-width: 480px;
+  code {
+    font-size: 12px; color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+    border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
+    padding: 1px 6px; border-radius: 4px;
+  }
+}
+
+/* ── Section title ── */
+.section-title {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--text2); margin-bottom: 10px;
+  animation: fadeUp 0.4s 0.1s ease both;
+}
+
+/* ── Accounts ── */
+.accounts-row {
+  display: flex; flex-wrap: wrap; gap: 12px;
+  animation: fadeUp 0.4s 0.12s ease both;
+}
+
+.account-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+  padding: 16px 20px; flex: 1; min-width: 260px;
+  transition: border-color 0.2s;
+
+  &.urgent { border-color: color-mix(in srgb, var(--red) 40%, transparent); }
+}
+
+.acc-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.acc-id   { font-size: 13px; font-weight: 600; color: var(--text); }
+
+.acc-slots {
+  font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px;
+  color: var(--green); background: color-mix(in srgb, var(--green) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--green) 22%, transparent);
+  &.low { color: var(--yellow); background: color-mix(in srgb, var(--yellow) 10%, transparent); border-color: color-mix(in srgb, var(--yellow) 22%, transparent); }
+}
+
+.acc-ttl-row {
+  display: flex; align-items: center; gap: 5px; font-size: 12px; margin-bottom: 10px;
+}
+.ttl-icon  { color: var(--text3); }
+.ttl-label { color: var(--text3); }
+.ttl-val   { font-weight: 700; color: var(--text); &.urgent-text { color: var(--red); } }
+.ttl-date  { color: var(--text3); font-size: 11px; }
+
+.slots-bar {
+  height: 4px; background: var(--border2); border-radius: 2px; overflow: hidden;
+}
+.slots-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), #6c3fc5);
+  border-radius: 2px; transition: width 0.6s ease;
+}
+
+/* ── Apps Table ── */
+.apps-table-wrap {
+  overflow-x: auto; border-radius: 12px;
+  border: 1px solid var(--border);
+  animation: fadeUp 0.4s 0.14s ease both;
+}
+
+.apps-table {
+  width: 100%; border-collapse: collapse; font-size: 13px;
+
+  th {
+    padding: 10px 14px; text-align: left;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase;
+    color: var(--text3); background: var(--surface2); border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 10px 14px; border-bottom: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
+    vertical-align: top;
+  }
+
+  tr:last-child td { border-bottom: none; }
+
+  tr.row-expired  { background: color-mix(in srgb, var(--red)    4%, transparent); }
+  tr.row-expiring { background: color-mix(in srgb, var(--yellow)  4%, transparent); }
+  tr.row-error    { background: color-mix(in srgb, var(--red)     6%, transparent); }
+
+  tr:hover td { background: color-mix(in srgb, var(--accent) 4%, transparent); }
+}
+
+.app-name   { font-weight: 600; color: var(--text); margin-bottom: 2px; }
+.app-bundle { font-size: 11px; color: var(--text3); font-family: 'JetBrains Mono', monospace; }
+.app-error  {
+  display: flex; align-items: center; gap: 4px; margin-top: 4px;
+  font-size: 11px; color: var(--red);
+}
+
+.device-cell {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 13px; color: var(--text2); white-space: nowrap;
+}
+.device-icon { color: var(--text3); flex-shrink: 0; }
+
+.account-chip {
+  font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 4px;
+  color: #6c3fc5; background: rgba(108, 63, 197, 0.12);
+  border: 1px solid rgba(108, 63, 197, 0.25);
+}
+
+.date-cell { color: var(--text2); white-space: nowrap; }
+
+.countdown {
+  font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700;
+  &.countdown-ok       { color: var(--green); }
+  &.countdown-expiring { color: var(--yellow); }
+  &.countdown-expired  { color: var(--red); }
+}
+.next-date { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+.status-badge {
+  display: inline-block; font-size: 10px; font-weight: 700;
+  letter-spacing: 0.05em; text-transform: uppercase;
+  padding: 2px 8px; border-radius: 4px;
+  &.badge-ok       { color: var(--green);  background: color-mix(in srgb, var(--green)  10%, transparent); border: 1px solid color-mix(in srgb, var(--green)  22%, transparent); }
+  &.badge-expiring { color: var(--yellow); background: color-mix(in srgb, var(--yellow) 10%, transparent); border: 1px solid color-mix(in srgb, var(--yellow) 22%, transparent); }
+  &.badge-expired  { color: var(--red);    background: color-mix(in srgb, var(--red)    10%, transparent); border: 1px solid color-mix(in srgb, var(--red)    22%, transparent); }
+}
+
+.failures-badge {
+  display: inline-block; font-size: 10px; font-weight: 700;
+  margin-left: 5px; padding: 2px 6px; border-radius: 4px;
+  color: var(--red); background: color-mix(in srgb, var(--red) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--red) 22%, transparent);
+}
+
+/* ── Devices ── */
+.devices-row {
+  display: flex; flex-wrap: wrap; gap: 10px;
+  animation: fadeUp 0.4s 0.18s ease both;
+  margin-bottom: 16px;
+}
+
+.device-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  padding: 14px 18px; flex: 1; min-width: 220px;
+  &.dev-error { border-color: color-mix(in srgb, var(--red) 35%, transparent); }
+}
+
+.dev-name  { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+.dev-udid  { font-size: 10px; color: var(--text3); font-family: 'JetBrains Mono', monospace; margin-bottom: 6px; }
+.dev-seen  { font-size: 12px; color: var(--text3); }
+.dev-error-msg {
+  display: flex; align-items: center; gap: 4px;
+  margin-top: 6px; font-size: 11px; color: var(--red);
+}
+
+/* ── Animations ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

@@ -1,15 +1,17 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Interval } from '@nestjs/schedule';
 import * as fs from 'fs';
+import * as path from 'path';
 import * as readline from 'readline';
 import axios, { AxiosInstance } from 'axios';
 import { NexusGateway } from '../gateway/nexus.gateway';
 import { KodiStatus, KodiNowPlaying } from '@nexus/shared-types';
 
-const KODI_URL      = process.env['KODI_URL']      ?? 'http://localhost:8080/jsonrpc';
-const KODI_USER     = process.env['KODI_USER']     ?? '';
-const KODI_PASS     = process.env['KODI_PASS']     ?? '';
-const KODI_LOG_PATH = process.env['KODI_LOG_PATH'] ?? '';
+const KODI_URL        = process.env['KODI_URL']        ?? 'http://localhost:8080/jsonrpc';
+const KODI_USER       = process.env['KODI_USER']       ?? '';
+const KODI_PASS       = process.env['KODI_PASS']       ?? '';
+const KODI_LOG_PATH   = process.env['KODI_LOG_PATH']   ?? '';
+const KODI_STATE_PATH = process.env['KODI_STATE_PATH'] ?? path.join(process.cwd(), 'nexus-kodi-state.json');
 
 // Map Kodi log level strings to our levels
 const KODI_LEVEL_MAP: Record<string, 'info' | 'warn' | 'error'> = {
@@ -25,6 +27,7 @@ export class KodiService implements OnModuleInit {
   private readonly http: AxiosInstance;
 
   private currentStatus: KodiStatus = { connected: false, nowPlaying: null };
+  private lastPlayed: KodiStatus['lastPlayed'] = null;
 
   // ── State tracking for synthetic log events ──────────────────────────────
   private prevConnected     = false;
@@ -42,6 +45,7 @@ export class KodiService implements OnModuleInit {
   }
 
   onModuleInit() {
+    this.loadState();
     this.logger.log(`Kodi endpoint: ${KODI_URL}`);
     this.gateway.addLog('debug', 'kodi', `Endpoint: ${KODI_URL}`);
     if (KODI_LOG_PATH) {
@@ -89,7 +93,7 @@ export class KodiService implements OnModuleInit {
 
         const next: KodiStatus = { connected: true, version, nowPlaying: null };
         this.detectStateChange(next);
-        this.currentStatus = next;
+        this.currentStatus = { ...next, lastPlayed: this.lastPlayed };
         this.gateway.emitKodiStatus(this.currentStatus);
         return;
       }
@@ -167,7 +171,7 @@ export class KodiService implements OnModuleInit {
         nowPlaying,
       };
       this.detectStateChange(next);
-      this.currentStatus = next;
+      this.currentStatus = { ...next, lastPlayed: this.lastPlayed };
       this.gateway.emitKodiStatus(this.currentStatus);
     } catch {
       if (this.currentStatus.connected) {
@@ -176,7 +180,7 @@ export class KodiService implements OnModuleInit {
       }
       const next: KodiStatus = { connected: false, nowPlaying: null };
       this.detectStateChange(next);
-      this.currentStatus = next;
+      this.currentStatus = { ...next, lastPlayed: this.lastPlayed };
       this.gateway.emitKodiStatus(this.currentStatus);
     }
   }
@@ -199,6 +203,8 @@ export class KodiService implements OnModuleInit {
       const type = nextNp.type === 'episode' ? 'Série' : nextNp.type === 'music' ? 'Musique' : 'Film';
       this.gateway.addLog('info', 'kodi', `Lecture démarrée — ${type} : ${nextNp.title}`);
     } else if (prevNp && !nextNp) {
+      this.lastPlayed = { item: prevNp, stoppedAt: new Date().toISOString() };
+      this.saveState();
       this.gateway.addLog('info', 'kodi', `Lecture arrêtée — ${prevNp.title}`);
     } else if (prevNp && nextNp) {
       if (prevNp.title !== nextNp.title) {
@@ -298,6 +304,21 @@ export class KodiService implements OnModuleInit {
     } catch {
       return null;
     }
+  }
+
+  // ── State persistence ─────────────────────────────────────────────────────
+
+  private loadState(): void {
+    try {
+      const raw = JSON.parse(fs.readFileSync(KODI_STATE_PATH, 'utf8'));
+      if (raw?.lastPlayed) this.lastPlayed = raw.lastPlayed;
+    } catch { /* no saved state yet */ }
+  }
+
+  private saveState(): void {
+    try {
+      fs.writeFileSync(KODI_STATE_PATH, JSON.stringify({ lastPlayed: this.lastPlayed }));
+    } catch { /* ignore write errors */ }
   }
 
   // ── Playback commands ─────────────────────────────────────────────────────

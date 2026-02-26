@@ -25,6 +25,9 @@
         @if (item.route === '/playstation') {
           <span class="app-status psn" [class.running]="psnRunning" [class.stopped]="!psnRunning"></span>
         }
+        @if (item.route === '/sideloadly') {
+          <span class="app-status sdly" [class.running]="sdlyRunning" [class.stopped]="!sdlyRunning"></span>
+        }
       </a>
     }
   </div>

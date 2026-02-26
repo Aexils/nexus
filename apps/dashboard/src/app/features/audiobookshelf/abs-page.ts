@@ -66,6 +66,21 @@ export class AbsPage implements OnInit {
 
   ngOnInit() { this.nexus.loadAbsLibrary(); }
 
+  formatRelative(iso: string): string {
+    try {
+      const diff = Date.now() - new Date(iso).getTime();
+      const m = Math.floor(diff / 60_000);
+      if (m < 1)   return "à l'instant";
+      if (m < 60)  return `il y a ${m} min`;
+      const h = Math.floor(m / 60);
+      if (h < 24)  return `il y a ${h}h`;
+      const d = Math.floor(h / 24);
+      if (d === 1) return 'hier';
+      if (d < 7)   return `il y a ${d} jours`;
+      return new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' });
+    } catch { return ''; }
+  }
+
   progressPct(current: number, duration: number): number {
     return duration ? Math.min((current / duration) * 100, 100) : 0;
   }

@@ -5,3 +5,4 @@ export * from './lib/events-type';
 export * from './lib/metrics-types';
 export * from './lib/abs-types';
 export * from './lib/psn-types';
+export * from './lib/sideloadly-types';

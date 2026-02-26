@@ -11,7 +11,7 @@ import { CommonModule } from '@angular/common';
 import {
   LucideAngularModule,
   Star, Users, Clapperboard, Tv, Music2,
-  Building2, WifiOff, MonitorPlay,
+  Building2, WifiOff, MonitorPlay, Clock,
 } from 'lucide-angular';
 import { NexusService } from '../../core/services/nexus.service';
 import { StatusBadge } from '../../shared/components/status-badge/status-badge';
@@ -31,7 +31,7 @@ export class KodiPage implements OnInit, OnDestroy {
   private intervals: ReturnType<typeof setInterval>[] = [];
 
   readonly kodiStatus = this.nexus.kodiStatus;
-  readonly icons = { Star, Users, Clapperboard, Tv, Music2, Building2, WifiOff, MonitorPlay };
+  readonly icons = { Star, Users, Clapperboard, Tv, Music2, Building2, WifiOff, MonitorPlay, Clock };
 
   positionSec = signal(0);
   artLoaded   = signal(false);
@@ -49,6 +49,21 @@ export class KodiPage implements OnInit, OnDestroy {
     const dur = this.np?.durationSec ?? 0;
     if (!dur) return 0;
     return Math.min((this.positionSec() / dur) * 100, 100);
+  }
+
+  formatRelative(iso: string): string {
+    try {
+      const diff = Date.now() - new Date(iso).getTime();
+      const m = Math.floor(diff / 60_000);
+      if (m < 1)   return "à l'instant";
+      if (m < 60)  return `il y a ${m} min`;
+      const h = Math.floor(m / 60);
+      if (h < 24)  return `il y a ${h}h`;
+      const d = Math.floor(h / 24);
+      if (d === 1) return 'hier';
+      if (d < 7)   return `il y a ${d} jours`;
+      return new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' });
+    } catch { return ''; }
   }
 
   typeLabel(type: string): string {

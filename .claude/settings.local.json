@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(docker:*)",
+      "Bash(node:*)",
+      "Bash(DOCKER_BUILDKIT=0 docker compose:*)"
+    ]
+  }
+}

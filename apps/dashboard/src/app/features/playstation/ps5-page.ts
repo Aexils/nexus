@@ -46,7 +46,7 @@ export class Ps5Page {
     if (!m) return iso;
     const h  = parseInt(m[1] ?? '0', 10);
     const mn = parseInt(m[2] ?? '0', 10);
-    if (h > 0) return `${h}h${mn > 0 ? mn + 'm' : ''}`;
+    if (h > 0) return mn > 0 ? `${h}h ${mn}min` : `${h}h`;
     if (mn > 0) return `${mn} min`;
     return '<1 min';
   }
@@ -55,6 +55,41 @@ export class Ps5Page {
     try {
       return new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
     } catch { return ''; }
+  }
+
+  formatRelative(iso: string): string {
+    try {
+      const diff = Date.now() - new Date(iso).getTime();
+      const m = Math.floor(diff / 60_000);
+      if (m < 1)   return "à l'instant";
+      if (m < 60)  return `il y a ${m} min`;
+      const h = Math.floor(m / 60);
+      if (h < 24)  return `il y a ${h}h`;
+      const d = Math.floor(h / 24);
+      if (d === 1) return 'hier';
+      if (d < 7)   return `il y a ${d} jours`;
+      return this.formatDate(iso);
+    } catch { return ''; }
+  }
+
+  /** Find stats (playCount, playDuration) for the current game from recentGames */
+  currentGameStats(): { playCount?: number; playDuration?: string } | null {
+    const cg = this.psn().currentGame;
+    if (!cg) return null;
+    const match = this.psn().recentGames?.find(g => g.titleId === cg.titleId);
+    return match ? { playCount: match.playCount, playDuration: match.playDuration } : null;
+  }
+
+  formatPlatform(platform?: string): string {
+    if (!platform) return '';
+    const p = platform.toLowerCase();
+    if (p.startsWith('ps5')) return 'PS5';
+    if (p.startsWith('ps4')) return 'PS4';
+    if (p.startsWith('ps3')) return 'PS3';
+    if (p.startsWith('ps2')) return 'PS2';
+    if (p.startsWith('ps1') || p === 'ps_game') return 'PS1';
+    if (p.includes('vita')) return 'PS Vita';
+    return platform.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
   }
 
   onImgError(e: Event): void {

@@ -21,6 +21,12 @@ services:
       # PlayStation Network
       PSN_NPSSO:     "${PSN_NPSSO:-}"
       PSN_ONLINE_ID: "${PSN_ONLINE_ID:-}"
+      # Sideloadly
+      SIDELOADLY_DB_PATH:     "/sideloadly-local/installations.db"
+      SIDELOADLY_APPIDS_PATH: "/sideloadly-local/account-appids.json"
+      # State persistence (last played / last session survive container restarts)
+      KODI_STATE_PATH: "/nexus-state/kodi-state.json"
+      ABS_STATE_PATH:  "/nexus-state/abs-state.json"
       # KODI_USER: "${KODI_USER:-}"
       # KODI_PASS: "${KODI_PASS:-}"
     # Required on Linux for host.docker.internal to resolve to the host machine
@@ -35,6 +41,10 @@ services:
       # Set ABS_LOG_PATH_HOST in .env to the path on your host, e.g.:
       #   ABS_LOG_PATH_HOST=/opt/abs/config/logs/abslog-2024-01-15.txt
       - "${ABS_LOG_PATH_HOST:-/dev/null}:/abs.log:ro"
+      # Sideloadly data directory (read-only)
+      - "${SIDELOADLY_LOCAL_PATH_HOST:-/dev/null}:/sideloadly-local:ro"
+      # State persistence (last played/listened survives container restarts)
+      - nexus-state:/nexus-state
     restart: unless-stopped
     expose:
       - "3000"
@@ -48,3 +58,6 @@ services:
     depends_on:
       - api
     restart: unless-stopped
+
+volumes:
+  nexus-state:

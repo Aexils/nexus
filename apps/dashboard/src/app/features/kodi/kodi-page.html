@@ -190,11 +190,46 @@
 
 } @else {
 
-  <!-- ── Idle ── -->
-  <div class="state-view">
-    <lucide-icon [img]="icons.Tv" [size]="52" strokeWidth="1" class="idle-icon"></lucide-icon>
-    <p class="state-title">Kodi connecté</p>
-    <span class="state-sub">Aucune lecture en cours</span>
-  </div>
+  <!-- ── Last Played ── -->
+  @if (kodiStatus().lastPlayed; as lp) {
+    <div class="last-played-card">
+      <div class="last-played-label">
+        <lucide-icon [img]="icons.Clock" [size]="11" strokeWidth="2.5"></lucide-icon>
+        Dernière lecture · {{ formatRelative(lp.stoppedAt) }}
+      </div>
+      <div class="lp-body">
+        <div class="np-art lp-art" [class.has-art]="!!artUrl(lp.item)">
+          @if (artUrl(lp.item); as url) {
+            <img class="np-art-img" [src]="url" [alt]="lp.item.title">
+          }
+          @if (!artUrl(lp.item)) {
+            <span class="np-art-initial">{{ lp.item.title.charAt(0) }}</span>
+          }
+        </div>
+        <div class="np-info">
+          <div class="np-type">{{ typeLabel(lp.item.type) }}</div>
+          <div class="np-title lp-title">{{ lp.item.title }}</div>
+          @if (lp.item.tagline) {
+            <div class="np-tagline">{{ lp.item.tagline }}</div>
+          } @else if (lp.item.year) {
+            <div class="np-year">{{ lp.item.year }}</div>
+          }
+          @if (lp.item.genres?.length) {
+            <div class="genres" style="margin-top:10px">
+              @for (g of lp.item.genres!.slice(0, 3); track g) {
+                <span class="genre-tag">{{ g }}</span>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  } @else {
+    <div class="state-view">
+      <lucide-icon [img]="icons.Tv" [size]="52" strokeWidth="1" class="idle-icon"></lucide-icon>
+      <p class="state-title">Kodi connecté</p>
+      <span class="state-sub">Aucune lecture en cours</span>
+    </div>
+  }
 
 }

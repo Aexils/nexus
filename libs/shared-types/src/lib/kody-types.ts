@@ -25,7 +25,8 @@ export interface KodiNowPlaying {
 }
 
 export interface KodiStatus {
-  connected: boolean;
-  version?:  string;
-  nowPlaying: KodiNowPlaying | null;
+  connected:   boolean;
+  version?:    string;
+  nowPlaying:  KodiNowPlaying | null;
+  lastPlayed?: { item: KodiNowPlaying; stoppedAt: string } | null;
 }

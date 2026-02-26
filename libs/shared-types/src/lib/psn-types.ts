@@ -1,10 +1,10 @@
 export type PsnPresence = 'online' | 'offline' | 'ingame' | 'away';
 
 export interface PsnProfile {
-  onlineId:  string;
+  onlineId:   string;
   avatarUrl?: string;
-  presence:  PsnPresence;
-  lastOnline?: string; // ISO date
+  presence:   PsnPresence;
+  lastOnline?: string; // ISO date — last time the user was seen online
 }
 
 export interface PsnGame {

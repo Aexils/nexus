@@ -2,7 +2,7 @@
 <div class="page-header">
   <div>
     <div class="page-title">App <span>Control</span> Center</div>
-    <div class="page-subtitle">Vue d'ensemble de vos services · {{ connectedCount }}/3 connectés</div>
+    <div class="page-subtitle">Vue d'ensemble de vos services · {{ connectedCount }}/4 connectés</div>
   </div>
   <div class="ws-indicator" [class.connected]="anyConnected">
     <span class="ws-dot"></span>
@@ -65,6 +65,23 @@
               </div>
               <div class="preview-progress-bg">
                 <div class="preview-progress-fill kodi" [style.width.%]="progressPercent"></div>
+              </div>
+            </div>
+          </div>
+        } @else if (kodiStatus().lastPlayed; as lp) {
+          <div class="preview-playing">
+            <div class="kodi-cover">
+              @if (kodiArtUrl(lp.item)) {
+                <img class="kodi-cover-img" [src]="kodiArtUrl(lp.item)!" [alt]="lp.item.title" (error)="onKodiArtError($event)">
+              } @else {
+                <div class="preview-disc paused"></div>
+              }
+            </div>
+            <div class="preview-media">
+              <div class="preview-title">{{ lp.item.title }}</div>
+              <div class="preview-sub">
+                @if (lp.item.year) { {{ lp.item.year }} · }
+                Dernière lecture · {{ formatRelativeDate(lp.stoppedAt) }}
               </div>
             </div>
           </div>
@@ -141,6 +158,23 @@
               </div>
             }
           </div>
+        } @else if (absStatus().lastSession; as ls) {
+          <div class="preview-sessions">
+            <div class="preview-session">
+              <div class="session-cover" [style.background]="sessionGradient(ls.title)">
+                <img class="session-cover-img" [src]="coverUrl(ls.libraryItemId)" [alt]="ls.title" (error)="onImgError($event)">
+              </div>
+              <div class="session-details">
+                <div class="session-title">{{ ls.title }}</div>
+                <div class="session-author">Dernière écoute · {{ formatRelativeDate(ls.stoppedAt) }}</div>
+                <div class="preview-progress-bg">
+                  <div class="preview-progress-fill abs"
+                       [style.width.%]="ls.duration ? (ls.currentTime / ls.duration) * 100 : 0">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         } @else {
           <div class="preview-idle">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -171,8 +205,8 @@
           @if (psnHasData) {
             @if (psnStatus().profile?.presence === 'ingame') {
               <app-status-badge status="playing"></app-status-badge>
-            } @else if (psnStatus().profile?.presence === 'online') {
-              <app-status-badge status="running"></app-status-badge>
+            } @else if (psnStatus().profile?.presence === 'online' || psnStatus().profile?.presence === 'away') {
+              <app-status-badge status="running" customLabel="Connecté"></app-status-badge>
             } @else {
               <app-status-badge status="stopped"></app-status-badge>
             }
@@ -202,7 +236,7 @@
             <div class="preview-media">
               <div class="preview-title">{{ game.name }}</div>
               <div class="preview-sub">
-                @if (game.platform) { {{ game.platform }} · }En jeu
+                @if (game.platform) { {{ formatPlatform(game.platform) }} · }En jeu
               </div>
               @if (psnStatus().trophySummary; as t) {
                 <div class="psn-trophy-mini">
@@ -227,9 +261,15 @@
             <div class="preview-media">
               <div class="preview-title">{{ lastGame.name }}</div>
               <div class="preview-sub">
-                @if (lastGame.platform) { {{ lastGame.platform }} · }
-                @if (lastGame.lastPlayedAt) { {{ formatRelativeDate(lastGame.lastPlayedAt) }} }
+                @if (lastGame.platform) { {{ formatPlatform(lastGame.platform) }} · }
+                Dernière partie
+                @if (lastGame.lastPlayedAt) { · {{ formatRelativeDate(lastGame.lastPlayedAt) }} }
               </div>
+              @if (lastGame.playDuration) {
+                <div class="preview-sub" style="margin-top:2px">
+                  {{ formatDuration(lastGame.playDuration) }} au total
+                </div>
+              }
               @if (psnStatus().trophySummary; as t) {
                 <div class="psn-trophy-mini">
                   <span class="trophy-lvl">Niv. {{ t.level }}</span>
@@ -271,6 +311,71 @@
     </div>
   </div>
 
+
+  <!-- Sideloadly -->
+  <div class="service-card sdly-card" [class.offline]="!sdlyConnected" (click)="openSdly()" role="button" tabindex="0">
+    <div class="service-card-inner">
+      <div class="service-top">
+        <div class="service-logo sdly-logo">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+            <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+            <line x1="12" y1="18" x2="12.01" y2="18"/>
+          </svg>
+        </div>
+        <div class="service-info">
+          <div class="service-name">Sideloadly</div>
+          <div class="service-meta">
+            @if (sdlyConnected) {
+              {{ sdlyAppCount }} app{{ sdlyAppCount !== 1 ? 's' : '' }} · {{ sideloadlyStatus().devices.length }} appareil{{ sideloadlyStatus().devices.length !== 1 ? 's' : '' }}
+            } @else {
+              Daemon · Volume Docker
+            }
+          </div>
+        </div>
+        <div class="service-badge-wrap">
+          @if (!sdlyConnected) {
+            <app-status-badge status="error"></app-status-badge>
+          } @else if (sdlyDaemonAlive) {
+            <app-status-badge status="running" customLabel="Connecté"></app-status-badge>
+          } @else {
+            <app-status-badge status="stopped"></app-status-badge>
+          }
+        </div>
+      </div>
+
+      <div class="service-preview">
+        @if (!sdlyConnected) {
+          <div class="preview-offline">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M1 1l22 22M16.72 11.06A10.94 10.94 0 0 1 19 12.55M5 12.55a10.94 10.94 0 0 1 5.17-2.39M10.71 5.05A16 16 0 0 1 22.56 9M1.42 9a15.91 15.91 0 0 1 4.7-2.88M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01"/>
+            </svg>
+            Données Sideloadly inaccessibles
+          </div>
+        } @else {
+          <div class="sdly-preview">
+            @for (acc of sideloadlyStatus().accounts; track acc.appleId) {
+              <div class="sdly-account-row">
+                <span class="sdly-account-name">{{ acc.appleId.split('@')[0] }}</span>
+                <span class="sdly-account-renew" [class.urgent]="acc.nextRenewalMs < 3_600_000">
+                  Renouvelle dans {{ formatCountdownShort(acc.nextRenewalMs) }}
+                </span>
+              </div>
+            }
+            @if (sideloadlyStatus().accounts.length === 0) {
+              <div class="sdly-account-row">
+                <span class="sdly-account-name muted">Aucun compte</span>
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <div class="service-footer">
+        <span class="open-hint">Ouvrir Sideloadly →</span>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <!-- ── Event Log ── -->
@@ -284,7 +389,8 @@
         <button class="filter-chip" [class.active]="filterSource() === 'kodi'"   (click)="setFilterSource('kodi')">Kodi</button>
         <button class="filter-chip" [class.active]="filterSource() === 'abs'"    (click)="setFilterSource('abs')">ABS</button>
         <button class="filter-chip" [class.active]="filterSource() === 'psn'"    (click)="setFilterSource('psn')">PSN</button>
-        <button class="filter-chip" [class.active]="filterSource() === 'nexus'"  (click)="setFilterSource('nexus')">Nexus</button>
+        <button class="filter-chip" [class.active]="filterSource() === 'nexus'"       (click)="setFilterSource('nexus')">Nexus</button>
+        <button class="filter-chip" [class.active]="filterSource() === 'sideloadly'" (click)="setFilterSource('sideloadly')">Sdly</button>
       </div>
       <!-- Level filter -->
       <div class="filter-group">

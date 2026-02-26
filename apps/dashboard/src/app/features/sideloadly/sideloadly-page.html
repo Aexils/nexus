@@ -1,0 +1,166 @@
+<div class="page-header">
+  <div class="brand">
+    <div class="brand-logo sdly-logo">
+      <lucide-icon [img]="icons.Smartphone" [size]="22"></lucide-icon>
+    </div>
+    <div>
+      <div class="brand-name">Sideloadly</div>
+      <div class="brand-meta">
+        @if (sideloadly().connected) {
+          {{ totalApps }} app{{ totalApps !== 1 ? 's' : '' }} · {{ sideloadly().devices.length }} appareil{{ sideloadly().devices.length !== 1 ? 's' : '' }}
+        } @else {
+          Données inaccessibles
+        }
+      </div>
+    </div>
+  </div>
+
+  @if (sideloadly().connected) {
+    <div class="summary-pills">
+      @if (errorCount > 0) {
+        <span class="pill pill-error">
+          <lucide-icon [img]="icons.AlertTriangle" [size]="12"></lucide-icon>
+          {{ errorCount }} erreur{{ errorCount !== 1 ? 's' : '' }}
+        </span>
+      }
+      @if (expiredCount > 0) {
+        <span class="pill pill-expired">{{ expiredCount }} expiré{{ expiredCount !== 1 ? 's' : '' }}</span>
+      }
+      @if (expiringCount > 0) {
+        <span class="pill pill-expiring">
+          <lucide-icon [img]="icons.Clock" [size]="12"></lucide-icon>
+          {{ expiringCount }} expire bientôt
+        </span>
+      }
+    </div>
+  }
+</div>
+
+<!-- ── Offline ── -->
+@if (!sideloadly().connected) {
+  <div class="state-view">
+    <lucide-icon class="offline-icon" [img]="icons.WifiOff" [size]="48"></lucide-icon>
+    <div class="state-title">Données Sideloadly inaccessibles</div>
+    <div class="state-sub">
+      Vérifier que <code>SIDELOADLY_LOCAL_PATH_HOST</code> est défini dans <code>.env</code>
+      et que le conteneur a été redémarré après la modification.
+    </div>
+  </div>
+}
+
+@if (sideloadly().connected) {
+
+  <!-- ── Accounts ── -->
+  <div class="section-title">
+    <lucide-icon [img]="icons.User" [size]="14"></lucide-icon>
+    Comptes Apple
+  </div>
+  <div class="accounts-row">
+    @for (acc of sideloadly().accounts; track acc.appleId) {
+      <div class="account-card" [class.urgent]="acc.nextRenewalMs < 3600_000">
+        <div class="acc-header">
+          <span class="acc-id">{{ acc.appleId }}</span>
+          <span class="acc-slots" [class.low]="acc.remaining <= 3">
+            {{ acc.remaining }}/10 slots
+          </span>
+        </div>
+        <div class="acc-ttl-row">
+          <lucide-icon [img]="icons.Clock" [size]="12" class="ttl-icon"></lucide-icon>
+          <span class="ttl-label">Prochain renewal :</span>
+          <span class="ttl-val" [class.urgent-text]="acc.nextRenewalMs < 3600_000">
+            {{ formatCountdown(acc.nextRenewalMs) }}
+          </span>
+          <span class="ttl-date">({{ formatDate(acc.nearestTtl) }})</span>
+        </div>
+        <div class="slots-bar">
+          <div class="slots-fill" [style.width.%]="(acc.remaining / 10) * 100"></div>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- ── Apps table ── -->
+  <div class="section-title" style="margin-top: 20px;">
+    <lucide-icon [img]="icons.Smartphone" [size]="14"></lucide-icon>
+    Applications installées
+  </div>
+
+  <div class="apps-table-wrap">
+    <table class="apps-table">
+      <thead>
+        <tr>
+          <th>Application</th>
+          <th>Appareil</th>
+          <th>Compte</th>
+          <th>Dernier renewal</th>
+          <th>Prochain renewal</th>
+          <th>Statut</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (app of sideloadly().apps; track app.id) {
+          <tr [class]="'row-' + app.status" [class.row-error]="app.failuresCount > 0">
+            <td>
+              <div class="app-name">{{ app.name }}</div>
+              <div class="app-bundle">{{ app.bundleId }} · v{{ app.version }}</div>
+              @if (app.lastError) {
+                <div class="app-error">
+                  <lucide-icon [img]="icons.AlertTriangle" [size]="11"></lucide-icon>
+                  {{ app.lastError }}
+                </div>
+              }
+            </td>
+            <td>
+              <div class="device-cell">
+                <lucide-icon [img]="icons.Tablet" [size]="13" class="device-icon"></lucide-icon>
+                {{ app.deviceName }}
+              </div>
+            </td>
+            <td>
+              <span class="account-chip">{{ accountLabel(app.appleId) }}</span>
+            </td>
+            <td class="date-cell">{{ shortDate(app.lastRenewedAt) }}</td>
+            <td>
+              <div class="countdown" [class]="'countdown-' + app.status">
+                {{ formatCountdown(liveExpiresMs(app)) }}
+              </div>
+              <div class="next-date">{{ shortDate(app.nextRenewalAt) }}</div>
+            </td>
+            <td>
+              <span class="status-badge" [class]="'badge-' + app.status">
+                {{ badgeLabel(app) }}
+              </span>
+              @if (app.failuresCount > 0) {
+                <span class="failures-badge">{{ app.failuresCount }}x</span>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── Devices ── -->
+  <div class="section-title" style="margin-top: 20px;">
+    <lucide-icon [img]="icons.Tablet" [size]="14"></lucide-icon>
+    Appareils
+  </div>
+  <div class="devices-row">
+    @for (dev of sideloadly().devices; track dev.udid) {
+      <div class="device-card" [class.dev-error]="dev.failuresCount > 0">
+        <div class="dev-name">{{ dev.name }}</div>
+        <div class="dev-udid">{{ dev.udid }}</div>
+        <div class="dev-seen">
+          Vu : {{ dev.lastSeen ? formatDate(dev.lastSeen) : 'Jamais' }}
+        </div>
+        @if (dev.lastError) {
+          <div class="dev-error-msg">
+            <lucide-icon [img]="icons.AlertTriangle" [size]="11"></lucide-icon>
+            {{ dev.lastError }}
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+}

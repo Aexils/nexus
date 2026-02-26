@@ -32,6 +32,11 @@ export const appRoutes: Route[] = [
         loadComponent: () =>
           import('./features/playstation/ps5-page').then(m => m.Ps5Page),
       },
+      {
+        path: 'sideloadly',
+        loadComponent: () =>
+          import('./features/sideloadly/sideloadly-page').then(m => m.SideloadlyPage),
+      },
     ],
   },
 ];

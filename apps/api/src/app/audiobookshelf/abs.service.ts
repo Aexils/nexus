@@ -1,14 +1,16 @@
 import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { Interval } from '@nestjs/schedule';
 import * as fs from 'fs';
+import * as path from 'path';
 import * as readline from 'readline';
 import { io as socketIoClient, Socket as IoSocket } from 'socket.io-client';
 import { NexusGateway } from '../gateway/nexus.gateway';
-import { AbsStatus, AbsSession, AbsLibraryItem } from '@nexus/shared-types';
+import { AbsStatus, AbsSession, AbsLibraryItem, AbsLastSession } from '@nexus/shared-types';
 
-const ABS_URL      = process.env['ABS_URL']      ?? 'http://localhost:13378';
-const ABS_TOKEN    = process.env['ABS_TOKEN']     ?? '';
-const ABS_LOG_PATH = process.env['ABS_LOG_PATH']  ?? '';
+const ABS_URL       = process.env['ABS_URL']       ?? 'http://localhost:13378';
+const ABS_TOKEN     = process.env['ABS_TOKEN']     ?? '';
+const ABS_LOG_PATH  = process.env['ABS_LOG_PATH']  ?? '';
+const ABS_STATE_PATH = process.env['ABS_STATE_PATH'] ?? path.join(process.cwd(), 'nexus-abs-state.json');
 
 function stripHtml(html: string | undefined): string | undefined {
   if (!html) return undefined;
@@ -27,8 +29,9 @@ export class AbsService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(AbsService.name);
 
   // ── Session state tracking ───────────────────────────────────────────────
-  private prevSessionIds = new Set<string>();
-  private prevConnected  = false;
+  private prevSessions  = new Map<string, AbsSession>();
+  private prevConnected = false;
+  private lastSession:  AbsLastSession | null = null;
 
   // ── One-shot warn guards (avoid flooding journal on repeated poll errors) ──
   private warnSessionsEmitted = false;
@@ -50,6 +53,7 @@ export class AbsService implements OnModuleInit, OnModuleDestroy {
   }
 
   onModuleInit() {
+    this.loadState();
     if (ABS_TOKEN) this.connectToAbsSocket();
     if (ABS_LOG_PATH) {
       this.logger.log(`ABS log file: ${ABS_LOG_PATH}`);
@@ -119,7 +123,7 @@ export class AbsService implements OnModuleInit, OnModuleDestroy {
   async poll() {
     const status = await this.fetchStatus();
     this.detectStateChange(status);
-    this.gateway.emitAbsStatus(status);
+    this.gateway.emitAbsStatus({ ...status, lastSession: this.lastSession });
   }
 
   private async fetchStatus(): Promise<AbsStatus> {
@@ -194,18 +198,28 @@ export class AbsService implements OnModuleInit, OnModuleDestroy {
     const nextIds = new Set(next.activeSessions.map(s => s.id));
 
     for (const s of next.activeSessions) {
-      if (!this.prevSessionIds.has(s.id)) {
+      if (!this.prevSessions.has(s.id)) {
         const type = s.mediaType === 'podcast' ? 'Podcast' : 'Audiobook';
         const author = s.author ? ` — ${s.author}` : '';
         this.gateway.addLog('info', 'abs', `Écoute démarrée — ${type} : ${s.title}${author}`);
       }
     }
-    for (const prevId of this.prevSessionIds) {
+    for (const [prevId, prevSession] of this.prevSessions) {
       if (!nextIds.has(prevId)) {
-        this.gateway.addLog('info', 'abs', `Session terminée — ID ${prevId}`);
+        this.lastSession = {
+          title:         prevSession.title,
+          author:        prevSession.author,
+          libraryItemId: prevSession.libraryItemId,
+          mediaType:     prevSession.mediaType,
+          currentTime:   prevSession.currentTime,
+          duration:      prevSession.duration,
+          stoppedAt:     new Date().toISOString(),
+        };
+        this.saveState();
+        this.gateway.addLog('info', 'abs', `Écoute terminée — ${prevSession.title}`);
       }
     }
-    this.prevSessionIds = nextIds;
+    this.prevSessions = new Map(next.activeSessions.map(s => [s.id, s]));
   }
 
   // ── Log file tailing ─────────────────────────────────────────────────────
@@ -252,6 +266,21 @@ export class AbsService implements OnModuleInit, OnModuleDestroy {
       : rl === 'ERROR' || rl === 'FATAL' ? 'error'
       : 'info';
     this.gateway.addLog(level, 'abs', message.trim());
+  }
+
+  // ── State persistence ─────────────────────────────────────────────────────
+
+  private loadState(): void {
+    try {
+      const raw = JSON.parse(fs.readFileSync(ABS_STATE_PATH, 'utf8'));
+      if (raw?.lastSession) this.lastSession = raw.lastSession;
+    } catch { /* no saved state yet */ }
+  }
+
+  private saveState(): void {
+    try {
+      fs.writeFileSync(ABS_STATE_PATH, JSON.stringify({ lastSession: this.lastSession }));
+    } catch { /* ignore write errors */ }
   }
 
   // ── REST: library ─────────────────────────────────────────────────────────

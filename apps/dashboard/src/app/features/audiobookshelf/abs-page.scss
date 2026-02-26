@@ -54,6 +54,53 @@
 }
 
 /* ═══════════════════════════════════════════════
+   LAST SESSION
+═══════════════════════════════════════════════ */
+.last-session {
+  margin-bottom: 32px;
+  animation: fadeUp .4s .05s ease both;
+  opacity: 0.9;
+}
+
+.section-eyebrow.muted { color: var(--text3); opacity: 0.75; }
+
+.ls-card {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--text3);
+  border-radius: 14px;
+  padding: 18px 20px;
+}
+
+.ls-body { flex: 1; min-width: 0; }
+
+.ls-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 4px 0 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ls-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.ls-pct {
+  font-size: 11px;
+  color: var(--text3);
+  white-space: nowrap;
+}
+
+/* ═══════════════════════════════════════════════
    NOW PLAYING
 ═══════════════════════════════════════════════ */
 .now-playing { margin-bottom: 40px; animation: fadeUp .4s .05s ease both; }

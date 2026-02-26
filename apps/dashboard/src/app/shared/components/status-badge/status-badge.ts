@@ -12,8 +12,10 @@ export type BadgeStatus = 'playing' | 'paused' | 'running' | 'stopped' | 'error'
 })
 export class StatusBadge {
   @Input() status: BadgeStatus = 'stopped';
+  @Input() customLabel?: string;
 
   get label(): string {
+    if (this.customLabel) return this.customLabel;
     const labels: Record<BadgeStatus, string> = {
       playing:  'En lecture',
       paused:   'En pause',
