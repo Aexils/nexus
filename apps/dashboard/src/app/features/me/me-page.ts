@@ -23,8 +23,9 @@ import { NexusService } from '../../core/services/nexus.service';
 import { StatusBadge } from '../../shared/components/status-badge/status-badge';
 import { NexusUser, PsnPresence, USER_PROFILES, UserProfile, BudgetSummary } from '@nexus/shared-types';
 
-type MeCardId = 'abs' | 'booklore' | 'psn' | 'sideloadly' | 'budget';
-const ALL_ME_CARDS: MeCardId[] = ['abs', 'booklore', 'psn', 'sideloadly', 'budget'];
+type MeCardId = 'abs' | 'booklore' | 'psn' | 'sideloadly' | 'budget' | 'body';
+const ME_CARDS_ALEXIS: MeCardId[] = ['abs', 'booklore', 'psn', 'sideloadly', 'budget'];
+const ME_CARDS_MARION: MeCardId[] = ['abs', 'booklore', 'psn', 'sideloadly', 'budget', 'body'];
 
 function loadMeOrder(key: string, defaults: MeCardId[]): MeCardId[] {
   try {
@@ -122,8 +123,9 @@ export class MePage implements OnInit, OnDestroy {
   // ── DnD order ────────────────────────────────────────────────────────
 
   private readonly orderKey = `nexus-cards-me-${this.userId}`;
+  private readonly defaultCards = this.userId === 'marion' ? ME_CARDS_MARION : ME_CARDS_ALEXIS;
 
-  cardOrder = signal<MeCardId[]>(loadMeOrder(this.orderKey, ALL_ME_CARDS));
+  cardOrder = signal<MeCardId[]>(loadMeOrder(this.orderKey, this.defaultCards));
 
   onCardDrop(event: CdkDragDrop<MeCardId[]>): void {
     const arr = [...this.cardOrder()];
@@ -220,8 +222,9 @@ export class MePage implements OnInit, OnDestroy {
   openAbs():      void { this.router.navigate(['/audiobookshelf']); }
   openBooklore(): void { this.router.navigate(['/booklore']); }
   openPsn():      void { this.router.navigate(['/playstation']); }
-  openSdly():   void { this.router.navigate(['/sideloadly']); }
-  openBudget(): void { this.router.navigate([`/${this.userId}/budget`]); }
+  openSdly():     void { this.router.navigate(['/sideloadly']); }
+  openBudget():   void { this.router.navigate([`/${this.userId}/budget`]); }
+  openBody():     void { this.router.navigate(['/marion/corps']); }
 
   // ── Budget helpers ───────────────────────────────────────────────────
 

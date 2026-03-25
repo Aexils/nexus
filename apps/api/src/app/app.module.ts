@@ -12,6 +12,7 @@ import { JellyfinModule } from './jellyfin/jellyfin.module';
 import { ExpenseModule } from './expense/expense.module';
 import { AdminModule } from './admin/admin.module';
 import { BookloreModule } from './booklore/booklore.module';
+import { BodyModule } from './body/body.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { BookloreModule } from './booklore/booklore.module';
     ExpenseModule,
     AdminModule,
     BookloreModule,
+    BodyModule,
   ],
 })
 export class AppModule {}

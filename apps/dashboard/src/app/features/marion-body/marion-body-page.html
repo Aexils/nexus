@@ -1,0 +1,783 @@
+<!-- ══════════════════════════════════════════════════════════════════════
+     LOCK SCREEN
+     ══════════════════════════════════════════════════════════════════════ -->
+@if (!isAuthenticated()) {
+  <div class="lock-screen">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+    <div class="lock-card">
+      <div class="lock-icon">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+      </div>
+      <div class="lock-title">Espace privé</div>
+      <div class="lock-subtitle">Suivi corps · Marion</div>
+
+      @if (setupMode()) {
+        <!-- First-time setup -->
+        <div class="lock-section-label">Créer ton mot de passe</div>
+        <input
+          class="lock-input"
+          type="password"
+          placeholder="Choisis un mot de passe"
+          [(ngModel)]="passwordInput"
+          (keyup.enter)="doSetup()"
+          autofocus>
+        <input
+          class="lock-input"
+          type="password"
+          placeholder="Confirme le mot de passe"
+          [(ngModel)]="confirmInput"
+          (keyup.enter)="doSetup()">
+        @if (authError()) {
+          <div class="lock-error">{{ authError() }}</div>
+        }
+        <button class="lock-btn" (click)="doSetup()" [disabled]="authLoading()">
+          @if (authLoading()) { Création… } @else { Créer mon espace privé }
+        </button>
+      } @else {
+        <!-- Login -->
+        <input
+          class="lock-input"
+          type="password"
+          placeholder="Mot de passe"
+          [(ngModel)]="passwordInput"
+          (keyup.enter)="doLogin()"
+          autofocus>
+        @if (authError()) {
+          <div class="lock-error">{{ authError() }}</div>
+        }
+        <button class="lock-btn" (click)="doLogin()" [disabled]="authLoading()">
+          @if (authLoading()) { Vérification… } @else { Accéder }
+        </button>
+      }
+
+      <button class="lock-back" (click)="goBack()">← Retour à mon espace</button>
+    </div>
+  </div>
+}
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     MAIN PAGE
+     ══════════════════════════════════════════════════════════════════════ -->
+@if (isAuthenticated()) {
+
+  <!-- ── Header ── -->
+  <div class="page-header">
+    <div class="header-left">
+      <button class="back-btn" (click)="goBack()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 12H5M5 12l7 7M5 12l7-7"/>
+        </svg>
+      </button>
+      <div class="avatar-marion">M</div>
+      <div>
+        <div class="page-title">Suivi Corps <span>Marion</span></div>
+        <div class="page-subtitle">Programme minceur · Sport & Santé</div>
+      </div>
+    </div>
+    <button class="logout-btn" (click)="doLogout()" title="Verrouiller">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- ── Motivational banner ── -->
+  <div class="banner" [class]="'banner-' + motivationalMessage().type">
+    <span class="banner-icon">
+      @if (motivationalMessage().type === 'good') { ✨ }
+      @else if (motivationalMessage().type === 'warn') { 💬 }
+      @else { 💡 }
+    </span>
+    <span>{{ motivationalMessage().text }}</span>
+  </div>
+
+  <!-- ── Stats hero ── -->
+  <div class="stats-hero">
+
+    <!-- Weight hero card -->
+    <div class="glass-card weight-card">
+      <div class="card-eyebrow">⚖️ Poids actuel</div>
+      @if (lastMeasurement()?.weight; as w) {
+        <div class="weight-main">
+          <span class="weight-value">{{ w % 1 === 0 ? w : w.toFixed(1) }}</span>
+          <span class="weight-unit">kg</span>
+        </div>
+        @if (weightDelta(); as d) {
+          <div>
+            <span class="weight-delta" [class]="d < 0 ? 'delta-good' : d > 0 ? 'delta-bad' : 'delta-neutral'">
+              {{ d < 0 ? '▼' : d > 0 ? '▲' : '→' }}&nbsp;{{ d < 0 ? '' : d > 0 ? '+' : '' }}{{ d }} kg
+            </span>
+          </div>
+        }
+        @if (settings()?.targetWeight; as tw) {
+          <div class="weight-target">Objectif {{ tw }} kg</div>
+        }
+      } @else {
+        <div class="weight-empty">Aucun poids enregistré encore —<br>saisis ta première mesure !</div>
+      }
+    </div>
+
+    <!-- BMI gauge card -->
+    <div class="glass-card bmi-card">
+      <div class="card-eyebrow">📊 IMC</div>
+      @if (bmi(); as b) {
+        <svg class="gauge-svg" viewBox="0 0 120 72" overflow="visible">
+          <!-- Zone arcs (background coloring) -->
+          <path [attr.d]="bmiZoneArc(15, 18.5)"    class="gauge-zone gauge-zone-under"/>
+          <path [attr.d]="bmiZoneArc(18.5, 25)"    class="gauge-zone gauge-zone-normal"/>
+          <path [attr.d]="bmiZoneArc(25, 30)"      class="gauge-zone gauge-zone-overweight"/>
+          <path [attr.d]="bmiZoneArc(30, 40)"      class="gauge-zone gauge-zone-obese"/>
+          <!-- Background track -->
+          <path d="M 16 58 A 44 44 0 0 1 104 58" class="gauge-bg-arc"/>
+          <!-- Filled arc to current BMI -->
+          <path
+            [attr.d]="bmiFilledArc(b)"
+            class="gauge-filled"
+            [attr.stroke]="bmiGaugeColor(b)"
+            [attr.stroke-width]="10"/>
+          <!-- Needle -->
+          <line
+            x1="60" y1="58"
+            [attr.x2]="bmiNeedlePos(b).x"
+            [attr.y2]="bmiNeedlePos(b).y"
+            class="gauge-needle"/>
+          <circle cx="60" cy="58" r="4" class="gauge-center"/>
+          <!-- Labels -->
+          <text x="60" y="46" class="gauge-value">{{ b }}</text>
+        </svg>
+        <div class="bmi-category-label" [class]="bmiCategory()?.cls">{{ bmiCategory()?.label }}</div>
+      } @else {
+        <div class="bmi-empty-hint">Renseigne ta taille dans les réglages pour voir ton IMC</div>
+      }
+    </div>
+  </div>
+
+  <!-- Bottom stat strip -->
+  <div class="stats-bottom">
+    <!-- Last measurement -->
+    <div class="glass-card mini-stat-card">
+      <div class="mini-stat-icon">📅</div>
+      <div>
+        <div class="mini-stat-label">Dernière mesure</div>
+        @if (lastMeasurement(); as m) {
+          <div class="mini-stat-value">{{ dateLabel(m.date) }}</div>
+          @if (daysSinceLast(); as days) {
+            <div class="mini-stat-sub">
+              @if (days === 0) { Aujourd'hui }
+              @else if (days === 1) { Hier }
+              @else { Il y a {{ days }} jours }
+            </div>
+          }
+        } @else {
+          <div class="mini-stat-value">—</div>
+        }
+      </div>
+    </div>
+    <!-- Total measurements -->
+    <div class="glass-card mini-stat-card">
+      <div class="mini-stat-icon">📈</div>
+      <div>
+        <div class="mini-stat-label">Mesures enregistrées</div>
+        <div class="mini-stat-value">{{ measurements().length }}</div>
+        <div class="mini-stat-sub">
+          @if (measurements().length === 0) { Commence dès maintenant }
+          @else if (measurements().length === 1) { Super, continue ! }
+          @else if (measurements().length < 5) { Tu es dans le rythme 💪 }
+          @else { Excellent suivi 🌟 }
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Tabs ── -->
+  <div class="tabs">
+    <button class="tab-btn" [class.active]="activeTab() === 'entry'"   (click)="activeTab.set('entry')">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+      Saisie
+    </button>
+    <button class="tab-btn" [class.active]="activeTab() === 'charts'"  (click)="activeTab.set('charts')">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Graphiques
+    </button>
+    <button class="tab-btn" [class.active]="activeTab() === 'history'" (click)="activeTab.set('history')">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      Historique
+    </button>
+    <button class="tab-btn" [class.active]="activeTab() === 'settings'" (click)="activeTab.set('settings')">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Réglages
+    </button>
+  </div>
+
+  <!-- ══════════════════════════════
+       TAB: SAISIE
+       ══════════════════════════════ -->
+  @if (activeTab() === 'entry') {
+    <div class="entry-layout">
+
+      <!-- ── Silhouette ── -->
+      <div class="silhouette-panel">
+        <div class="silhouette-title">Clique sur une zone pour saisir</div>
+        <div class="silhouette-wrap">
+          <svg viewBox="0 0 160 440" xmlns="http://www.w3.org/2000/svg" class="body-svg">
+            <defs>
+              <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#f9a8d4" stop-opacity="0.18"/>
+                <stop offset="100%" stop-color="#c084fc" stop-opacity="0.18"/>
+              </linearGradient>
+              <filter id="glow">
+                <feGaussianBlur stdDeviation="2.5" result="blur"/>
+                <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+              </filter>
+            </defs>
+
+            <!-- Body shapes — order matters: arms behind torso -->
+            <!-- Left arm (behind torso) -->
+            <rect x="18" y="72" width="28" height="108" rx="14" class="body-part body-arm"/>
+            <!-- Right arm (behind torso) -->
+            <rect x="114" y="72" width="28" height="108" rx="14" class="body-part body-arm"/>
+            <!-- Left thigh -->
+            <rect x="27" y="230" width="48" height="96" rx="14" class="body-part"/>
+            <!-- Right thigh -->
+            <rect x="85" y="230" width="48" height="96" rx="14" class="body-part"/>
+            <!-- Left calf -->
+            <rect x="31" y="324" width="40" height="92" rx="11" class="body-part"/>
+            <!-- Right calf -->
+            <rect x="89" y="324" width="40" height="92" rx="11" class="body-part"/>
+            <!-- Left foot -->
+            <ellipse cx="50" cy="420" rx="22" ry="8" class="body-part"/>
+            <!-- Right foot -->
+            <ellipse cx="110" cy="420" rx="22" ry="8" class="body-part"/>
+            <!-- Head -->
+            <circle cx="80" cy="30" r="25" class="body-part"/>
+            <!-- Neck -->
+            <rect x="73" y="53" width="14" height="16" rx="4" class="body-part"/>
+            <!-- Upper torso — hourglass: chest wide → waist narrows → hip connection -->
+            <path d="M 42 84 Q 56 140 44 190 L 116 190 Q 104 140 118 84 Z" class="body-part"/>
+            <!-- Lower torso / hips (widens out) -->
+            <path d="M 44 190 Q 28 208 26 232 L 134 232 Q 132 208 116 190 Z" class="body-part"/>
+            <!-- Shoulder bar (on top, connects torso to arms) -->
+            <rect x="24" y="68" width="112" height="18" rx="9" class="body-part body-shoulder"/>
+
+            <!-- ── Clickable zones ── -->
+
+            <!-- Neck zone -->
+            @if (isEnabled('neck')) {
+              <g class="zone-group" [class.zone-active]="activeZone() === 'neck'" [class.zone-filled]="zoneHasValue('neck')" (click)="setActiveZone('neck')">
+                <ellipse cx="80" cy="61" rx="22" ry="14" class="zone-hit"/>
+                <circle cx="80" cy="61" r="8" class="zone-dot" [attr.fill]="zoneHasValue('neck') ? metricColor('neck') : 'transparent'"/>
+                @if (zoneHasValue('neck')) {
+                  <text x="80" y="44" class="zone-label">{{ zoneValue('neck') }}</text>
+                }
+              </g>
+            }
+
+            <!-- Chest zone -->
+            @if (isEnabled('chest')) {
+              <g class="zone-group" [class.zone-active]="activeZone() === 'chest'" [class.zone-filled]="zoneHasValue('chest')" (click)="setActiveZone('chest')">
+                <ellipse cx="80" cy="118" rx="36" ry="22" class="zone-hit"/>
+                <circle cx="80" cy="118" r="9" class="zone-dot" [attr.fill]="zoneHasValue('chest') ? metricColor('chest') : 'transparent'"/>
+                @if (zoneHasValue('chest')) {
+                  <text x="80" y="102" class="zone-label">{{ zoneValue('chest') }}</text>
+                }
+              </g>
+            }
+
+            <!-- Abdomen zone -->
+            @if (isEnabled('abdomen')) {
+              <g class="zone-group" [class.zone-active]="activeZone() === 'abdomen'" [class.zone-filled]="zoneHasValue('abdomen')" (click)="setActiveZone('abdomen')">
+                <ellipse cx="80" cy="156" rx="30" ry="18" class="zone-hit"/>
+                <circle cx="80" cy="156" r="8" class="zone-dot" [attr.fill]="zoneHasValue('abdomen') ? metricColor('abdomen') : 'transparent'"/>
+                @if (zoneHasValue('abdomen')) {
+                  <text x="80" y="140" class="zone-label">{{ zoneValue('abdomen') }}</text>
+                }
+              </g>
+            }
+
+            <!-- Waist zone -->
+            @if (isEnabled('waist')) {
+              <g class="zone-group" [class.zone-active]="activeZone() === 'waist'" [class.zone-filled]="zoneHasValue('waist')" (click)="setActiveZone('waist')">
+                <ellipse cx="80" cy="185" rx="26" ry="14" class="zone-hit"/>
+                <circle cx="80" cy="185" r="8" class="zone-dot" [attr.fill]="zoneHasValue('waist') ? metricColor('waist') : 'transparent'"/>
+                @if (zoneHasValue('waist')) {
+                  <text x="80" y="170" class="zone-label">{{ zoneValue('waist') }}</text>
+                }
+              </g>
+            }
+
+            <!-- Hips zone -->
+            @if (isEnabled('hips')) {
+              <g class="zone-group" [class.zone-active]="activeZone() === 'hips'" [class.zone-filled]="zoneHasValue('hips')" (click)="setActiveZone('hips')">
+                <ellipse cx="80" cy="214" rx="40" ry="16" class="zone-hit"/>
+                <circle cx="80" cy="214" r="9" class="zone-dot" [attr.fill]="zoneHasValue('hips') ? metricColor('hips') : 'transparent'"/>
+                @if (zoneHasValue('hips')) {
+                  <text x="80" y="200" class="zone-label">{{ zoneValue('hips') }}</text>
+                }
+              </g>
+            }
+
+            <!-- Left arm zone -->
+            @if (isEnabled('armLeft')) {
+              <g class="zone-group" [class.zone-active]="activeZone() === 'armLeft'" [class.zone-filled]="zoneHasValue('armLeft')" (click)="setActiveZone('armLeft')">
+                <ellipse cx="32" cy="128" rx="16" ry="26" class="zone-hit"/>
+                <circle cx="32" cy="128" r="7" class="zone-dot" [attr.fill]="zoneHasValue('armLeft') ? metricColor('armLeft') : 'transparent'"/>
+                @if (zoneHasValue('armLeft')) {
+                  <text x="32" y="113" class="zone-label small-label">{{ zoneValue('armLeft') }}</text>
+                }
+              </g>
+            }
+
+            <!-- Right arm zone -->
+            @if (isEnabled('armRight')) {
+              <g class="zone-group" [class.zone-active]="activeZone() === 'armRight'" [class.zone-filled]="zoneHasValue('armRight')" (click)="setActiveZone('armRight')">
+                <ellipse cx="128" cy="128" rx="16" ry="26" class="zone-hit"/>
+                <circle cx="128" cy="128" r="7" class="zone-dot" [attr.fill]="zoneHasValue('armRight') ? metricColor('armRight') : 'transparent'"/>
+                @if (zoneHasValue('armRight')) {
+                  <text x="128" y="113" class="zone-label small-label">{{ zoneValue('armRight') }}</text>
+                }
+              </g>
+            }
+
+            <!-- Left thigh zone -->
+            @if (isEnabled('thighLeft')) {
+              <g class="zone-group" [class.zone-active]="activeZone() === 'thighLeft'" [class.zone-filled]="zoneHasValue('thighLeft')" (click)="setActiveZone('thighLeft')">
+                <ellipse cx="51" cy="277" rx="22" ry="32" class="zone-hit"/>
+                <circle cx="51" cy="277" r="8" class="zone-dot" [attr.fill]="zoneHasValue('thighLeft') ? metricColor('thighLeft') : 'transparent'"/>
+                @if (zoneHasValue('thighLeft')) {
+                  <text x="51" y="261" class="zone-label small-label">{{ zoneValue('thighLeft') }}</text>
+                }
+              </g>
+            }
+
+            <!-- Right thigh zone -->
+            @if (isEnabled('thighRight')) {
+              <g class="zone-group" [class.zone-active]="activeZone() === 'thighRight'" [class.zone-filled]="zoneHasValue('thighRight')" (click)="setActiveZone('thighRight')">
+                <ellipse cx="109" cy="277" rx="22" ry="32" class="zone-hit"/>
+                <circle cx="109" cy="277" r="8" class="zone-dot" [attr.fill]="zoneHasValue('thighRight') ? metricColor('thighRight') : 'transparent'"/>
+                @if (zoneHasValue('thighRight')) {
+                  <text x="109" y="261" class="zone-label small-label">{{ zoneValue('thighRight') }}</text>
+                }
+              </g>
+            }
+
+            <!-- Left calf zone -->
+            @if (isEnabled('calfLeft')) {
+              <g class="zone-group" [class.zone-active]="activeZone() === 'calfLeft'" [class.zone-filled]="zoneHasValue('calfLeft')" (click)="setActiveZone('calfLeft')">
+                <ellipse cx="51" cy="368" rx="18" ry="28" class="zone-hit"/>
+                <circle cx="51" cy="368" r="7" class="zone-dot" [attr.fill]="zoneHasValue('calfLeft') ? metricColor('calfLeft') : 'transparent'"/>
+                @if (zoneHasValue('calfLeft')) {
+                  <text x="51" y="352" class="zone-label small-label">{{ zoneValue('calfLeft') }}</text>
+                }
+              </g>
+            }
+
+            <!-- Right calf zone -->
+            @if (isEnabled('calfRight')) {
+              <g class="zone-group" [class.zone-active]="activeZone() === 'calfRight'" [class.zone-filled]="zoneHasValue('calfRight')" (click)="setActiveZone('calfRight')">
+                <ellipse cx="109" cy="368" rx="18" ry="28" class="zone-hit"/>
+                <circle cx="109" cy="368" r="7" class="zone-dot" [attr.fill]="zoneHasValue('calfRight') ? metricColor('calfRight') : 'transparent'"/>
+                @if (zoneHasValue('calfRight')) {
+                  <text x="109" y="352" class="zone-label small-label">{{ zoneValue('calfRight') }}</text>
+                }
+              </g>
+            }
+          </svg>
+        </div>
+
+        <!-- Zone legend -->
+        @if (enabledDefs().length > 0) {
+          <div class="zone-legend">
+            @for (def of enabledDefs(); track def.key) {
+              <div class="zone-legend-item">
+                <span class="zone-legend-dot" [style.background]="def.color"></span>
+                {{ def.label }}
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- ── Form panel ── -->
+      <div class="form-panel">
+
+        <!-- Date + toggle -->
+        <div class="form-header">
+          <div class="form-date-row">
+            <label class="form-label">Date de la mesure</label>
+            <input class="form-date-input" type="date" [(ngModel)]="formDate" [max]="todayDate">
+          </div>
+          <button class="form-toggle" (click)="formOpen.set(!formOpen())">
+            {{ formOpen() ? '▲ Réduire' : '▼ Formulaire' }}
+          </button>
+        </div>
+
+        @if (formOpen()) {
+          <div class="form-fields">
+
+            <!-- Weight group -->
+            @if (isEnabled('weight')) {
+              <div class="field-group-label">Poids</div>
+              <div class="field-row" [class.field-active]="activeZone() === 'weight'" (click)="setActiveZone('weight')">
+                <div class="field-color-dot" [style.background]="metricColor('weight')"></div>
+                <div class="field-info">
+                  <label class="field-label" [for]="'body-input-weight'">
+                    ⚖️ Poids
+                  </label>
+                  @if (getDelta('weight'); as d) {
+                    <span class="field-delta" [class]="d.direction === 'down' ? 'delta-good' : d.direction === 'up' ? 'delta-bad' : 'delta-neutral'">
+                      {{ d.direction === 'down' ? '▼' : d.direction === 'up' ? '▲' : '→' }} {{ d.value }} kg
+                    </span>
+                  }
+                </div>
+                <div class="field-input-wrap">
+                  <input
+                    [id]="'body-input-weight'"
+                    class="field-input"
+                    type="number"
+                    min="30" max="200" step="0.1"
+                    placeholder="kg"
+                    [(ngModel)]="formValues['weight']"
+                    (focus)="setActiveZone('weight')">
+                  <span class="field-unit">kg</span>
+                </div>
+                @if (progressToGoal('weight'); as p) {
+                  <div class="field-progress">
+                    <div class="progress-bar"><div class="progress-fill" [style.width.%]="p" [style.background]="metricColor('weight')"></div></div>
+                    <span class="progress-pct">{{ p }}%</span>
+                  </div>
+                }
+              </div>
+            }
+
+            <!-- Measurements group -->
+            @if (hasMeasurementDefs()) {
+              <div class="field-group-label">Mensurations</div>
+            }
+            @for (def of enabledDefs(); track def.key) {
+              @if (def.key !== 'weight') {
+                <div class="field-row" [class.field-active]="activeZone() === def.key" (click)="setActiveZone(def.key)">
+                  <div class="field-color-dot" [style.background]="def.color"></div>
+                  <div class="field-info">
+                    <label class="field-label" [for]="'body-input-' + def.key">{{ def.label }}</label>
+                    @if (getDelta(def.key); as d) {
+                      <span class="field-delta" [class]="d.direction === 'down' ? 'delta-good' : d.direction === 'up' ? 'delta-bad' : 'delta-neutral'">
+                        {{ d.direction === 'down' ? '▼' : d.direction === 'up' ? '▲' : '→' }} {{ d.value }} cm
+                      </span>
+                    }
+                  </div>
+                  <div class="field-input-wrap">
+                    <input
+                      [id]="'body-input-' + def.key"
+                      class="field-input"
+                      type="number"
+                      min="10" max="200" step="0.5"
+                      placeholder="cm"
+                      [(ngModel)]="formValues[def.key]"
+                      (focus)="setActiveZone(def.key)">
+                    <span class="field-unit">cm</span>
+                  </div>
+                  @if (progressToGoal(def.key); as p) {
+                    <div class="field-progress">
+                      <div class="progress-bar"><div class="progress-fill" [style.width.%]="p" [style.background]="def.color"></div></div>
+                      <span class="progress-pct">{{ p }}%</span>
+                    </div>
+                  }
+                </div>
+              }
+            }
+          </div>
+
+          <button class="save-btn" (click)="saveMeasurement()" [disabled]="saving()">
+            @if (saving()) {
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+              Enregistrement…
+            } @else if (saveSuccess()) {
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
+              Enregistré !
+            } @else {
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              Enregistrer la mesure
+            }
+          </button>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- ══════════════════════════════
+       TAB: CHARTS
+       ══════════════════════════════ -->
+  @if (activeTab() === 'charts') {
+    <div class="charts-section">
+
+      <!-- Weight chart -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <span class="chart-title-text">⚖️ Évolution du poids</span>
+          @if (settings()?.targetWeight) {
+            <span class="chart-target-label">Objectif {{ settings()!.targetWeight }} kg</span>
+          }
+        </div>
+
+        @if (weightChartData(); as wd) {
+          @let wpts = toChartPoints(wd, 'weight');
+          <div class="chart-scroll">
+            <svg [attr.viewBox]="'0 0 ' + CHART_W + ' ' + CHART_H" class="chart-svg">
+              <defs>
+                <linearGradient id="wGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%"   stop-color="#f472b6" stop-opacity=".25"/>
+                  <stop offset="100%" stop-color="#f472b6" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+
+              @for (i of [0,1,2,3,4]; track i) {
+                @let gy = CHART_PAD_Y + (CHART_H - 2*CHART_PAD_Y) * i / 4;
+                <line [attr.x1]="CHART_PAD_X" [attr.x2]="CHART_W - CHART_PAD_X" [attr.y1]="gy" [attr.y2]="gy" class="grid-line"/>
+                <text [attr.x]="CHART_PAD_X - 6" [attr.y]="gy + 4" class="axis-label">{{ (wd.max - (wd.max - wd.min) * i / 4).toFixed(0) }}</text>
+              }
+
+              @if (wd.target) {
+                @let ty = CHART_PAD_Y + (CHART_H - 2*CHART_PAD_Y) - ((wd.target - wd.min) / (wd.max - wd.min)) * (CHART_H - 2*CHART_PAD_Y);
+                <line [attr.x1]="CHART_PAD_X" [attr.x2]="CHART_W - CHART_PAD_X" [attr.y1]="ty" [attr.y2]="ty" class="target-line"/>
+              }
+
+              <path [attr.d]="svgSmoothArea(wpts)" fill="url(#wGrad)"/>
+              <path [attr.d]="svgSmoothLine(wpts)" fill="none" stroke="#f472b6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+              @for (pt of wpts; track pt.date) {
+                <circle [attr.cx]="pt.x" [attr.cy]="pt.y" r="4" fill="#f472b6" stroke="var(--surface)" stroke-width="2" class="chart-dot">
+                  <title>{{ shortDate(pt.date) }} · {{ pt.value }} kg</title>
+                </circle>
+              }
+
+              @for (lbl of xAxisLabels(wd.list); track lbl.x) {
+                <text [attr.x]="lbl.x" [attr.y]="CHART_H - 4" class="axis-label x-label">{{ lbl.label }}</text>
+              }
+            </svg>
+          </div>
+        } @else {
+          <div class="chart-empty">Enregistre au moins 2 pesées pour voir ton évolution.</div>
+        }
+      </div>
+
+      <!-- Measurements chart -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <span class="chart-title-text">📏 Évolution des mensurations</span>
+        </div>
+
+        <div class="metric-toggles">
+          @for (def of metricDefs; track def.key) {
+            @if (def.key !== 'weight' && isEnabled(def.key)) {
+              <button
+                class="toggle-pill"
+                [class.toggle-active]="visibleMetrics().has(def.key)"
+                [style.--pill-color]="def.color"
+                (click)="toggleChartMetric(def.key)">
+                {{ def.label }}
+              </button>
+            }
+          }
+        </div>
+
+        @if (measurementsChartData(); as md) {
+          <div class="chart-scroll">
+            <svg [attr.viewBox]="'0 0 ' + CHART_W + ' ' + CHART_H" class="chart-svg">
+
+              @for (i of [0,1,2,3,4]; track i) {
+                @let gy = CHART_PAD_Y + (CHART_H - 2*CHART_PAD_Y) * i / 4;
+                <line [attr.x1]="CHART_PAD_X" [attr.x2]="CHART_W - CHART_PAD_X" [attr.y1]="gy" [attr.y2]="gy" class="grid-line"/>
+                <text [attr.x]="CHART_PAD_X - 6" [attr.y]="gy + 4" class="axis-label">{{ (md.max - (md.max - md.min) * i / 4).toFixed(0) }}</text>
+              }
+
+              @for (key of md.keys; track key) {
+                @let pts = toChartPoints(md, key);
+                @let col = metricColor(key);
+                @if (pts.length >= 2) {
+                  <path [attr.d]="svgSmoothLine(pts)" fill="none" [attr.stroke]="col" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" [attr.opacity]="visibleMetrics().has(key) ? 1 : 0"/>
+                  @for (pt of pts; track pt.date) {
+                    <circle [attr.cx]="pt.x" [attr.cy]="pt.y" r="3.5" [attr.fill]="col" stroke="var(--surface)" stroke-width="1.5" class="chart-dot">
+                      <title>{{ shortDate(pt.date) }} · {{ pt.value }} cm — {{ metricLabel(key) }}</title>
+                    </circle>
+                  }
+                }
+              }
+
+              @for (lbl of xAxisLabels(md.list); track lbl.x) {
+                <text [attr.x]="lbl.x" [attr.y]="CHART_H - 4" class="axis-label x-label">{{ lbl.label }}</text>
+              }
+            </svg>
+          </div>
+
+          <div class="chart-legend">
+            @for (key of md.keys; track key) {
+              <div class="legend-item">
+                <span class="legend-dot" [style.background]="metricColor(key)"></span>
+                {{ metricLabel(key) }}
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="chart-empty">Sélectionne des métriques ci-dessus et enregistre au moins 2 mesures.</div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- ══════════════════════════════
+       TAB: HISTORIQUE
+       ══════════════════════════════ -->
+  @if (activeTab() === 'history') {
+    <div class="history-section">
+      @if (measurements().length === 0) {
+        <div class="history-empty">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <p>Aucune mesure enregistrée pour l'instant.</p>
+        </div>
+      } @else {
+        <div class="history-list">
+          @for (m of measurements(); track m.id) {
+            <div class="history-card">
+              <div class="history-date">
+                <span class="history-date-label">{{ dateLabel(m.date) }}</span>
+                <button class="history-delete-btn" (click)="deleteId.set(deleteId() === m.id ? null : m.id)" title="Supprimer">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/>
+                  </svg>
+                </button>
+              </div>
+              @if (deleteId() === m.id) {
+                <div class="delete-confirm">
+                  <span>Supprimer cette entrée ?</span>
+                  <button class="delete-yes" (click)="deleteMeasurement(m.id)">Supprimer</button>
+                  <button class="delete-no" (click)="deleteId.set(null)">Annuler</button>
+                </div>
+              }
+              <div class="history-metrics">
+                @if (m.weight != null) {
+                  <div class="history-metric">
+                    <span class="hm-dot" style="background:#f472b6"></span>
+                    <span class="hm-label">Poids</span>
+                    <span class="hm-val">{{ fmt(m.weight, 'kg') }}</span>
+                  </div>
+                }
+                @for (def of metricDefs; track def.key) {
+                  @if (def.key !== 'weight') {
+                    @let v = $any(m)[def.key];
+                    @if (v != null) {
+                      <div class="history-metric">
+                        <span class="hm-dot" [style.background]="def.color"></span>
+                        <span class="hm-label">{{ def.label }}</span>
+                        <span class="hm-val">{{ fmt(v, 'cm') }}</span>
+                      </div>
+                    }
+                  }
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ══════════════════════════════
+       TAB: RÉGLAGES
+       ══════════════════════════════ -->
+  @if (activeTab() === 'settings') {
+    <div class="settings-section">
+
+      <!-- Profile section -->
+      <div class="settings-card">
+        <div class="settings-card-title">📐 Profil & Objectifs</div>
+        <div class="settings-fields two-col">
+          <div class="settings-field">
+            <label class="settings-label">Taille (cm)</label>
+            <input class="settings-input" type="number" min="100" max="230" step="1"
+                   placeholder="ex : 165" [(ngModel)]="settingsValues['height']">
+          </div>
+          <div class="settings-field">
+            <label class="settings-label">Objectif poids (kg)</label>
+            <input class="settings-input" type="number" min="30" max="200" step="0.5"
+                   placeholder="ex : 60" [(ngModel)]="settingsValues['targetWeight']">
+          </div>
+        </div>
+
+        <div class="settings-card-title mt">🎯 Objectifs mensurations (cm)</div>
+        <div class="settings-fields">
+          @for (def of metricDefs; track def.key) {
+            @if (def.key !== 'weight') {
+              <div class="settings-field">
+                <label class="settings-label">{{ def.label }}</label>
+                <div class="settings-input-row">
+                  <span class="settings-color-dot" [style.background]="def.color"></span>
+                  <input class="settings-input" type="number" min="10" max="200" step="0.5"
+                         [placeholder]="'ex : ' + (def.key === 'waist' ? '70' : def.key === 'hips' ? '90' : '35')"
+                         [(ngModel)]="settingsValues['target' + def.key.charAt(0).toUpperCase() + def.key.slice(1)]">
+                </div>
+              </div>
+            }
+          }
+        </div>
+
+        @if (settingsSaveOk()) {
+          <div class="settings-success">✓ Réglages enregistrés</div>
+        }
+        <button class="settings-save-btn" (click)="saveSettings()">Enregistrer les réglages</button>
+      </div>
+
+      <!-- Enabled metrics section -->
+      <div class="settings-card">
+        <div class="settings-card-title">📋 Métriques actives</div>
+        <div class="settings-card-sub">Désactive les mesures que tu ne souhaites pas suivre</div>
+        <div class="metrics-toggle-list">
+          @for (def of metricDefs; track def.key) {
+            <label class="metric-toggle-row">
+              <input type="checkbox" class="metric-checkbox"
+                     [checked]="isEnabled(def.key)"
+                     (change)="toggleMetric(def.key)">
+              <span class="metric-color-swatch" [style.background]="def.color"></span>
+              <span class="metric-toggle-label">{{ def.label }}</span>
+              <span class="metric-toggle-unit">{{ def.unit }}</span>
+            </label>
+          }
+        </div>
+        <button class="settings-save-btn" (click)="saveSettings()">Enregistrer</button>
+      </div>
+
+      <!-- Password section -->
+      <div class="settings-card">
+        <div class="settings-card-title">🔐 Changer le mot de passe</div>
+        <div class="settings-fields single-col">
+          <div class="settings-field">
+            <label class="settings-label">Mot de passe actuel</label>
+            <input class="settings-input" type="password" placeholder="••••••••" [(ngModel)]="oldPwdInput">
+          </div>
+          <div class="settings-field">
+            <label class="settings-label">Nouveau mot de passe</label>
+            <input class="settings-input" type="password" placeholder="Minimum 4 caractères" [(ngModel)]="newPwdInput">
+          </div>
+          <div class="settings-field">
+            <label class="settings-label">Confirmer le nouveau</label>
+            <input class="settings-input" type="password" placeholder="••••••••" [(ngModel)]="confirmPwdInput">
+          </div>
+        </div>
+        @if (pwdChangeError()) {
+          <div class="settings-error">{{ pwdChangeError() }}</div>
+        }
+        @if (pwdChangeOk()) {
+          <div class="settings-success">✓ Mot de passe modifié avec succès</div>
+        }
+        <button class="settings-save-btn" (click)="doChangePassword()">Changer le mot de passe</button>
+      </div>
+
+    </div>
+  }
+}

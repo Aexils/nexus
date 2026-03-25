@@ -83,6 +83,11 @@ export const appRoutes: Route[] = [
         data: { user: 'marion' },
       },
       {
+        path: 'marion/corps',
+        loadComponent: () =>
+          import('./features/marion-body/marion-body-page').then(m => m.MarionBodyPage),
+      },
+      {
         path: 'admin',
         loadComponent: () =>
           import('./features/admin/admin-page').then(m => m.AdminPage),

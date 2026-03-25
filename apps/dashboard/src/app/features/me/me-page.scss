@@ -689,3 +689,60 @@
   0%, 100% { opacity: 1; }
   50%       { opacity: 0.3; }
 }
+
+/* ── Body card (Marion only) ── */
+.body-card {
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, color-mix(in srgb, #f472b6 8%, transparent), color-mix(in srgb, #a78bfa 6%, transparent));
+    pointer-events: none;
+    transition: opacity 0.2s;
+    opacity: 0;
+  }
+
+  &:hover::after { opacity: 1; }
+}
+
+.body-logo { background: linear-gradient(135deg, #f472b6, #a78bfa); box-shadow: 0 4px 12px rgba(244, 114, 182, 0.35); }
+
+.body-lock-icon {
+  color: var(--text3);
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+}
+
+.body-card-content {
+  padding: 4px 0 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.body-card-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text2);
+}
+
+.body-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.body-private-note {
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 4px;
+  font-style: italic;
+}
