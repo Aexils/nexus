@@ -4,7 +4,7 @@ WORKDIR /app
 
 # Install deps first (better layer cache)
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm install --no-audit --no-fund
 
 # Copy source and build the API
 COPY . .
@@ -16,7 +16,8 @@ WORKDIR /app
 
 # Nx generates a package.json in dist (generatePackageJson: true) — install prod deps
 COPY --from=builder /app/dist/apps/api ./
-RUN npm ci --only=production
+COPY --from=builder /app/package-lock.json ./
+RUN npm ci --omit=dev
 
 EXPOSE 3000
 CMD ["node", "main.js"]

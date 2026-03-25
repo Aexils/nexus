@@ -8,8 +8,9 @@ services:
       PORT: "3000"
       CORS_ORIGIN: "*"
       KODI_URL:      "${KODI_URL:-http://localhost:8080/jsonrpc}"
-      ABS_URL:       "${ABS_URL:-http://localhost:13378}"
-      ABS_TOKEN:     "${ABS_TOKEN:-}"
+      ABS_URL:          "${ABS_URL:-http://localhost:13378}"
+      ABS_TOKEN_ALEXIS: "${ABS_TOKEN_ALEXIS:-}"
+      ABS_TOKEN_MARION: "${ABS_TOKEN_MARION:-}"
       # Log file paths (inside the container after volume mounts below)
       KODI_LOG_PATH: "${KODI_LOG_PATH:-}"
       ABS_LOG_PATH:  "${ABS_LOG_PATH:-}"
@@ -18,9 +19,31 @@ services:
       #   - Set to http://host.docker.internal:9182/metrics for Windows host (windows_exporter)
       #   - Set to http://host.docker.internal:9100/metrics for Linux host (node_exporter)
       HOST_METRICS_URL: "${HOST_METRICS_URL:-}"
-      # PlayStation Network
-      PSN_NPSSO:     "${PSN_NPSSO:-}"
-      PSN_ONLINE_ID: "${PSN_ONLINE_ID:-}"
+      # Docker Desktop version (optional — requires "Expose daemon on tcp://localhost:2375" in Docker Desktop Settings)
+      # Defaults to http://host.docker.internal:2375 in Docker mode, http://localhost:2375 in local mode.
+      DOCKER_API_URL: "${DOCKER_API_URL:-}"
+      # PlayStation Network (per user)
+      PSN_NPSSO_ALEXIS:     "${PSN_NPSSO_ALEXIS:-}"
+      PSN_ONLINE_ID_ALEXIS: "${PSN_ONLINE_ID_ALEXIS:-}"
+      PSN_NPSSO_MARION:     "${PSN_NPSSO_MARION:-}"
+      PSN_ONLINE_ID_MARION: "${PSN_ONLINE_ID_MARION:-}"
+      # UrBackup
+      URBACKUP_URL:  "${URBACKUP_URL:-http://host.docker.internal:55414}"
+      URBACKUP_USER: "${URBACKUP_USER:-admin}"
+      URBACKUP_PASS: "${URBACKUP_PASS:-admin}"
+      # Jellyfin
+      JELLYFIN_URL:  "${JELLYFIN_URL:-http://host.docker.internal:8096}"
+      JELLYFIN_USER: "${JELLYFIN_USER:-a}"
+      JELLYFIN_PASS: "${JELLYFIN_PASS:-a}"
+      # Booklore
+      BOOKLORE_URL:              "${BOOKLORE_URL:-http://host.docker.internal:6060}"
+      BOOKLORE_USERNAME_ALEXIS:  "${BOOKLORE_USERNAME_ALEXIS:-}"
+      BOOKLORE_PASSWORD_ALEXIS:  "${BOOKLORE_PASSWORD_ALEXIS:-}"
+      BOOKLORE_USERNAME_MARION:  "${BOOKLORE_USERNAME_MARION:-}"
+      BOOKLORE_PASSWORD_MARION:  "${BOOKLORE_PASSWORD_MARION:-}"
+      NEXUS_PUBLIC_URL: "${NEXUS_PUBLIC_URL:-http://localhost}"
+      # Expenses (dépenses partagées)
+      EXPENSE_DB_PATH: "/nexus-state/expenses.db"
       # Sideloadly
       SIDELOADLY_DB_PATH:     "/sideloadly-local/installations.db"
       SIDELOADLY_APPIDS_PATH: "/sideloadly-local/account-appids.json"
@@ -43,7 +66,7 @@ services:
       - "${ABS_LOG_PATH_HOST:-/dev/null}:/abs.log:ro"
       # Sideloadly data directory (read-only)
       - "${SIDELOADLY_LOCAL_PATH_HOST:-/dev/null}:/sideloadly-local:ro"
-      # State persistence (last played/listened survives container restarts)
+      # State persistence (last played/listened, expenses DB survive container restarts)
       - nexus-state:/nexus-state
     restart: unless-stopped
     expose:

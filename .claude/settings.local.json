@@ -3,7 +3,33 @@
     "allow": [
       "Bash(docker:*)",
       "Bash(node:*)",
-      "Bash(DOCKER_BUILDKIT=0 docker compose:*)"
+      "Bash(DOCKER_BUILDKIT=0 docker compose:*)",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:python-urbackup.readthedocs.io)",
+      "WebFetch(domain:www.urbackup.org)",
+      "WebFetch(domain:100.82.190.13)",
+      "WebFetch(domain:localhost)",
+      "Bash(curl:*)",
+      "Bash(npx nx:*)",
+      "Bash(node_modules/.bin/tsc:*)",
+      "Bash(powershell:*)",
+      "Bash(python3:*)",
+      "WebFetch(domain:sideloadly.io)",
+      "Bash(ls:*)",
+      "Bash(npm list:*)",
+      "Bash(node_modules/.bin/nx typecheck:*)",
+      "Bash(reg query:*)",
+      "Bash(Get-Process windows_exporter:*)",
+      "Bash(xargs grep:*)",
+      "WebFetch(domain:booklore.org)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:api.github.com)",
+      "WebFetch(domain:deepwiki.com)",
+      "WebFetch(domain:booklore-app.github.io)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git rm:*)"
     ]
   }
 }
