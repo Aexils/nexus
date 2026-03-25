@@ -5,12 +5,17 @@ import * as path from 'path';
 import * as readline from 'readline';
 import { io as socketIoClient, Socket as IoSocket } from 'socket.io-client';
 import { NexusGateway } from '../gateway/nexus.gateway';
-import { AbsStatus, AbsSession, AbsLibraryItem, AbsLastSession } from '@nexus/shared-types';
+import { AbsStatus, AbsSession, AbsLibraryItem, AbsLastSession, NexusUser } from '@nexus/shared-types';
 
-const ABS_URL       = process.env['ABS_URL']       ?? 'http://localhost:13378';
-const ABS_TOKEN     = process.env['ABS_TOKEN']     ?? '';
-const ABS_LOG_PATH  = process.env['ABS_LOG_PATH']  ?? '';
+const ABS_URL      = process.env['ABS_URL']      ?? 'http://localhost:13378';
+const ABS_LOG_PATH = process.env['ABS_LOG_PATH'] ?? '';
 const ABS_STATE_PATH = process.env['ABS_STATE_PATH'] ?? path.join(process.cwd(), 'nexus-abs-state.json');
+
+// Per-user token config
+const USER_CONFIGS: { userId: NexusUser; token: string }[] = [
+  { userId: 'alexis', token: process.env['ABS_TOKEN_ALEXIS'] ?? process.env['ABS_TOKEN'] ?? '' },
+  { userId: 'marion', token: process.env['ABS_TOKEN_MARION'] ?? '' },
+];
 
 function stripHtml(html: string | undefined): string | undefined {
   if (!html) return undefined;
@@ -21,46 +26,55 @@ function stripHtml(html: string | undefined): string | undefined {
     .replace(/\s+/g, ' ').trim() || undefined;
 }
 
-// ABS socket log levels: 0=debug, 1=info, 2=warn, 3=error
 const ABS_LOG_LEVELS = ['info', 'info', 'warn', 'error'] as const;
+
+interface UserAbsState {
+  prevSessions:  Map<string, AbsSession>;
+  prevConnected: boolean;
+  lastSession:   AbsLastSession | null;
+  warnEmitted:   boolean;
+}
 
 @Injectable()
 export class AbsService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(AbsService.name);
 
-  // ── Session state tracking ───────────────────────────────────────────────
-  private prevSessions  = new Map<string, AbsSession>();
-  private prevConnected = false;
-  private lastSession:  AbsLastSession | null = null;
+  private readonly userStates = new Map<NexusUser, UserAbsState>();
 
-  // ── One-shot warn guards (avoid flooding journal on repeated poll errors) ──
-  private warnSessionsEmitted = false;
+  // Server version (shared — same for all users)
+  private absServerVersion: string | undefined;
+  private absVersionFetched = false;
+
+  // Socket (shared — uses first available token for log streaming)
+  private absSocket: IoSocket | null = null;
   private warnSocketErrEmitted = false;
 
-  // ── ABS socket client ────────────────────────────────────────────────────
-  private absSocket: IoSocket | null = null;
-
-  // ── Log file tailing ─────────────────────────────────────────────────────
+  // Log file tailing
   private logFileOffset = 0;
 
   constructor(private readonly gateway: NexusGateway) {
     this.logger.log(`Audiobookshelf endpoint: ${ABS_URL}`);
-    this.gateway.addLog('debug', 'abs', `Endpoint: ${ABS_URL}`);
-    if (!ABS_TOKEN) {
-      this.logger.warn('ABS_TOKEN not set — sessions and library will not be fetched');
-      this.gateway.addLog('warn', 'abs', 'ABS_TOKEN non défini — sessions et bibliothèque désactivées');
+    for (const cfg of USER_CONFIGS) {
+      this.userStates.set(cfg.userId, {
+        prevSessions:  new Map(),
+        prevConnected: false,
+        lastSession:   null,
+        warnEmitted:   false,
+      });
+      if (!cfg.token) {
+        this.logger.warn(`ABS_TOKEN_${cfg.userId.toUpperCase()} not set — ${cfg.userId} sessions disabled`);
+        this.gateway.addLog('warn', 'abs', `${cfg.userId}: token non défini — sessions désactivées`);
+      }
     }
   }
 
   onModuleInit() {
     this.loadState();
-    if (ABS_TOKEN) this.connectToAbsSocket();
+    const socketToken = USER_CONFIGS.find(c => c.token)?.token;
+    if (socketToken) this.connectToAbsSocket(socketToken);
     if (ABS_LOG_PATH) {
-      this.logger.log(`ABS log file: ${ABS_LOG_PATH}`);
-      this.gateway.addLog('debug', 'abs', `Fichier log: ${ABS_LOG_PATH}`);
       this.initLogOffset();
     } else {
-      this.logger.warn('ABS_LOG_PATH not set — log file tailing disabled');
       this.gateway.addLog('warn', 'abs', 'ABS_LOG_PATH non défini — tailing désactivé');
     }
   }
@@ -69,64 +83,65 @@ export class AbsService implements OnModuleInit, OnModuleDestroy {
     this.absSocket?.disconnect();
   }
 
-  // ── ABS socket.io client ─────────────────────────────────────────────────
+  // ── ABS socket.io (log streaming, shared) ────────────────────────────────
 
-  private connectToAbsSocket(): void {
+  private connectToAbsSocket(token: string): void {
     this.absSocket = socketIoClient(ABS_URL, {
-      auth:          { token: ABS_TOKEN },
-      query:         { token: ABS_TOKEN },
+      auth:          { token },
+      query:         { token },
       reconnection:  true,
       reconnectionDelay: 5000,
       timeout:       10000,
     });
 
     this.absSocket.on('connect', () => {
-      this.logger.log('Connected to ABS socket.io');
       this.gateway.addLog('ok', 'abs', 'Socket ABS connecté');
       this.warnSocketErrEmitted = false;
     });
 
+    // ABS emits 'init' right after connect with serverVersion
+    this.absSocket.on('init', (data: { serverVersion?: string }) => {
+      if (data?.serverVersion && !this.absVersionFetched) {
+        this.absServerVersion = data.serverVersion;
+        this.absVersionFetched = true;
+      }
+    });
+
     this.absSocket.on('disconnect', (reason: string) => {
-      this.logger.warn(`ABS socket disconnected: ${reason}`);
       this.gateway.addLog('warn', 'abs', `Socket ABS déconnecté — ${reason}`);
     });
 
     this.absSocket.on('connect_error', (err: Error) => {
-      this.logger.debug(`ABS socket error: ${err.message}`);
       if (!this.warnSocketErrEmitted) {
         this.warnSocketErrEmitted = true;
         this.gateway.addLog('debug', 'abs', `Erreur socket ABS: ${err.message}`);
       }
     });
 
-    // ABS server log stream (emitted by LogManager to admin clients)
-    this.absSocket.on('log', (data: { level?: number; message?: string; timestamp?: string }) => {
+    this.absSocket.on('log', (data: { level?: number; message?: string }) => {
       const lvlIdx = data.level ?? 1;
       const level  = ABS_LOG_LEVELS[Math.min(lvlIdx, 3)];
-      if (level === 'info' && lvlIdx === 0) return; // skip debug
+      if (lvlIdx === 0) return;
       const msg = data.message ?? '';
       if (msg) this.gateway.addLog(level, 'abs', msg);
     });
-
-    // Real-time session progress
-    this.absSocket.on('user_stream_progress', (data: { displayTitle?: string; progress?: number }) => {
-      if (data.displayTitle && data.progress != null) {
-        const pct = (data.progress * 100).toFixed(1);
-        this.gateway.addLog('info', 'abs', `Progression — ${data.displayTitle} : ${pct}%`);
-      }
-    });
   }
 
-  // ── WebSocket polling ────────────────────────────────────────────────────
+  // ── Polling ───────────────────────────────────────────────────────────────
 
   @Interval(5000)
   async poll() {
-    const status = await this.fetchStatus();
-    this.detectStateChange(status);
-    this.gateway.emitAbsStatus({ ...status, lastSession: this.lastSession });
+    for (const cfg of USER_CONFIGS) {
+      const status = await this.fetchStatus(cfg.token);
+      const state  = this.userStates.get(cfg.userId)!;
+      this.detectStateChange(cfg.userId, state, status);
+      state.prevConnected = status.connected;
+      this.gateway.emitAbsStatus(cfg.userId, { ...status, lastSession: state.lastSession });
+    }
   }
 
-  private async fetchStatus(): Promise<AbsStatus> {
+  private async fetchStatus(token: string): Promise<AbsStatus> {
+    // Connectivity check
     try {
       const res  = await fetch(`${ABS_URL}/ping`, { signal: AbortSignal.timeout(3000) });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -136,21 +151,49 @@ export class AbsService implements OnModuleInit, OnModuleDestroy {
       return { connected: false, activeSessions: [] };
     }
 
-    if (!ABS_TOKEN) return { connected: true, activeSessions: [] };
+    if (!token) return { connected: true, activeSessions: [] };
+
+    // Fetch server version (retry until obtained, via /api/me or /status)
+    if (!this.absVersionFetched) {
+      try {
+        // Try /api/me first (includes serverVersion in ABS v2.x)
+        const vRes = await fetch(`${ABS_URL}/api/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+          signal: AbortSignal.timeout(3000),
+        });
+        if (vRes.ok) {
+          const vData = await vRes.json() as { serverVersion?: string; version?: string };
+          const ver = vData.serverVersion ?? vData.version;
+          if (ver) {
+            this.absServerVersion = ver;
+            this.absVersionFetched = true;
+          }
+        }
+      } catch { /* version stays undefined, will retry next poll */ }
+
+      // Fallback: /status endpoint (public, no auth required)
+      if (!this.absVersionFetched) {
+        try {
+          const sRes = await fetch(`${ABS_URL}/status`, { signal: AbortSignal.timeout(3000) });
+          if (sRes.ok) {
+            const sData = await sRes.json() as { version?: string; serverVersion?: string };
+            const ver = sData.version ?? sData.serverVersion;
+            if (ver) {
+              this.absServerVersion = ver;
+              this.absVersionFetched = true;
+            }
+          }
+        } catch { /* no-op */ }
+      }
+    }
 
     try {
       const res = await fetch(`${ABS_URL}/api/sessions?page=0&itemsPerPage=100`, {
-        headers: { Authorization: `Bearer ${ABS_TOKEN}` },
+        headers: { Authorization: `Bearer ${token}` },
         signal: AbortSignal.timeout(3000),
       });
-      if (!res.ok) {
-        this.logger.warn(`ABS sessions HTTP ${res.status}`);
-        if (!this.warnSessionsEmitted) {
-          this.warnSessionsEmitted = true;
-          this.gateway.addLog('warn', 'abs', `Sessions HTTP ${res.status}`);
-        }
-        return { connected: true, activeSessions: [] };
-      }
+      if (!res.ok) return { connected: true, activeSessions: [] };
+
       const data = await res.json() as { sessions?: any[] };
       const allSessions: any[] = data.sessions ?? [];
 
@@ -173,40 +216,34 @@ export class AbsService implements OnModuleInit, OnModuleDestroy {
         currentTime:   s.currentTime   ?? 0,
         duration:      s.duration      ?? 0,
       }));
-      this.warnSessionsEmitted = false;
-      return { connected: true, activeSessions: sessions };
+      return { connected: true, version: this.absServerVersion, activeSessions: sessions };
     } catch {
-      this.logger.warn('Cannot fetch ABS sessions');
-      if (!this.warnSessionsEmitted) {
-        this.warnSessionsEmitted = true;
-        this.gateway.addLog('warn', 'abs', 'Impossible de récupérer les sessions ABS');
-      }
-      return { connected: true, activeSessions: [] };
+      return { connected: true, version: this.absServerVersion, activeSessions: [] };
     }
   }
 
-  // ── Synthetic state-change events ────────────────────────────────────────
+  // ── State change detection ────────────────────────────────────────────────
 
-  private detectStateChange(next: AbsStatus): void {
-    if (!this.prevConnected && next.connected) {
-      this.gateway.addLog('ok', 'abs', 'Audiobookshelf connecté');
-    } else if (this.prevConnected && !next.connected) {
-      this.gateway.addLog('warn', 'abs', 'Audiobookshelf déconnecté — hors ligne');
+  private detectStateChange(userId: NexusUser, state: UserAbsState, next: AbsStatus): void {
+    const label = userId.charAt(0).toUpperCase() + userId.slice(1);
+
+    if (!state.prevConnected && next.connected) {
+      this.gateway.addLog('ok', 'abs', `Audiobookshelf connecté (${label})`);
+    } else if (state.prevConnected && !next.connected) {
+      this.gateway.addLog('warn', 'abs', `Audiobookshelf déconnecté (${label})`);
     }
-    this.prevConnected = next.connected;
 
     const nextIds = new Set(next.activeSessions.map(s => s.id));
-
     for (const s of next.activeSessions) {
-      if (!this.prevSessions.has(s.id)) {
-        const type = s.mediaType === 'podcast' ? 'Podcast' : 'Audiobook';
+      if (!state.prevSessions.has(s.id)) {
+        const type   = s.mediaType === 'podcast' ? 'Podcast' : 'Audiobook';
         const author = s.author ? ` — ${s.author}` : '';
-        this.gateway.addLog('info', 'abs', `Écoute démarrée — ${type} : ${s.title}${author}`);
+        this.gateway.addLog('info', 'abs', `${label} — Écoute démarrée : ${s.title}${author}`);
       }
     }
-    for (const [prevId, prevSession] of this.prevSessions) {
+    for (const [prevId, prevSession] of state.prevSessions) {
       if (!nextIds.has(prevId)) {
-        this.lastSession = {
+        state.lastSession = {
           title:         prevSession.title,
           author:        prevSession.author,
           libraryItemId: prevSession.libraryItemId,
@@ -216,20 +253,16 @@ export class AbsService implements OnModuleInit, OnModuleDestroy {
           stoppedAt:     new Date().toISOString(),
         };
         this.saveState();
-        this.gateway.addLog('info', 'abs', `Écoute terminée — ${prevSession.title}`);
+        this.gateway.addLog('info', 'abs', `${label} — Écoute terminée : ${prevSession.title}`);
       }
     }
-    this.prevSessions = new Map(next.activeSessions.map(s => [s.id, s]));
+    state.prevSessions = new Map(next.activeSessions.map(s => [s.id, s]));
   }
 
   // ── Log file tailing ─────────────────────────────────────────────────────
 
   private initLogOffset(): void {
-    try {
-      this.logFileOffset = fs.statSync(ABS_LOG_PATH).size;
-    } catch {
-      this.logFileOffset = 0;
-    }
+    try { this.logFileOffset = fs.statSync(ABS_LOG_PATH).size; } catch { this.logFileOffset = 0; }
   }
 
   @Interval(3000)
@@ -239,32 +272,22 @@ export class AbsService implements OnModuleInit, OnModuleDestroy {
       const stat = fs.statSync(ABS_LOG_PATH);
       if (stat.size < this.logFileOffset) this.logFileOffset = 0;
       if (stat.size === this.logFileOffset) return;
-
-      const stream = fs.createReadStream(ABS_LOG_PATH, {
-        start: this.logFileOffset,
-        encoding: 'utf8',
-      });
+      const stream = fs.createReadStream(ABS_LOG_PATH, { start: this.logFileOffset, encoding: 'utf8' });
       this.logFileOffset = stat.size;
-
       const rl = readline.createInterface({ input: stream, crlfDelay: Infinity });
       rl.on('line', line => this.parseAbsLogLine(line));
       await new Promise<void>(resolve => rl.on('close', resolve));
-    } catch {
-      // File not yet created or unreadable — silently skip
-    }
+    } catch { /* silently skip */ }
   }
 
   private parseAbsLogLine(line: string): void {
-    // ABS log format: [YYYY-MM-DDTHH:mm:ss.mssZ] [LEVEL] message
-    // or:             YYYY-MM-DD HH:mm:ss.mmm [LEVEL] message
     const m = line.match(/\[?(FATAL|ERROR|WARN|WARNING|INFO|DEBUG)\]?\s+(.+)/i);
     if (!m) return;
     const [, rawLevel, message] = m;
     const rl = rawLevel.toUpperCase();
     if (rl === 'DEBUG') return;
     const level = rl === 'WARN' || rl === 'WARNING' ? 'warn'
-      : rl === 'ERROR' || rl === 'FATAL' ? 'error'
-      : 'info';
+      : rl === 'ERROR' || rl === 'FATAL' ? 'error' : 'info';
     this.gateway.addLog(level, 'abs', message.trim());
   }
 
@@ -273,23 +296,31 @@ export class AbsService implements OnModuleInit, OnModuleDestroy {
   private loadState(): void {
     try {
       const raw = JSON.parse(fs.readFileSync(ABS_STATE_PATH, 'utf8'));
-      if (raw?.lastSession) this.lastSession = raw.lastSession;
+      for (const userId of ['alexis', 'marion'] as NexusUser[]) {
+        const state = this.userStates.get(userId)!;
+        if (raw?.[userId]?.lastSession) state.lastSession = raw[userId].lastSession;
+      }
     } catch { /* no saved state yet */ }
   }
 
   private saveState(): void {
     try {
-      fs.writeFileSync(ABS_STATE_PATH, JSON.stringify({ lastSession: this.lastSession }));
+      const data: Record<string, any> = {};
+      for (const [userId, state] of this.userStates) {
+        data[userId] = { lastSession: state.lastSession };
+      }
+      fs.writeFileSync(ABS_STATE_PATH, JSON.stringify(data));
     } catch { /* ignore write errors */ }
   }
 
   // ── REST: library ─────────────────────────────────────────────────────────
 
-  async getLibrary(): Promise<AbsLibraryItem[]> {
-    if (!ABS_TOKEN) return [];
+  async getLibrary(userId: NexusUser = 'alexis'): Promise<AbsLibraryItem[]> {
+    const token = USER_CONFIGS.find(c => c.userId === userId)?.token ?? '';
+    if (!token) return [];
     try {
       const libsRes = await fetch(`${ABS_URL}/api/libraries`, {
-        headers: { Authorization: `Bearer ${ABS_TOKEN}` },
+        headers: { Authorization: `Bearer ${token}` },
         signal: AbortSignal.timeout(5000),
       });
       if (!libsRes.ok) return [];
@@ -302,7 +333,7 @@ export class AbsService implements OnModuleInit, OnModuleDestroy {
         try {
           const itemsRes = await fetch(
             `${ABS_URL}/api/libraries/${lib.id}/items?limit=500&page=0&include=progress`,
-            { headers: { Authorization: `Bearer ${ABS_TOKEN}` }, signal: AbortSignal.timeout(10000) },
+            { headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(10000) },
           );
           if (!itemsRes.ok) continue;
           const itemsData = await itemsRes.json() as { results?: any[] };
@@ -349,24 +380,23 @@ export class AbsService implements OnModuleInit, OnModuleDestroy {
           }
         } catch {
           this.logger.warn(`Cannot fetch items for library ${lib.id}`);
-          this.gateway.addLog('warn', 'abs', `Impossible de récupérer la bibliothèque ${lib.id}`);
         }
       }
       return allItems;
     } catch {
       this.logger.warn('Cannot fetch ABS library');
-      this.gateway.addLog('warn', 'abs', 'Impossible de récupérer les bibliothèques ABS');
       return [];
     }
   }
 
   // ── REST: cover proxy ─────────────────────────────────────────────────────
 
-  async getCover(itemId: string): Promise<{ buffer: Buffer; contentType: string } | null> {
-    if (!ABS_TOKEN) return null;
+  async getCover(itemId: string, userId: NexusUser = 'alexis'): Promise<{ buffer: Buffer; contentType: string } | null> {
+    const token = USER_CONFIGS.find(c => c.userId === userId)?.token ?? '';
+    if (!token) return null;
     try {
       const res = await fetch(`${ABS_URL}/api/items/${itemId}/cover?raw=1`, {
-        headers: { Authorization: `Bearer ${ABS_TOKEN}` },
+        headers: { Authorization: `Bearer ${token}` },
         signal: AbortSignal.timeout(5000),
       });
       if (!res.ok) return null;
