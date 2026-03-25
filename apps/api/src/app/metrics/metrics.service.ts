@@ -13,6 +13,11 @@ interface NetSnapshot { rx: number; tx: number; }
 const HOST_METRICS_URL = process.env['HOST_METRICS_URL'];
 const PROC_PATH = process.env['HOST_PROC'] ?? '/proc';
 
+// Docker Engine API — auto-detected from run mode, overridable via DOCKER_API_URL.
+// Docker Desktop must have "Expose daemon on tcp://localhost:2375" enabled in Settings.
+const DOCKER_API_URL = process.env['DOCKER_API_URL'] ||
+  (HOST_METRICS_URL ? 'http://host.docker.internal:2375' : 'http://localhost:2375');
+
 @Injectable()
 export class MetricsService {
   private readonly logger = new Logger(MetricsService.name);
@@ -31,6 +36,10 @@ export class MetricsService {
   private warnWinExporterEmitted = false;
   private warnProcNetEmitted = false;
 
+  // Docker version cache (refreshed every 60 s)
+  private cachedDockerVersion: string | undefined;
+  private dockerVersionLastFetch = 0;
+
   constructor(private readonly gateway: NexusGateway) {
     if (HOST_METRICS_URL) {
       this.logger.log(`Windows host metrics via: ${HOST_METRICS_URL}`);
@@ -46,8 +55,34 @@ export class MetricsService {
     if (HOST_METRICS_URL) {
       await this.collectWindows();
     } else {
-      this.collectLocal();
+      await this.collectLocal();
     }
+  }
+
+  // ── Docker Engine API ────────────────────────────────────────────────────────
+
+  private async getDockerVersion(): Promise<string | undefined> {
+    const now = Date.now();
+    if (now - this.dockerVersionLastFetch < 60_000) return this.cachedDockerVersion;
+    this.dockerVersionLastFetch = now;
+
+    try {
+      const res = await fetch(`${DOCKER_API_URL}/version`, {
+        signal: AbortSignal.timeout(3_000),
+      });
+      if (!res.ok) return this.cachedDockerVersion;
+
+      const data = await res.json() as { Platform?: { Name?: string }; Version?: string };
+
+      // Prefer "Docker Desktop X.Y.Z" from Platform.Name; fall back to engine version
+      const platformName = data?.Platform?.Name ?? '';
+      const desktopMatch = platformName.match(/Docker Desktop ([\d.]+)/i);
+      this.cachedDockerVersion = desktopMatch ? desktopMatch[1] : (data.Version ?? undefined);
+    } catch {
+      // TCP not enabled or Docker not running — silently return cached (or undefined)
+    }
+
+    return this.cachedDockerVersion;
   }
 
   // ── Windows Exporter (Docker mode) ──────────────────────────────────────────
@@ -73,6 +108,8 @@ export class MetricsService {
     const disks = this.getWinDisks(raw);
     const gpus = this.getWinGpus(raw);
     const cpuTempCelsius = this.getWinCpuTemp(raw);
+    const osInfo = this.getWinOsInfo(raw);
+    const pendingUpdates = this.getWinPendingUpdates(raw);
 
     if (!this.winInitialized) {
       this.winInitialized = true;
@@ -87,6 +124,9 @@ export class MetricsService {
       disks,
       gpus,
       cpuTempCelsius,
+      ...osInfo,
+      pendingUpdates,
+      dockerVersion: await this.getDockerVersion(),
       timestamp: Date.now(),
     });
   }
@@ -195,10 +235,11 @@ export class MetricsService {
         const total = sizes[vol];
         const free = frees[vol] ?? 0;
         const used = total - free;
+        const GiB = 1024 * 1024 * 1024;
         return {
           mount: vol,
-          totalGB: parseFloat((total / 1e9).toFixed(1)),
-          usedGB: parseFloat((used / 1e9).toFixed(1)),
+          totalGB: parseFloat((total / GiB).toFixed(1)),
+          usedGB: parseFloat((used / GiB).toFixed(1)),
           usedPercent: Math.round((used / total) * 100),
         };
       });
@@ -255,9 +296,39 @@ export class MetricsService {
     return temps.length > 0 ? Math.round(Math.max(...temps)) : null;
   }
 
+  private getWinOsInfo(raw: string): { windowsProductName?: string; windowsBuild?: string } {
+    // Requires os collector (enabled by default in windows_exporter)
+    // Line format: windows_os_info{caption="Microsoft Windows 11 Pro",hostname="...",version="10.0.26200.0"} 1
+    for (const line of raw.split('\n')) {
+      if (!line.startsWith('windows_os_info{')) continue;
+      const captionMatch = line.match(/caption="([^"]+)"/);
+      const versionMatch = line.match(/version="([^"]+)"/);
+      const productName = captionMatch
+        ? captionMatch[1].replace(/^Microsoft /, '')
+        : undefined;
+      // Keep only major.minor.build (drop the revision)
+      const build = versionMatch
+        ? versionMatch[1].split('.').slice(0, 3).join('.')
+        : undefined;
+      return { windowsProductName: productName, windowsBuild: build };
+    }
+    return {};
+  }
+
+  private getWinPendingUpdates(raw: string): number | null {
+    // Requires update collector: --collectors.enabled ...,update
+    // Line format: windows_update_pending_updates 3
+    for (const line of raw.split('\n')) {
+      if (!line.startsWith('windows_update_pending_updates ')) continue;
+      const val = parseFloat(line.split(' ').at(-1) ?? '');
+      return isNaN(val) ? null : Math.round(val);
+    }
+    return null;
+  }
+
   // ── Local /proc (dev mode) ──────────────────────────────────────────────────
 
-  private collectLocal() {
+  private async collectLocal() {
     const cpuPercent = this.getCpuPercent();
     const ram = this.getRam();
     const net = this.getNet();
@@ -277,6 +348,7 @@ export class MetricsService {
       disks,
       gpus: [],
       cpuTempCelsius,
+      dockerVersion: await this.getDockerVersion(),
       timestamp: Date.now(),
     });
   }
@@ -375,10 +447,11 @@ export class MetricsService {
         if (total < 1e9) continue; // skip tiny mounts
         const free = stat.bavail * stat.bsize;
         const used = total - free;
+        const GiB = 1024 * 1024 * 1024;
         disks.push({
           mount: mp,
-          totalGB: parseFloat((total / 1e9).toFixed(1)),
-          usedGB: parseFloat((used / 1e9).toFixed(1)),
+          totalGB: parseFloat((total / GiB).toFixed(1)),
+          usedGB: parseFloat((used / GiB).toFixed(1)),
           usedPercent: Math.round((used / total) * 100),
         });
       } catch {

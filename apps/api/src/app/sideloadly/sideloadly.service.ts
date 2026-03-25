@@ -36,6 +36,7 @@ export class SideloadlyService implements OnModuleInit {
   private readonly EMPTY_DAEMON: SideloadlyDaemon = { alive: false, startedAt: null, uptimeSec: null, ramMB: null };
   private currentStatus: SideloadlyStatus = { connected: false, daemon: this.EMPTY_DAEMON, accounts: [], devices: [], apps: [] };
   private warnEmitted = false;
+  private sdlyVersion: string | undefined;
 
   constructor(private readonly gateway: NexusGateway) {}
 
@@ -117,19 +118,22 @@ export class SideloadlyService implements OnModuleInit {
       const accounts = this.readAccounts();
       const { devices, apps } = this.readDb();
       this.warnEmitted = false;
-      return { connected: true, daemon, accounts, devices, apps };
+      return { connected: true, version: this.sdlyVersion, daemon, accounts, devices, apps };
     } catch (err: any) {
       if (!this.warnEmitted) {
         this.warnEmitted = true;
         this.logger.warn(`Cannot read Sideloadly data: ${err?.message ?? err}`);
       }
-      return { connected: false, daemon, accounts: [], devices: [], apps: [] };
+      return { connected: false, version: this.sdlyVersion, daemon, accounts: [], devices: [], apps: [] };
     }
   }
 
   // ── Daemon process monitoring ─────────────────────────────────────────────
 
   private async readDaemon(): Promise<SideloadlyDaemon> {
+    // Always try to extract version from log (safe, fast) regardless of daemon source
+    if (!this.sdlyVersion) this.parseStartupFromLog();
+
     // Primary source: windows_exporter process metrics
     const fromExporter = await this.readDaemonFromExporter();
     if (fromExporter) return fromExporter;
@@ -210,23 +214,39 @@ export class SideloadlyService implements OnModuleInit {
       const size = stat.size;
       if (size === 0) return null;
 
-      const readSize = Math.min(LOG_TAIL_BYTES, size);
-      const buf      = Buffer.allocUnsafe(readSize);
-      const fd       = fs.openSync(LOG_PATH, 'r');
-      fs.readSync(fd, buf, 0, readSize, size - readSize);
-      fs.closeSync(fd);
+      const fd = fs.openSync(LOG_PATH, 'r');
 
-      const text  = buf.toString('utf8');
-      const lines = text.split('\n');
+      // ── Read tail (most recent restart timestamp) ──────────────────────────
+      const tailSize = Math.min(LOG_TAIL_BYTES, size);
+      const tailBuf  = Buffer.allocUnsafe(tailSize);
+      fs.readSync(fd, tailBuf, 0, tailSize, size - tailSize);
+      const tailText  = tailBuf.toString('utf8');
+      const tailLines = tailText.split('\n');
 
-      // Find the last "Loading X.XX" line — emitted at daemon startup
-      for (let i = lines.length - 1; i >= 0; i--) {
-        const m = lines[i].match(/^(\d{4})\/(\d{2})\/(\d{2}) (\d{2}:\d{2}:\d{2}) Loading /);
+      let startedAt: string | null = null;
+      for (let i = tailLines.length - 1; i >= 0; i--) {
+        const m = tailLines[i].match(/^(\d{4})\/(\d{2})\/(\d{2}) (\d{2}:\d{2}:\d{2}) Loading (\S+)/);
         if (m) {
-          return new Date(`${m[1]}-${m[2]}-${m[3]}T${m[4]}`).toISOString();
+          if (!this.sdlyVersion) this.sdlyVersion = m[5];
+          startedAt = new Date(`${m[1]}-${m[2]}-${m[3]}T${m[4]}`).toISOString();
+          break;
         }
       }
-      return null;
+
+      // ── If version not found in tail, scan the first 32 KB (startup line is near the top) ──
+      if (!this.sdlyVersion && size > LOG_TAIL_BYTES) {
+        const headSize = Math.min(32 * 1024, size);
+        const headBuf  = Buffer.allocUnsafe(headSize);
+        fs.readSync(fd, headBuf, 0, headSize, 0);
+        const headLines = headBuf.toString('utf8').split('\n');
+        for (const line of headLines) {
+          const m = line.match(/^(\d{4})\/(\d{2})\/(\d{2}) (\d{2}:\d{2}:\d{2}) Loading (\S+)/);
+          if (m) { this.sdlyVersion = m[5]; break; }
+        }
+      }
+
+      fs.closeSync(fd);
+      return startedAt;
     } catch {
       return null;
     }
