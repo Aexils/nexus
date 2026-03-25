@@ -168,3 +168,28 @@
   border-radius: 50%;
   flex-shrink: 0;
 }
+
+/* ── Hamburger (mobile only) ── */
+.hamburger {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .topbar {
+    height: 56px;
+    padding: 0 14px;
+  }
+
+  .hamburger {
+    display: flex;
+  }
+
+  .status-center {
+    display: none;
+  }
+
+  .clock {
+    font-size: 12px;
+    min-width: auto;
+  }
+}

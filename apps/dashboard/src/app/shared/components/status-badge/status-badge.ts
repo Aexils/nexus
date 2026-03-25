@@ -13,6 +13,7 @@ export type BadgeStatus = 'playing' | 'paused' | 'running' | 'stopped' | 'error'
 export class StatusBadge {
   @Input() status: BadgeStatus = 'stopped';
   @Input() customLabel?: string;
+  @Input() dotOnly = false;
 
   get label(): string {
     if (this.customLabel) return this.customLabel;

@@ -175,12 +175,25 @@
 
   <!-- ── Recent Games ── -->
   @if (psn().recentGames?.length) {
-    <div class="section-title">
-      <lucide-icon [img]="icons.Clock" [size]="13" strokeWidth="2"></lucide-icon>
-      Jeux récents
+    <div class="section-header-row">
+      <div class="section-title">
+        <lucide-icon [img]="icons.Clock" [size]="13" strokeWidth="2"></lucide-icon>
+        Jeux récents
+        <span class="game-count">{{ psn().recentGames!.length }}</span>
+      </div>
+      <!-- Sort selector -->
+      <div class="sort-row">
+        <lucide-icon [img]="icons.ArrowUpDown" [size]="12" strokeWidth="2" class="sort-icon"></lucide-icon>
+        <select class="sort-select" (change)="setSort($any($event.target).value)">
+          @for (opt of sortOptions; track opt.value) {
+            <option [value]="opt.value" [selected]="opt.value === sortBy()">{{ opt.label }}</option>
+          }
+        </select>
+      </div>
     </div>
+
     <div class="games-grid">
-      @for (game of psn().recentGames; track game.titleId) {
+      @for (game of pagedGames(); track game.titleId) {
         <div class="game-card">
           <div class="game-cover" [class.has-img]="!!game.imageUrl">
             @if (game.imageUrl) {
@@ -206,6 +219,99 @@
         </div>
       }
     </div>
+
+    <!-- Pagination -->
+    @if (totalPages() > 1) {
+      <div class="pagination-row">
+        <button class="page-btn" (click)="prevPage()" [disabled]="page() === 0">
+          <lucide-icon [img]="icons.ChevronLeft" [size]="14" strokeWidth="2"></lucide-icon>
+        </button>
+        <span class="page-info">{{ page() + 1 }} / {{ totalPages() }}</span>
+        <button class="page-btn" (click)="nextPage()" [disabled]="page() === totalPages() - 1">
+          <lucide-icon [img]="icons.ChevronRight" [size]="14" strokeWidth="2"></lucide-icon>
+        </button>
+      </div>
+    }
+  }
+
+  <!-- ── Trophy Titles ── -->
+  @if (psn().trophyTitles?.length) {
+    <div class="section-header-row" style="margin-top: 6px">
+      <div class="section-title">
+        <lucide-icon [img]="icons.Trophy" [size]="13" strokeWidth="2"></lucide-icon>
+        Trophées par jeu
+        <span class="game-count">{{ psn().trophyTitles!.length }}</span>
+      </div>
+      <div class="sort-row">
+        <lucide-icon [img]="icons.ArrowUpDown" [size]="12" strokeWidth="2" class="sort-icon"></lucide-icon>
+        <select class="sort-select" (change)="setTrophySort($any($event.target).value)">
+          @for (opt of trophySortOptions; track opt.value) {
+            <option [value]="opt.value" [selected]="opt.value === trophySortBy()">{{ opt.label }}</option>
+          }
+        </select>
+      </div>
+    </div>
+    <div class="trophy-titles-list">
+      @for (t of pagedTrophyTitles(); track t.npCommunicationId) {
+        <div class="tt-row">
+          <div class="tt-icon" [class.has-img]="!!t.trophyTitleIconUrl">
+            @if (t.trophyTitleIconUrl) {
+              <img class="tt-icon-img" [src]="t.trophyTitleIconUrl" [alt]="t.trophyTitleName" (error)="onImgError($event)">
+            } @else {
+              <lucide-icon [img]="icons.Trophy" [size]="18" strokeWidth="1.5" class="tt-icon-fallback"></lucide-icon>
+            }
+          </div>
+
+          <div class="tt-info">
+            <div class="tt-header">
+              <span class="tt-name">{{ t.trophyTitleName }}</span>
+              <span class="platform-badge-sm">{{ formatPlatform(t.trophyTitlePlatform) }}</span>
+            </div>
+
+            <div class="tt-progress-row">
+              <div class="tt-progress-track">
+                <div class="tt-progress-fill" [style.width.%]="t.progress"
+                     [class.complete]="t.progress === 100"></div>
+              </div>
+              <span class="tt-pct" [class.complete]="t.progress === 100">{{ t.progress }}%</span>
+            </div>
+
+            <div class="tt-medals">
+              @if (t.definedTrophies.platinum > 0) {
+                <span class="tt-medal platinum" [class.earned]="t.earnedTrophies.platinum > 0">
+                  <span class="tt-gem"></span>{{ t.earnedTrophies.platinum }}/{{ t.definedTrophies.platinum }}
+                </span>
+              }
+              <span class="tt-medal gold">
+                <span class="tt-gem"></span>{{ t.earnedTrophies.gold }}/{{ t.definedTrophies.gold }}
+              </span>
+              <span class="tt-medal silver">
+                <span class="tt-gem"></span>{{ t.earnedTrophies.silver }}/{{ t.definedTrophies.silver }}
+              </span>
+              <span class="tt-medal bronze">
+                <span class="tt-gem"></span>{{ t.earnedTrophies.bronze }}/{{ t.definedTrophies.bronze }}
+              </span>
+              @if (t.lastUpdatedDateTime) {
+                <span class="tt-updated">{{ formatRelative(t.lastUpdatedDateTime) }}</span>
+              }
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Trophy pagination -->
+    @if (totalTrophyPages() > 1) {
+      <div class="pagination-row">
+        <button class="page-btn" (click)="prevTrophyPage()" [disabled]="trophyPage() === 0">
+          <lucide-icon [img]="icons.ChevronLeft" [size]="14" strokeWidth="2"></lucide-icon>
+        </button>
+        <span class="page-info">{{ trophyPage() + 1 }} / {{ totalTrophyPages() }}</span>
+        <button class="page-btn" (click)="nextTrophyPage()" [disabled]="trophyPage() === totalTrophyPages() - 1">
+          <lucide-icon [img]="icons.ChevronRight" [size]="14" strokeWidth="2"></lucide-icon>
+        </button>
+      </div>
+    }
   }
 
 }

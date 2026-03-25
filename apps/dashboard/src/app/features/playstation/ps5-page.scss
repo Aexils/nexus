@@ -432,7 +432,15 @@
   color: var(--text3);
 }
 
-/* ── Section title ── */
+/* ── Section header (title + sort) ── */
+.section-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  gap: 12px;
+}
+
 .section-title {
   display: flex;
   align-items: center;
@@ -442,8 +450,83 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text2);
-  margin-bottom: 10px;
   animation: fadeUp 0.4s 0.15s ease both;
+}
+
+.game-count {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 20%, transparent);
+  border-radius: 10px;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 6px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.sort-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text3);
+}
+
+.sort-icon { flex-shrink: 0; }
+
+.sort-select {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text2);
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 7px;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s;
+
+  &:focus { border-color: color-mix(in srgb, var(--accent) 40%, transparent); }
+  option  { background: var(--surface); color: var(--text); }
+}
+
+/* ── Pagination ── */
+.pagination-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.page-btn {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text2);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+
+  &:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+    border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+    color: var(--accent);
+  }
+  &:disabled { opacity: 0.35; cursor: not-allowed; }
+}
+
+.page-info {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text2);
+  font-family: 'JetBrains Mono', monospace;
+  min-width: 48px;
+  text-align: center;
 }
 
 /* ── Games grid ── */
@@ -546,6 +629,159 @@
   font-size: 10px;
   color: var(--text3);
   margin-top: 3px;
+}
+
+/* ── Trophy Titles ── */
+.trophy-titles-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  animation: fadeUp 0.4s 0.2s ease both;
+}
+
+.tt-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  transition: background 0.15s, border-color 0.15s;
+
+  &:hover {
+    background: var(--surface2);
+    border-color: color-mix(in srgb, var(--accent) 25%, transparent);
+  }
+}
+
+.tt-icon {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--accent) 7%, var(--surface2));
+  border: 1px solid var(--border2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+
+  &.has-img { border-color: transparent; }
+}
+
+.tt-icon-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 7px;
+}
+
+.tt-icon-fallback { color: color-mix(in srgb, var(--accent) 35%, transparent); }
+
+.tt-info { flex: 1; min-width: 0; }
+
+.tt-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.tt-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.tt-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 5px;
+}
+
+.tt-progress-track {
+  flex: 1;
+  height: 4px;
+  background: var(--border2);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.tt-progress-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #0070cc, #3da9fc);
+  transition: width 0.9s ease;
+
+  &.complete {
+    background: linear-gradient(90deg, var(--green), #5be584);
+    box-shadow: 0 0 6px color-mix(in srgb, var(--green) 40%, transparent);
+  }
+}
+
+.tt-pct {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text3);
+  white-space: nowrap;
+  min-width: 32px;
+  text-align: right;
+
+  &.complete { color: var(--green); }
+}
+
+.tt-medals {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.tt-medal {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: 'Roboto Mono', monospace;
+  font-size: 10px;
+  color: var(--text3);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 6px 1px 4px;
+
+  &.earned { color: var(--text2); }
+}
+
+.tt-gem {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  transform: rotate(45deg);
+  flex-shrink: 0;
+
+  .tt-medal.platinum & { background: linear-gradient(135deg, #b0c4d8, #e8f0ff); }
+  .tt-medal.gold     & { background: linear-gradient(135deg, #c9a227, #ffd700); }
+  .tt-medal.silver   & { background: linear-gradient(135deg, #8c8c8c, #d4d4d4); }
+  .tt-medal.bronze   & { background: linear-gradient(135deg, #8b4513, #cd7f32); }
+}
+
+.tt-updated {
+  font-size: 10px;
+  color: var(--text3);
+  margin-left: auto;
+  white-space: nowrap;
 }
 
 /* ── Animations ── */

@@ -87,3 +87,13 @@
   0%, 100% { opacity: 1; }
   50%       { opacity: 0.35; }
 }
+
+/* ── dot-only mode (no label) ── */
+.badge.dot-only {
+  padding: 5px;
+  gap: 0;
+}
+.badge.dot-only .dot {
+  width: 8px;
+  height: 8px;
+}

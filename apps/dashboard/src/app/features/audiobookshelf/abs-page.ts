@@ -96,7 +96,10 @@ export class AbsPage implements OnInit {
     const r = duration - current;
     const h = Math.floor(r / 3600);
     const m = Math.floor((r % 3600) / 60);
-    return h > 0 ? `-${h}h ${m}m` : `-${m}m`;
+    const s = Math.floor(r % 60);
+    if (h > 0) return `-${h}h ${m}m ${s}s`;
+    if (m > 0) return `-${m}m ${s}s`;
+    return `-${s}s`;
   }
 
   getInitials(title: string): string {

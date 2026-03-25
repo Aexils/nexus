@@ -25,7 +25,7 @@
       <span class="mp-value">{{ ramPct }}%</span>
     </div>
 
-    <div class="mp-sub">{{ ramUsed }} / {{ ramTotal }} GB</div>
+    <div class="mp-sub">{{ ramUsed }} / {{ ramTotal }} Go</div>
 
     <div class="mp-divider"></div>
 
@@ -67,7 +67,7 @@
           <div class="mp-bar-fill vram"
                [style.width.%]="(g.vramUsedGB / g.vramTotalGB) * 100"></div>
         </div>
-        <span class="mp-sub mp-vram-value">{{ g.vramUsedGB | number:'1.1-1' }} / {{ g.vramTotalGB | number:'1.0-0' }} GB</span>
+        <span class="mp-sub mp-vram-value">{{ g.vramUsedGB | number:'1.1-1' }} / {{ g.vramTotalGB | number:'1.0-0' }} Go</span>
       </div>
     </div>
   </div>
@@ -89,21 +89,153 @@
     </div>
   </div>
 
+  <!-- Windows OS -->
+  <div class="mp-section" *ngIf="windowsProductName">
+    <div class="mp-section-label">Système d'exploitation</div>
+    <div class="mp-app-row">
+      <span class="mp-app-dot win on"></span>
+      <span class="mp-os-name">{{ windowsProductName }}</span>
+    </div>
+    <div class="mp-os-meta">
+      <span class="mp-app-ver" *ngIf="windowsBuild">Build {{ windowsBuild }}</span>
+      <span *ngIf="pendingUpdates !== null"
+            class="mp-update-badge"
+            [class.ok]="pendingUpdates === 0"
+            [class.update]="pendingUpdates! > 0">
+        {{ pendingUpdates === 0 ? '✓ À jour' : '↑ ' + pendingUpdates + ' màj' }}
+      </span>
+    </div>
+
+    <!-- Docker Desktop -->
+    <div class="mp-app-entry" *ngIf="dockerVersion">
+      <div class="mp-app-row">
+        <span class="mp-app-dot docker on"></span>
+        <span class="mp-app-name">Docker Desktop</span>
+      </div>
+      <div class="mp-app-meta">
+        <span class="mp-app-ver">v{{ dockerVersion }}</span>
+        <span class="mp-update-badge"
+              [class.ok]="versionStatus(dockerVersion, latestVersions.dockerDesktop) === 'ok'"
+              [class.update]="versionStatus(dockerVersion, latestVersions.dockerDesktop) === 'update'"
+              *ngIf="latestVersions.dockerDesktop">
+          {{ versionStatus(dockerVersion, latestVersions.dockerDesktop) === 'update' ? '↑ v' + latestVersions.dockerDesktop : '✓' }}
+        </span>
+      </div>
+    </div>
+  </div>
+
   <!-- Apps -->
   <div class="mp-section">
     <div class="mp-section-label">Applications</div>
 
-    <div class="mp-app-row">
-      <span class="mp-app-dot" [class.on]="kodiOk"></span>
-      <span class="mp-app-name">Kodi</span>
-      <span class="mp-app-status" [class.on]="kodiOk">{{ kodiOk ? 'Connecté' : 'Hors ligne' }}</span>
+    <!-- Kodi -->
+    <div class="mp-app-entry">
+      <div class="mp-app-row">
+        <span class="mp-app-dot kodi" [class.on]="kodiOk"></span>
+        <span class="mp-app-name">Kodi</span>
+        <span class="mp-app-status" [class.on]="kodiOk">{{ kodiOk ? 'Up' : 'Down' }}</span>
+      </div>
+      <div class="mp-app-meta" *ngIf="kodiVersion">
+        <span class="mp-app-ver">v{{ kodiVersion }}</span>
+        <span class="mp-update-badge"
+              [class.ok]="versionStatus(kodiVersion, latestVersions.kodi) === 'ok'"
+              [class.update]="versionStatus(kodiVersion, latestVersions.kodi) === 'update'"
+              *ngIf="latestVersions.kodi">
+          {{ versionStatus(kodiVersion, latestVersions.kodi) === 'update' ? '↑ v' + latestVersions.kodi : '✓' }}
+        </span>
+      </div>
     </div>
 
-    <div class="mp-app-row">
-      <span class="mp-app-dot abs" [class.on]="absOk"></span>
-      <span class="mp-app-name">Audiobookshelf</span>
-      <span class="mp-app-status" [class.on]="absOk">{{ absOk ? 'Connecté' : 'Hors ligne' }}</span>
+    <!-- Audiobookshelf -->
+    <div class="mp-app-entry">
+      <div class="mp-app-row">
+        <span class="mp-app-dot abs" [class.on]="absOk"></span>
+        <span class="mp-app-name">Audiobookshelf</span>
+        <span class="mp-app-status" [class.on]="absOk">{{ absOk ? 'Up' : 'Down' }}</span>
+      </div>
+      <div class="mp-app-meta" *ngIf="absVersion">
+        <span class="mp-app-ver">v{{ absVersion }}</span>
+        <span class="mp-update-badge"
+              [class.ok]="versionStatus(absVersion, latestVersions.abs) === 'ok'"
+              [class.update]="versionStatus(absVersion, latestVersions.abs) === 'update'"
+              *ngIf="latestVersions.abs">
+          {{ versionStatus(absVersion, latestVersions.abs) === 'update' ? '↑ v' + latestVersions.abs : '✓' }}
+        </span>
+      </div>
     </div>
+
+    <!-- UrBackup -->
+    <div class="mp-app-entry">
+      <div class="mp-app-row">
+        <span class="mp-app-dot urb" [class.on]="urbOk"></span>
+        <span class="mp-app-name">UrBackup</span>
+        <span class="mp-app-status" [class.on]="urbOk">{{ urbOk ? 'Up' : 'Down' }}</span>
+      </div>
+      <div class="mp-app-meta" *ngIf="urbVersion">
+        <span class="mp-app-ver">v{{ urbVersion }}</span>
+        <span class="mp-update-badge"
+              [class.ok]="versionStatus(urbVersion, latestVersions.urbackup) === 'ok'"
+              [class.update]="versionStatus(urbVersion, latestVersions.urbackup) === 'update'"
+              *ngIf="latestVersions.urbackup">
+          {{ versionStatus(urbVersion, latestVersions.urbackup) === 'update' ? '↑ v' + latestVersions.urbackup : '✓' }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Sideloadly -->
+    <div class="mp-app-entry">
+      <div class="mp-app-row">
+        <span class="mp-app-dot sdly" [class.on]="sdlyOk"></span>
+        <span class="mp-app-name">Sideloadly</span>
+        <span class="mp-app-status" [class.on]="sdlyOk">{{ sdlyOk ? 'Up' : 'Down' }}</span>
+      </div>
+      <div class="mp-app-meta" *ngIf="sdlyVersion">
+        <span class="mp-app-ver">v{{ sdlyVersion }}</span>
+        <span class="mp-update-badge"
+              [class.ok]="versionStatus(sdlyVersion, latestVersions.sideloadly) === 'ok'"
+              [class.update]="versionStatus(sdlyVersion, latestVersions.sideloadly) === 'update'"
+              *ngIf="latestVersions.sideloadly">
+          {{ versionStatus(sdlyVersion, latestVersions.sideloadly) === 'update' ? '↑ v' + latestVersions.sideloadly : '✓' }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Booklore -->
+    <div class="mp-app-entry">
+      <div class="mp-app-row">
+        <span class="mp-app-dot bl" [class.on]="bookloreOk"></span>
+        <span class="mp-app-name">Booklore</span>
+        <span class="mp-app-status" [class.on]="bookloreOk">{{ bookloreOk ? 'Up' : 'Down' }}</span>
+      </div>
+      <div class="mp-app-meta" *ngIf="bookloreVersion">
+        <span class="mp-app-ver">v{{ bookloreVersion }}</span>
+        <span class="mp-update-badge"
+              [class.ok]="versionStatus(bookloreVersion, latestVersions.booklore) === 'ok'"
+              [class.update]="versionStatus(bookloreVersion, latestVersions.booklore) === 'update'"
+              *ngIf="latestVersions.booklore">
+          {{ versionStatus(bookloreVersion, latestVersions.booklore) === 'update' ? '↑ v' + latestVersions.booklore : '✓' }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Jellyfin -->
+    <div class="mp-app-entry">
+      <div class="mp-app-row">
+        <span class="mp-app-dot jf" [class.on]="jellyfinOk"></span>
+        <span class="mp-app-name">Jellyfin</span>
+        <span class="mp-app-status" [class.on]="jellyfinOk">{{ jellyfinOk ? 'Up' : 'Down' }}</span>
+      </div>
+      <div class="mp-app-meta" *ngIf="jellyfinVersion">
+        <span class="mp-app-ver">v{{ jellyfinVersion }}</span>
+        <span class="mp-update-badge"
+              [class.ok]="versionStatus(jellyfinVersion, latestVersions.jellyfin) === 'ok'"
+              [class.update]="versionStatus(jellyfinVersion, latestVersions.jellyfin) === 'update'"
+              *ngIf="latestVersions.jellyfin">
+          {{ versionStatus(jellyfinVersion, latestVersions.jellyfin) === 'update' ? '↑ v' + latestVersions.jellyfin : '✓' }}
+        </span>
+      </div>
+    </div>
+
   </div>
 
 </aside>

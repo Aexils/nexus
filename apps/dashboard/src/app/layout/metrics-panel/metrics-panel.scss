@@ -177,10 +177,25 @@
 }
 
 /* ── Apps ── */
+.mp-app-entry {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+
+  & + & { margin-top: 6px; }
+}
+
 .mp-app-row {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.mp-app-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-left: 15px; /* align under app name (past the dot) */
 }
 
 .mp-app-dot {
@@ -196,11 +211,32 @@
     box-shadow: 0 0 6px var(--kodi);
     animation: dot-pulse 2.5s ease infinite;
   }
+  &.abs.on  { background: var(--abs); box-shadow: 0 0 6px var(--abs); }
+  &.urb.on  { background: var(--urbackup, #3b82f6); box-shadow: 0 0 6px var(--urbackup, #3b82f6); }
+  &.sdly.on { background: #7c3aed; box-shadow: 0 0 6px #7c3aed; }
+  &.jf.on     { background: #00a4dc; box-shadow: 0 0 6px #00a4dc; }
+  &.win.on    { background: #0078d4; box-shadow: 0 0 6px #0078d4; }
+  &.docker.on { background: #1d63ed; box-shadow: 0 0 6px #1d63ed; }
+  &.bl.on     { background: #7c3aed; box-shadow: 0 0 6px #7c3aed; }
+}
 
-  &.abs.on {
-    background: var(--abs);
-    box-shadow: 0 0 6px var(--abs);
-  }
+/* ── Windows OS section ── */
+.mp-os-name {
+  font-family: 'Roboto', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text2);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mp-os-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-left: 15px;
 }
 
 @keyframes dot-pulse {
@@ -227,4 +263,29 @@
   flex-shrink: 0;
 
   &.on { color: var(--green); }
+}
+
+.mp-app-ver {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 9px;
+  color: var(--text3);
+}
+
+.mp-update-badge {
+  font-family: 'Roboto', sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 4px;
+  flex-shrink: 0;
+
+  &.ok {
+    color: var(--green);
+    background: color-mix(in srgb, var(--green) 12%, transparent);
+  }
+  &.update {
+    color: var(--yellow);
+    background: color-mix(in srgb, var(--yellow) 15%, transparent);
+    animation: dot-pulse 2s ease infinite;
+  }
 }

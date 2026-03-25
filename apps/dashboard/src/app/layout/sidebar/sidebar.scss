@@ -22,10 +22,6 @@
   gap: 2px;
   padding: 0 12px;
   margin-bottom: 4px;
-
-  &--bottom {
-    margin-top: auto;
-  }
 }
 
 .section-label {
@@ -76,6 +72,18 @@
   .active & { opacity: 1; }
 }
 
+.me-badge {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: capitalize;
+  padding: 1px 6px;
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 20%, transparent);
+  margin-left: auto;
+}
+
 .app-status {
   width: 7px;
   height: 7px;
@@ -99,14 +107,75 @@
     background: #7c3aed;
     box-shadow: 0 0 6px #7c3aed;
   }
+  &.urb.running {
+    background: var(--urbackup);
+    box-shadow: 0 0 6px var(--urbackup);
+  }
+  &.jf.running {
+    background: #00a4dc;
+    box-shadow: 0 0 6px #00a4dc;
+  }
+  &.bl.running {
+    background: #7c3aed;
+    box-shadow: 0 0 6px #7c3aed;
+  }
   &.stopped { background: var(--text3); }
-  &.error {
-    background: var(--red);
-    animation: blink 1.5s infinite;
+}
+
+
+/* ── Admin section (pushed to bottom) ── */
+.nav-bottom {
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.nav-item-admin {
+  color: var(--text3);
+
+  &.active {
+    background: color-mix(in srgb, #6b7280 10%, transparent);
+    color: var(--text2);
+    border-color: color-mix(in srgb, #6b7280 20%, transparent);
   }
 }
 
-@keyframes blink {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.2; }
+/* ── iPad compact mode (icon-only sidebar) ── */
+@media (min-width: 768px) and (max-width: 1100px) {
+  .sidebar {
+    padding: 20px 0;
+    overflow: visible;
+  }
+
+  .section-label { display: none; }
+
+  .nav-section {
+    padding: 0 8px;
+    gap: 4px;
+  }
+
+  .nav-label,
+  .me-badge { display: none; }
+
+  .nav-item {
+    justify-content: center;
+    padding: 10px;
+    gap: 0;
+    position: relative;
+  }
+
+  .nav-icon {
+    width: 18px;
+    height: 18px;
+  }
+
+  .app-status {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 6px;
+    height: 6px;
+    margin-left: 0;
+  }
+
 }

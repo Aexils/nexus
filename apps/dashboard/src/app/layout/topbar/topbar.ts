@@ -3,8 +3,9 @@ import {
   ChangeDetectionStrategy, ChangeDetectorRef,
 } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
-import { LucideAngularModule, Palette, Bell } from 'lucide-angular';
+import { LucideAngularModule, Palette, Bell, Menu } from 'lucide-angular';
 import { ThemeService, THEMES } from '../../core/services/theme';
+import { LayoutService } from '../layout.service';
 
 @Component({
   selector: 'nxs-topbar',
@@ -15,13 +16,14 @@ import { ThemeService, THEMES } from '../../core/services/theme';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TopbarComponent implements OnInit {
-  protected themeService = inject(ThemeService);
+  protected themeService  = inject(ThemeService);
+  protected layoutService = inject(LayoutService);
   protected themes = THEMES;
   protected themePickerOpen = false;
   protected currentTime = new Date();
   private cdr = inject(ChangeDetectorRef);
 
-  readonly icons = { Palette, Bell };
+  readonly icons = { Palette, Bell, Menu };
 
   ngOnInit() {
     setInterval(() => {

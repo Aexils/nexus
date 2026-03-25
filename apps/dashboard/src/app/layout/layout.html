@@ -1,10 +1,42 @@
 <div class="app-shell">
   <nxs-topbar />
-  <div class="shell-body">
-    <nxs-sidebar />
+  <div class="shell-body"
+       [class.sidebar-collapsed]="layout.sidebarCollapsed()"
+       [class.metrics-collapsed]="layout.metricsCollapsed()">
+
+    <!-- Mobile overlay backdrop -->
+    <div class="sidebar-overlay"
+         [class.visible]="layout.sidebarOpen()"
+         (click)="layout.closeSidebar()">
+    </div>
+
+    <nxs-sidebar [class.mobile-open]="layout.sidebarOpen()" />
+
     <main class="main-content">
       <router-outlet />
     </main>
+
     <nxs-metrics-panel />
+
+    <!-- Sidebar collapse toggle -->
+    <button class="panel-toggle sidebar-toggle"
+            (click)="layout.toggleSidebarCollapse()"
+            [title]="layout.sidebarCollapsed() ? 'Afficher la navigation' : 'Masquer la navigation'">
+      <lucide-icon
+        [img]="layout.sidebarCollapsed() ? icons.ChevronRight : icons.ChevronLeft"
+        [size]="13">
+      </lucide-icon>
+    </button>
+
+    <!-- Metrics panel collapse toggle -->
+    <button class="panel-toggle metrics-toggle"
+            (click)="layout.toggleMetricsCollapse()"
+            [title]="layout.metricsCollapsed() ? 'Afficher les métriques' : 'Masquer les métriques'">
+      <lucide-icon
+        [img]="layout.metricsCollapsed() ? icons.ChevronLeft : icons.ChevronRight"
+        [size]="13">
+      </lucide-icon>
+    </button>
+
   </div>
 </div>

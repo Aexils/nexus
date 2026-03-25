@@ -24,10 +24,52 @@ export class MetricsPanelComponent {
   get disks()   { return this.m?.disks ?? []; }
   get gpus()    { return this.m?.gpus ?? []; }
   get cpuTemp() { return this.m?.cpuTempCelsius ?? null; }
-  get kodiOk()  { return this.nexus.kodiStatus().connected; }
-  get absOk()   { return this.nexus.absStatus().connected; }
+  get windowsProductName() { return this.m?.windowsProductName; }
+  get windowsBuild()       { return this.m?.windowsBuild; }
+  get pendingUpdates()     { return this.m?.pendingUpdates ?? null; }
+  get dockerVersion()      { return this.m?.dockerVersion; }
+
+  get bookloreOk()  {
+    const map = this.nexus.bookloreStatusMap();
+    return map.alexis.connected || map.marion.connected;
+  }
+  get bookloreVersion() {
+    const map = this.nexus.bookloreStatusMap();
+    return map.alexis.version ?? map.marion.version;
+  }
+  get kodiOk()      { return this.nexus.kodiStatus().connected; }
+  get absOk()       { return this.nexus.absStatusMap().alexis.connected || this.nexus.absStatusMap().marion.connected; }
+  get urbOk()       { return this.nexus.urbackupStatus().connected; }
+  get sdlyOk()       { return this.nexus.sideloadlyStatus().connected; }
+  get sdlyVersion()  { return this.nexus.sideloadlyStatus().version; }
+  get jellyfinOk()  { return this.nexus.jellyfinStatus().connected; }
   get rx()      { return this.formatNet(this.m?.netRxBytesPerSec ?? 0); }
   get tx()      { return this.formatNet(this.m?.netTxBytesPerSec ?? 0); }
+
+  // ── Versions ──────────────────────────────────────────────────────────────
+
+  get kodiVersion()  { return this.nexus.kodiStatus().version; }
+  get absVersion()   {
+    return this.nexus.absStatusMap().alexis.version ?? this.nexus.absStatusMap().marion.version;
+  }
+  get urbVersion()       { return this.nexus.urbackupStatus().serverVersion || undefined; }
+  get jellyfinVersion()  { return this.nexus.jellyfinStatus().version; }
+
+  get latestVersions() { return this.nexus.appLatestVersions(); }
+
+  versionStatus(current: string | undefined, latest: string | undefined): 'ok' | 'update' | 'unknown' {
+    if (!current || !latest) return 'unknown';
+    const parse = (s: string) => s.replace(/^v/, '').split('-')[0].split('.').map(n => parseInt(n, 10) || 0);
+    const cur = parse(current);
+    const lat = parse(latest);
+    for (let i = 0; i < Math.max(cur.length, lat.length); i++) {
+      const c = cur[i] ?? 0;
+      const l = lat[i] ?? 0;
+      if (l > c) return 'update';
+      if (c > l) return 'ok';
+    }
+    return 'ok';
+  }
 
   formatNet(bytes: number): string {
     if (bytes >= 1024 * 1024) return (bytes / 1024 / 1024).toFixed(1) + ' MB/s';
@@ -36,8 +78,8 @@ export class MetricsPanelComponent {
   }
 
   formatDisk(gb: number): string {
-    if (gb >= 1000) return (gb / 1000).toFixed(2) + ' TB';
-    return Math.round(gb) + ' GB';
+    if (gb >= 1024) return (gb / 1024).toFixed(2) + ' To';
+    return Math.round(gb) + ' Go';
   }
 
   diskClass(d: DiskInfo): string {

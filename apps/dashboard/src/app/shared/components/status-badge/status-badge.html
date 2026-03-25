@@ -1,4 +1,4 @@
-<span class="badge" [class]="status">
+<span class="badge" [class]="status" [class.dot-only]="dotOnly">
   <span class="dot"></span>
-  {{ label }}
+  @if (!dotOnly) { {{ label }} }
 </span>

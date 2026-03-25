@@ -3,9 +3,9 @@
   <div class="nav-section">
     <span class="section-label">Navigation</span>
     @for (item of navMain; track item.route) {
-      <a class="nav-item" [routerLink]="item.route" routerLinkActive="active">
+      <a class="nav-item" [routerLink]="item.route" routerLinkActive="active" (click)="layout.closeSidebar()" [title]="item.label">
         <lucide-icon [img]="item.icon" [size]="16" strokeWidth="2" class="nav-icon"></lucide-icon>
-        {{ item.label }}
+        <span class="nav-label">{{ item.label }}</span>
       </a>
     }
   </div>
@@ -13,9 +13,9 @@
   <div class="nav-section">
     <span class="section-label">Applications</span>
     @for (item of navApps; track item.route) {
-      <a class="nav-item" [routerLink]="item.route" routerLinkActive="active">
+      <a class="nav-item" [routerLink]="item.route" routerLinkActive="active" (click)="layout.closeSidebar()" [title]="item.label">
         <lucide-icon [img]="item.icon" [size]="16" strokeWidth="2" class="nav-icon"></lucide-icon>
-        {{ item.label }}
+        <span class="nav-label">{{ item.label }}</span>
         @if (item.route === '/kodi') {
           <span class="app-status" [class.running]="kodiRunning" [class.stopped]="!kodiRunning"></span>
         }
@@ -28,6 +28,25 @@
         @if (item.route === '/sideloadly') {
           <span class="app-status sdly" [class.running]="sdlyRunning" [class.stopped]="!sdlyRunning"></span>
         }
+        @if (item.route === '/urbackup') {
+          <span class="app-status urb" [class.running]="urbRunning" [class.stopped]="!urbRunning"></span>
+        }
+        @if (item.route === '/jellyfin') {
+          <span class="app-status jf" [class.running]="jellyfinRunning" [class.stopped]="!jellyfinRunning"></span>
+        }
+        @if (item.route === '/booklore') {
+          <span class="app-status bl" [class.running]="bookloreRunning" [class.stopped]="!bookloreRunning"></span>
+        }
+      </a>
+    }
+  </div>
+
+  <div class="nav-section nav-bottom">
+    @for (item of navAdmin; track item.route) {
+      <a class="nav-item nav-item-admin" [routerLink]="item.route" routerLinkActive="active"
+         (click)="layout.closeSidebar()" [title]="item.label">
+        <lucide-icon [img]="item.icon" [size]="16" strokeWidth="2" class="nav-icon"></lucide-icon>
+        <span class="nav-label">{{ item.label }}</span>
       </a>
     }
   </div>

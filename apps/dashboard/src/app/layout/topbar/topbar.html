@@ -1,5 +1,9 @@
 <header class="topbar">
 
+  <button class="icon-btn hamburger" (click)="layoutService.toggleSidebar()" title="Menu">
+    <lucide-icon [img]="icons.Menu" [size]="16" strokeWidth="2"></lucide-icon>
+  </button>
+
   <div class="logo">
     <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
       <rect x="2" y="2" width="12" height="12" rx="2" stroke="var(--accent)" stroke-width="1.5"/>
