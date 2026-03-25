@@ -1,0 +1,307 @@
+<!-- ── Header ── -->
+<div class="page-header">
+  <div class="brand">
+    <div class="brand-logo">
+      <lucide-icon [img]="icons.HardDrive" [size]="24"></lucide-icon>
+    </div>
+    <div>
+      <div class="brand-name">
+        UrBackup
+        @if (urbackup().connected && urbackup().serverVersion) {
+          <span class="brand-version">v{{ urbackup().serverVersion }}</span>
+          @if (updateStatus !== 'unknown') {
+            <span class="update-badge" [class.ok]="updateStatus === 'ok'" [class.update]="updateStatus === 'update'">
+              {{ updateStatus === 'update' ? '↑ v' + versions().urbackup : '✓' }}
+            </span>
+          }
+        }
+      </div>
+      <div class="brand-meta">
+        @if (urbackup().connected) {
+          {{ totalClients }} client{{ totalClients !== 1 ? 's' : '' }} ·
+          {{ onlineCount }} en ligne
+        } @else {
+          Serveur inaccessible
+        }
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Offline ── -->
+@if (!urbackup().connected) {
+  <div class="state-view">
+    <lucide-icon class="offline-icon" [img]="icons.WifiOff" [size]="52"></lucide-icon>
+    <div class="state-title">UrBackup inaccessible</div>
+    <div class="state-sub">
+      Vérifier que <code>URBACKUP_URL</code>, <code>URBACKUP_USER</code> et <code>URBACKUP_PASS</code>
+      sont configurés dans le <code>.env</code>.
+    </div>
+  </div>
+}
+
+@if (urbackup().connected) {
+
+  <!-- ── Stat Cards ── -->
+  <div class="stat-cards">
+    <!-- Clients online -->
+    <div class="stat-card" [class]="onlineCount === totalClients ? 'ok' : (onlineCount === 0 ? 'error' : 'warn')">
+      <div class="stat-label">
+        <lucide-icon [img]="icons.Monitor" [size]="11"></lucide-icon>
+        Clients en ligne
+      </div>
+      <div class="stat-value colored">{{ onlineCount }}<span style="font-size:16px;opacity:.5">/{{ totalClients }}</span></div>
+      <div class="stat-sub">
+        @if (onlineCount === totalClients) { Tous connectés }
+        @else if (onlineCount === 0) { Aucun client en ligne }
+        @else { {{ totalClients - onlineCount }} hors ligne }
+      </div>
+    </div>
+
+    <!-- Santé globale -->
+    <div class="stat-card" [class]="overallHealth">
+      <div class="stat-label">
+        <lucide-icon [img]="icons.CheckCircle" [size]="11"></lucide-icon>
+        Santé globale
+      </div>
+      <div class="stat-value colored">{{ healthyCount }}<span style="font-size:16px;opacity:.5">/{{ totalClients }}</span></div>
+      <div class="stat-sub">
+        @if (overallHealth === 'ok') { Tous les backups OK }
+        @else if (overallHealth === 'warn') { Certains backups anciens }
+        @else { Backups critiques }
+      </div>
+    </div>
+
+    <!-- Stockage -->
+    <div class="stat-card info">
+      <div class="stat-label">
+        <lucide-icon [img]="icons.Database" [size]="11"></lucide-icon>
+        Stockage dédupliqué
+      </div>
+      <div class="stat-value">{{ formatSize(totalStorageGB) }}</div>
+      <div class="stat-sub">sur le serveur</div>
+    </div>
+
+    <!-- Dernier backup -->
+    @if (lastBackupTs) {
+      <div class="stat-card ok">
+        <div class="stat-label">
+          <lucide-icon [img]="icons.Clock" [size]="11"></lucide-icon>
+          Dernier backup
+        </div>
+        <div class="stat-value" style="font-size:18px;letter-spacing:-.01em">{{ relativeTs(lastBackupTs) }}</div>
+        <div class="stat-sub">{{ formatTsShort(lastBackupTs) }}</div>
+      </div>
+    }
+
+    <!-- Backup en cours -->
+    @if (isRunning) {
+      <div class="stat-card running">
+        <div class="stat-label">
+          <span class="stat-running-dot"></span>
+          En cours
+        </div>
+        <div class="stat-value colored">{{ urbackup().activeProgress.length }}</div>
+        <div class="stat-sub">backup{{ urbackup().activeProgress.length > 1 ? 's' : '' }} actif{{ urbackup().activeProgress.length > 1 ? 's' : '' }}</div>
+      </div>
+    }
+  </div>
+
+  <!-- ── Active progress ── -->
+  @if (isRunning) {
+    <div class="progress-section">
+      <div class="section-header">
+        <div class="section-title">
+          <lucide-icon [img]="icons.Activity" [size]="13" class="progress-spinner"></lucide-icon>
+          Backup en cours
+        </div>
+        <span class="section-count">{{ urbackup().activeProgress.length }}</span>
+      </div>
+      <div class="progress-cards">
+        @for (p of urbackup().activeProgress; track p.clientId) {
+          <div class="progress-card">
+            <div class="progress-header">
+              <div class="progress-client-wrap">
+                <lucide-icon [img]="icons.RefreshCw" [size]="14" class="progress-spinner"></lucide-icon>
+                <span class="progress-client">{{ p.clientName }}</span>
+                <span class="act-type-badge" [class]="actionTypeShort(p.action)">
+                  <span class="act-badge-dot"></span>
+                  {{ actionLabel(p.action) }}
+                </span>
+              </div>
+              <span class="progress-pct">{{ p.percentDone }}%</span>
+            </div>
+            <div class="progress-bar-bg">
+              <div class="progress-bar-fill" [style.width.%]="p.percentDone"></div>
+            </div>
+            <div class="progress-footer">
+              <span class="progress-details">{{ p.details || '—' }}</span>
+              @if (p.eta > 0) {
+                <span class="progress-eta">
+                  <lucide-icon [img]="icons.Clock" [size]="11"></lucide-icon>
+                  ETA {{ formatDuration(p.eta) }}
+                </span>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- ── Clients ── -->
+  <div class="clients-section">
+    <div class="section-header">
+      <div class="section-title">
+        <lucide-icon [img]="icons.Monitor" [size]="13"></lucide-icon>
+        Clients
+      </div>
+      <span class="section-count">{{ totalClients }}</span>
+    </div>
+
+    <div class="clients-grid">
+      @for (client of urbackup().clients; track client.id) {
+        <div class="client-card" [class]="'health-' + clientHealth(client)">
+
+          <!-- Header -->
+          <div class="client-header">
+            <div class="client-status-dot" [class.online]="client.online"></div>
+            <div class="client-name">{{ client.name }}</div>
+            <div class="client-badges">
+              @if (client.osSimple) {
+                <span class="client-os-badge">{{ osLabel(client.osSimple) }}</span>
+              }
+              @if (client.clientVersion) {
+                <span class="client-version-badge">v{{ client.clientVersion }}</span>
+              }
+            </div>
+          </div>
+
+          <!-- Backup rows -->
+          <div class="client-backups">
+            <div class="backup-row">
+              <lucide-icon [img]="icons.HardDriveDownload" [size]="13" class="backup-type-icon img-icon"></lucide-icon>
+              <span class="backup-row-label">Image</span>
+              @if (client.lastImageBackup) {
+                <span class="backup-row-date" [class]="'health-' + clientHealth(client)">
+                  {{ relativeTs(client.lastImageBackup) }}
+                </span>
+                <span class="backup-row-abs">{{ formatTsShort(client.lastImageBackup) }}</span>
+              } @else {
+                <span class="backup-row-date muted">Jamais</span>
+              }
+              @if (client.imageOk) {
+                <lucide-icon [img]="icons.CheckCircle" [size]="13" class="check-icon ok"></lucide-icon>
+              } @else if (client.lastImageBackup) {
+                <lucide-icon [img]="icons.XCircle" [size]="13" class="check-icon warn"></lucide-icon>
+              }
+            </div>
+
+            <div class="backup-row">
+              <lucide-icon [img]="icons.ArrowDownToLine" [size]="13" class="backup-type-icon file-icon"></lucide-icon>
+              <span class="backup-row-label">Fichiers</span>
+              @if (client.lastFileBackup) {
+                <span class="backup-row-date" [class]="'health-' + clientHealth(client)">
+                  {{ relativeTs(client.lastFileBackup) }}
+                </span>
+                <span class="backup-row-abs">{{ formatTsShort(client.lastFileBackup) }}</span>
+              } @else {
+                <span class="backup-row-date muted">Jamais</span>
+              }
+              @if (client.fileOk) {
+                <lucide-icon [img]="icons.CheckCircle" [size]="13" class="check-icon ok"></lucide-icon>
+              } @else if (client.lastFileBackup) {
+                <lucide-icon [img]="icons.XCircle" [size]="13" class="check-icon warn"></lucide-icon>
+              }
+            </div>
+          </div>
+
+          <!-- Mini history bars (14 days) -->
+          <div class="client-history">
+            <div class="history-label">14 derniers jours</div>
+            <div class="history-bars">
+              @for (bar of clientHistoryBars(client); track $index) {
+                <div
+                  class="history-bar"
+                  [class]="bar.status"
+                  [style.height.%]="bar.height"
+                  [attr.data-tip]="bar.tip"
+                ></div>
+              }
+            </div>
+          </div>
+
+          <!-- Storage -->
+          @if (client.filesUsedGB > 0 || client.imagesUsedGB > 0) {
+            <div class="client-storage">
+              <lucide-icon [img]="icons.Database" [size]="11" class="storage-icon"></lucide-icon>
+              @if (client.imagesUsedGB > 0) {
+                <span class="storage-item">
+                  <span class="storage-dot img"></span>
+                  <span class="storage-value">{{ formatSize(client.imagesUsedGB) }}</span>
+                  images
+                </span>
+              }
+              @if (client.filesUsedGB > 0) {
+                <span class="storage-item">
+                  <span class="storage-dot file"></span>
+                  <span class="storage-value">{{ formatSize(client.filesUsedGB) }}</span>
+                  fichiers
+                </span>
+              }
+            </div>
+          }
+
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- ── Recent Activities ── -->
+  @if (urbackup().recentActivities.length > 0) {
+    <div class="activities-section">
+      <div class="section-header" style="margin-bottom:12px">
+        <div class="section-title">
+          <lucide-icon [img]="icons.Clock" [size]="13"></lucide-icon>
+          Activités récentes
+        </div>
+        <span class="section-count">{{ urbackup().recentActivities.length }}</span>
+      </div>
+      <div class="activities-table-wrap">
+        <table class="activities-table">
+          <thead>
+            <tr>
+              <th>Client</th>
+              <th>Type</th>
+              <th>Détails</th>
+              <th>Taille</th>
+              <th>Durée</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (act of urbackup().recentActivities; track act.id) {
+              <tr>
+                <td><div class="act-client">{{ act.clientName }}</div></td>
+                <td>
+                  <span class="act-type-badge" [class]="activityTypeShort(act)">
+                    <span class="act-badge-dot"></span>
+                    {{ activityType(act) }}
+                  </span>
+                </td>
+                <td class="act-details">{{ act.details || '—' }}</td>
+                <td class="act-size">{{ formatSize(act.sizeGB) }}</td>
+                <td class="act-duration">{{ formatDuration(act.duration) }}</td>
+                <td>
+                  <div class="act-relative">{{ relativeTs(act.backupTime) }}</div>
+                  <div class="act-absolute">{{ formatTsShort(act.backupTime) }}</div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+
+}

@@ -1,0 +1,624 @@
+<!-- ── Header ── -->
+<div class="page-header">
+  <div class="brand">
+    <div class="brand-logo">
+      <lucide-icon [img]="icons.Home" [size]="24"></lucide-icon>
+    </div>
+    <div>
+      <div class="brand-name">Maison</div>
+      <div class="brand-meta">Suivi des dépenses</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Formulaire ── -->
+<div class="form-card">
+  <div class="form-title">
+    <lucide-icon [img]="icons.PlusCircle" [size]="15"></lucide-icon>
+    Ajouter une dépense
+  </div>
+
+  <!-- Qui a payé -->
+  <div class="form-row">
+    <div class="field-group full">
+      <label class="field-label">Qui a payé ?</label>
+      <div class="paidbby-toggle">
+        <button class="paid-btn" [class.active]="formPaidBy === 'alexis'" (click)="formPaidBy = 'alexis'">
+          Alexis
+        </button>
+        <button class="paid-btn marion" [class.active]="formPaidBy === 'marion'" (click)="formPaidBy = 'marion'">
+          Marion
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Catégorie › Sous-catégorie › Enseigne -->
+  <div class="form-row-3">
+    <!-- Catégorie -->
+    <div class="field-group">
+      <label class="field-label">Catégorie</label>
+      @if (!addingCategory()) {
+        <select class="field-input" [ngModel]="formCategory" (ngModelChange)="onCategorySelect($event)" name="category">
+          <option value="" disabled>Choisir…</option>
+          @for (cat of categories(); track cat) {
+            <option [value]="cat">{{ cat }}</option>
+          }
+          <option value="__new__">➕ Nouvelle…</option>
+        </select>
+      } @else {
+        <div class="new-item-row">
+          <input class="field-input new-item-input" type="text" [(ngModel)]="newCategoryName"
+                 name="newCat" placeholder="Nom de la catégorie…" (keyup.enter)="confirmNewCategory()" autofocus>
+          <button class="new-item-confirm" (click)="confirmNewCategory()" [disabled]="!newCategoryName.trim()">OK</button>
+          <button class="new-item-cancel" (click)="cancelNewCategory()">✕</button>
+        </div>
+      }
+    </div>
+
+    <!-- Sous-catégorie -->
+    <div class="field-group">
+      <label class="field-label">Sous-catégorie</label>
+      @if (!addingSubcategory()) {
+        <select class="field-input" [ngModel]="formSubcategory" (ngModelChange)="onSubcategorySelect($event)"
+                name="subcategory" [disabled]="!formCategory">
+          <option value="" disabled>{{ formCategory ? 'Choisir…' : 'Catégorie d\'abord' }}</option>
+          @for (s of subcategories(); track s) {
+            <option [value]="s">{{ s }}</option>
+          }
+          @if (formCategory) {
+            <option value="__new__">➕ Nouvelle…</option>
+          }
+        </select>
+      } @else {
+        <div class="new-item-row">
+          <input class="field-input new-item-input" type="text" [(ngModel)]="newSubcategoryName"
+                 name="newSubcat" placeholder="Nom de la sous-catégorie…" (keyup.enter)="confirmNewSubcategory()" autofocus>
+          <button class="new-item-confirm" (click)="confirmNewSubcategory()" [disabled]="!newSubcategoryName.trim()">OK</button>
+          <button class="new-item-cancel" (click)="cancelNewSubcategory()">✕</button>
+        </div>
+      }
+    </div>
+
+    <!-- Enseigne -->
+    <div class="field-group">
+      <label class="field-label">Enseigne</label>
+      @if (!addingEnseigne()) {
+        <select class="field-input" [ngModel]="formEnseigne" (ngModelChange)="onEnseigneSelect($event)"
+                name="enseigne" [disabled]="!formSubcategory">
+          <option value="" disabled>{{ formSubcategory ? 'Choisir…' : 'Sous-cat. d\'abord' }}</option>
+          @for (e of enseignes(); track e) {
+            <option [value]="e">{{ e }}</option>
+          }
+          @if (formSubcategory) {
+            <option value="__new__">➕ Nouvelle…</option>
+          }
+        </select>
+      } @else {
+        <div class="new-item-row">
+          <input class="field-input new-item-input" type="text" [(ngModel)]="newEnseigneName"
+                 name="newEnseigne" placeholder="Nom de l'enseigne…" (keyup.enter)="confirmNewEnseigne()" autofocus>
+          <button class="new-item-confirm" (click)="confirmNewEnseigne()" [disabled]="!newEnseigneName.trim()">OK</button>
+          <button class="new-item-cancel" (click)="cancelNewEnseigne()">✕</button>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Montant + Date -->
+  <div class="form-row">
+    <div class="field-group">
+      <label class="field-label">Montant ($)</label>
+      <input class="field-input" type="number" [(ngModel)]="formAmount" name="amount"
+             placeholder="0.00" min="0.01" step="0.01">
+    </div>
+    <div class="field-group">
+      <label class="field-label">Date</label>
+      <input class="field-input" type="date" [(ngModel)]="formDate" name="date">
+    </div>
+  </div>
+
+  <!-- Commentaire -->
+  <div class="form-row">
+    <div class="field-group full">
+      <label class="field-label">Commentaire <span class="optional-hint">(optionnel)</span></label>
+      <input class="field-input" type="text" [(ngModel)]="formComment" name="comment"
+             placeholder="Numéro de commande, détails…">
+    </div>
+  </div>
+
+  <!-- Submit -->
+  <div class="form-footer">
+    @if (success()) {
+      <div class="success-msg">
+        <lucide-icon [img]="icons.CheckCircle" [size]="14"></lucide-icon>
+        Dépense ajoutée !
+      </div>
+    }
+    <button class="submit-btn" (click)="submit()" [disabled]="submitting()">
+      @if (submitting()) { Enregistrement… } @else {
+        <lucide-icon [img]="icons.PlusCircle" [size]="15"></lucide-icon>
+        Ajouter
+      }
+    </button>
+  </div>
+</div>
+
+<!-- ── Filtres + Stats du mois ── -->
+<div class="filters-row">
+  <!-- Navigateur de mois -->
+  <div class="month-nav">
+    <button class="month-btn" (click)="prevMonth()">
+      <lucide-icon [img]="icons.ChevronLeft" [size]="16"></lucide-icon>
+    </button>
+    <span class="month-label">{{ monthDisplayLabel(selectedMonth()) }}</span>
+    <button class="month-btn" (click)="nextMonth()" [disabled]="isCurrentMonth()">
+      <lucide-icon [img]="icons.ChevronRight" [size]="16"></lucide-icon>
+    </button>
+  </div>
+
+  <!-- Filtres -->
+  <div class="filter-controls">
+    <select class="filter-select" [ngModel]="filterPaidBy()" (ngModelChange)="filterPaidBy.set($event); applyFilters()" name="fpaidby">
+      <option value="">Tous</option>
+      <option value="alexis">Alexis</option>
+      <option value="marion">Marion</option>
+    </select>
+    <select class="filter-select" [ngModel]="filterCategory()" (ngModelChange)="filterCategory.set($event); applyFilters()" name="fcat">
+      <option value="">Toutes catégories</option>
+      @for (cat of categories(); track cat) {
+        <option [value]="cat">{{ cat }}</option>
+      }
+    </select>
+    @if (filterPaidBy() || filterCategory() || !isCurrentMonth()) {
+      <button class="reset-btn" (click)="resetFilters()">Réinitialiser</button>
+    }
+  </div>
+</div>
+
+<!-- ── Cartes résumé ── -->
+<div class="stat-cards">
+  <div class="stat-card total">
+    <div class="stat-label">Total du mois</div>
+    <div class="stat-value">{{ fmt(totalMonth()) }}</div>
+    <div class="stat-sub">{{ expenses().length }} dépense{{ expenses().length !== 1 ? 's' : '' }}</div>
+  </div>
+  <div class="stat-card alexis">
+    <div class="stat-label">Alexis</div>
+    <div class="stat-value">{{ fmt(totalAlexis()) }}</div>
+    <div class="stat-sub">
+      @if (totalMonth() > 0) { {{ (totalAlexis() / totalMonth() * 100).toFixed(0) }}% du total }
+    </div>
+  </div>
+  <div class="stat-card marion">
+    <div class="stat-label">Marion</div>
+    <div class="stat-value">{{ fmt(totalMarion()) }}</div>
+    <div class="stat-sub">
+      @if (totalMonth() > 0) { {{ (totalMarion() / totalMonth() * 100).toFixed(0) }}% du total }
+    </div>
+  </div>
+  @if (byCategory().length) {
+    <div class="stat-card categories">
+      <div class="stat-label">Top catégorie</div>
+      <div class="stat-value small">{{ byCategory()[0][0] }}</div>
+      <div class="stat-sub">{{ fmt(byCategory()[0][1]) }}</div>
+    </div>
+  }
+</div>
+
+<!-- ── Balance du mois ── -->
+@if (balance()) {
+  <div class="balance-card" [class.balanced]="balance()!.balanced" [class.unbalanced]="!balance()!.balanced">
+
+    @if (balance()!.balanced) {
+      <div class="balance-icon">✓</div>
+      <div class="balance-main">Tout est équilibré !</div>
+      <div class="balance-sub">Chacun a payé sa part ce mois-ci.</div>
+
+    } @else {
+      <div class="balance-icon">⇄</div>
+      <div class="balance-main">
+        <span class="balance-debtor" [class]="balance()!.debtor">
+          {{ balance()!.debtor === 'alexis' ? 'Alexis' : 'Marion' }}
+        </span>
+        doit
+        <span class="balance-amount">{{ fmt(balance()!.amount) }}</span>
+        à
+        <span class="balance-creditor" [class]="balance()!.creditor">
+          {{ balance()!.creditor === 'alexis' ? 'Alexis' : 'Marion' }}
+        </span>
+      </div>
+      <div class="balance-breakdown">
+        <span class="bd-item">
+          <span class="bd-dot alexis"></span>
+          Alexis a payé <strong>{{ fmt(totalAlexis()) }}</strong>
+        </span>
+        <span class="bd-sep">·</span>
+        <span class="bd-item">
+          <span class="bd-dot marion"></span>
+          Marion a payé <strong>{{ fmt(totalMarion()) }}</strong>
+        </span>
+        <span class="bd-sep">·</span>
+        <span class="bd-item">Part égale <strong>{{ fmt(totalMonth() / 2) }}</strong></span>
+      </div>
+    }
+
+  </div>
+}
+
+<!-- ── Historique des balances ── -->
+@if (pastBalances().length > 0) {
+  <div class="past-balances">
+    @for (pb of pastBalances(); track pb.month) {
+      <div class="pb-chip" [class.pb-balanced]="pb.balanced" [class.pb-unbalanced]="!pb.balanced">
+        <span class="pb-month">{{ monthDisplayLabel(pb.month) }}</span>
+        @if (pb.balanced) {
+          <span class="pb-status">✓ Équilibré</span>
+        } @else {
+          <span class="pb-status">
+            {{ pb.debtor === 'alexis' ? 'Alexis' : 'Marion' }} → {{ fmt(pb.amount) }}
+          </span>
+        }
+      </div>
+    }
+  </div>
+}
+
+<!-- ── Donut catégories ── -->
+@if (donutSlices().length > 0) {
+  <div class="section donut-section">
+    <div class="section-header">
+      <div class="section-title">
+        <lucide-icon [img]="icons.Filter" [size]="13"></lucide-icon>
+        Répartition par catégorie
+      </div>
+      <div class="toggle-group">
+        <button [class.active]="donutMode()==='categories'" (click)="toggleDonutMode('categories')">Catégories</button>
+        <button [class.active]="donutMode()==='subcategories'" (click)="toggleDonutMode('subcategories')">Sous-catégories</button>
+      </div>
+    </div>
+
+    <div class="donut-card">
+      <!-- Donut chart -->
+      <div class="donut-wrap">
+        <div class="donut" [style.background]="activeDonutGradient()">
+          <div class="donut-hole">
+            @if (selectedDonutCat()) {
+              <div class="donut-total">{{ fmt(activeDonutTotal()) }}</div>
+              <div class="donut-sub" style="max-width:80px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ selectedDonutCat() }}</div>
+            } @else {
+              <div class="donut-total">{{ fmt(totalMonth()) }}</div>
+              <div class="donut-sub">{{ donutSlices().length }} catégorie{{ donutSlices().length > 1 ? 's' : '' }}</div>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Legend -->
+      <div class="donut-legend">
+        @if (selectedDonutCat()) {
+          <div class="drill-header">
+            <button class="drill-back" (click)="selectedDonutCat.set(null)">← Retour</button>
+            <span class="drill-cat-name">{{ selectedDonutCat() }}</span>
+          </div>
+        }
+        @for (s of activeDonutSlices(); track s.name) {
+          <div class="donut-legend-item"
+               [class.drillable]="donutMode()==='categories' && !selectedDonutCat() && s.hasSubs"
+               (click)="donutMode()==='categories' && !selectedDonutCat() && s.hasSubs ? selectedDonutCat.set(s.name) : null">
+            <div class="donut-legend-left">
+              <span class="donut-legend-dot" [style.background]="s.color"></span>
+              @if (!selectedDonutCat()) {
+                <lucide-icon [img]="categoryIcon(s.name)" [size]="13" [style.color]="s.color"></lucide-icon>
+              }
+              <span class="donut-legend-name">{{ s.name }}</span>
+              @if (!selectedDonutCat() && s.hasSubs) {
+                <span class="drill-arrow">›</span>
+              }
+            </div>
+            <div class="donut-legend-right">
+              <div class="donut-legend-bar-track">
+                <div class="donut-legend-bar-fill" [style.width.%]="s.pct" [style.background]="s.color"></div>
+              </div>
+              <span class="donut-legend-pct">{{ s.pct.toFixed(0) }}%</span>
+              <span class="donut-legend-amount">{{ fmt(s.amount) }}</span>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ── Tableau des dépenses ── -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-title">
+      <lucide-icon [img]="icons.Filter" [size]="13"></lucide-icon>
+      Dépenses — {{ monthDisplayLabel(selectedMonth()) }}
+    </div>
+    <span class="section-count">{{ expenses().length }}</span>
+  </div>
+
+  @if (loading()) {
+    <div class="loading-row">Chargement…</div>
+  } @else if (!expenses().length) {
+    <div class="empty-state">Aucune dépense pour ce mois.</div>
+  } @else {
+    <div class="table-wrap">
+      <table class="expense-table">
+        <thead>
+          <tr>
+            <th class="th-sortable" (click)="toggleSort('date')">
+              Date
+              <lucide-icon [img]="sortIcon('date')" [size]="11" class="sort-icon"></lucide-icon>
+            </th>
+            <th class="th-sortable" (click)="toggleSort('paidBy')">
+              Qui
+              <lucide-icon [img]="sortIcon('paidBy')" [size]="11" class="sort-icon"></lucide-icon>
+            </th>
+            <th class="th-sortable" (click)="toggleSort('enseigne')">
+              Enseigne
+              <lucide-icon [img]="sortIcon('enseigne')" [size]="11" class="sort-icon"></lucide-icon>
+            </th>
+            <th class="th-sortable" (click)="toggleSort('category')">
+              Catégorie
+              <lucide-icon [img]="sortIcon('category')" [size]="11" class="sort-icon"></lucide-icon>
+            </th>
+            <th class="th-sortable amount-col" (click)="toggleSort('amount')">
+              Montant
+              <lucide-icon [img]="sortIcon('amount')" [size]="11" class="sort-icon"></lucide-icon>
+            </th>
+            <th class="actions-col"></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (e of sortedExpenses(); track e.id) {
+            <tr>
+              <td class="date-cell">{{ formatDate(e.date) }}</td>
+              <td>
+                <span class="paid-badge" [class]="e.paidBy">
+                  {{ e.paidBy === 'alexis' ? 'Alexis' : 'Marion' }}
+                </span>
+              </td>
+              <td class="store-cell">
+                <div class="store-wrap">
+                  @if (e.enseigne) {
+                    <div class="store-logo-wrap">
+                      @if (enseigneFavicon(e.enseigne); as fav) {
+                        <img class="store-logo" [src]="fav" [alt]="e.enseigne">
+                      } @else {
+                        <div class="store-initial">{{ enseigneInitial(e.enseigne) }}</div>
+                      }
+                    </div>
+                  }
+                  <div class="store-info">
+                    <span class="store-name">{{ e.enseigne || '—' }}</span>
+                    @if (e.comment) {
+                      <span class="comment-text">{{ e.comment }}</span>
+                    }
+                  </div>
+                </div>
+              </td>
+              <td>
+                <span class="cat-badge" [ngStyle]="categoryStyle(e.category)">
+                  <lucide-icon [img]="categoryIcon(e.category)" [size]="11"></lucide-icon>
+                  {{ e.category }}
+                  @if (e.subcategory) {
+                    <span class="cat-sep">›</span>{{ e.subcategory }}
+                  }
+                </span>
+              </td>
+              <td class="amount-cell">{{ fmt(e.amount) }}</td>
+              <td class="action-cell">
+                <div class="action-btns">
+                  <button class="edit-btn" (click)="openEdit(e)" title="Modifier">
+                    <lucide-icon [img]="icons.Pencil" [size]="12"></lucide-icon>
+                  </button>
+                  <button class="delete-btn" (click)="deleteExpense(e.id)" title="Supprimer">
+                    <lucide-icon [img]="icons.Trash2" [size]="12"></lucide-icon>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>
+
+<!-- ── Tableau mensuel ── -->
+@if (breakdown().length > 0) {
+  <div class="section comp-section">
+    <div class="section-header">
+      <div class="section-title">
+        <lucide-icon [img]="icons.TrendingUp" [size]="13"></lucide-icon>
+        Évolution mensuelle
+      </div>
+      <div class="toggle-group">
+        <button [class.active]="tableMode()==='categories'" (click)="tableMode.set('categories')">Catégories</button>
+        <button [class.active]="tableMode()==='subcategories'" (click)="tableMode.set('subcategories')">Sous-cat.</button>
+      </div>
+    </div>
+
+    <div class="monthly-table-card">
+      <div class="monthly-table-scroll">
+        <table class="monthly-table">
+          <thead>
+            <tr>
+              <th class="mth-sticky mth-name">Catégorie</th>
+              @for (h of monthlyTable().headers; track h) {
+                <th class="mth-val">{{ h }}</th>
+              }
+              <th class="mth-avg">Moy.</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of monthlyTable().rows; track row.name) {
+              <tr [class.mtr-cat]="row.isCategory && row.depth === 0"
+                  [class.mtr-sub]="!row.isCategory && row.depth > 0"
+                  [class.mtr-total]="row.depth === -1">
+                <td class="mth-sticky mth-name-cell" [style.padding-left.px]="row.depth > 0 ? 28 : 14">
+                  {{ row.name }}
+                </td>
+                @for (cell of row.cells; track $index) {
+                  <td class="mth-val-cell" [class.mth-zero]="cell.amount === 0">
+                    <span class="mth-amount">{{ fmtK(cell.amount) }}</span>
+                    @if (cell.trend === 'up') { <span class="mth-trend-up">▲</span> }
+                    @else if (cell.trend === 'down') { <span class="mth-trend-down">▼</span> }
+                    @else if (cell.trend === 'new') { <span class="mth-trend-new">•</span> }
+                  </td>
+                }
+                <td class="mth-avg-cell">{{ fmtK(row.avg) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ── Calculatrice flottante ── -->
+<div class="calc-fab-wrap">
+  @if (showCalc()) {
+    <div class="calc-panel">
+      <!-- Affichage -->
+      <div class="calc-display-wrap">
+        <div class="calc-pending">{{ calcPendingInfo() }}&nbsp;</div>
+        <div class="calc-display-row">
+          <div class="calc-display">{{ calcDisplay() }}</div>
+          <button class="calc-copy-btn" (click)="calcCopy()" [class.copied]="calcCopied()" title="Copier le résultat">
+            @if (calcCopied()) {
+              <lucide-icon [img]="icons.Check" [size]="14"></lucide-icon>
+            } @else {
+              <lucide-icon [img]="icons.Copy" [size]="14"></lucide-icon>
+            }
+          </button>
+        </div>
+      </div>
+      <!-- Clavier -->
+      <div class="calc-grid">
+        <button class="calc-btn calc-op calc-wide" (click)="calcKey('C')">C</button>
+        <button class="calc-btn calc-op" (click)="calcKey('←')">←</button>
+        <button class="calc-btn calc-op" (click)="calcKey('÷')">÷</button>
+
+        <button class="calc-btn" (click)="calcKey('7')">7</button>
+        <button class="calc-btn" (click)="calcKey('8')">8</button>
+        <button class="calc-btn" (click)="calcKey('9')">9</button>
+        <button class="calc-btn calc-op" (click)="calcKey('×')">×</button>
+
+        <button class="calc-btn" (click)="calcKey('4')">4</button>
+        <button class="calc-btn" (click)="calcKey('5')">5</button>
+        <button class="calc-btn" (click)="calcKey('6')">6</button>
+        <button class="calc-btn calc-op" (click)="calcKey('-')">−</button>
+
+        <button class="calc-btn" (click)="calcKey('1')">1</button>
+        <button class="calc-btn" (click)="calcKey('2')">2</button>
+        <button class="calc-btn" (click)="calcKey('3')">3</button>
+        <button class="calc-btn calc-op" (click)="calcKey('+')">+</button>
+
+        <button class="calc-btn calc-wide" (click)="calcKey('0')">0</button>
+        <button class="calc-btn" (click)="calcKey('.')">.</button>
+        <button class="calc-btn calc-eq" (click)="calcKey('=')">=</button>
+      </div>
+    </div>
+  }
+  <button class="calc-fab" (click)="showCalc.set(!showCalc())" [class.active]="showCalc()" title="Calculatrice">
+    <lucide-icon [img]="icons.Calculator" [size]="20"></lucide-icon>
+  </button>
+</div>
+
+<!-- ── Modal d'édition ── -->
+@if (editingExpense()) {
+  <div class="modal-overlay" (click)="closeEdit()">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+
+      <div class="modal-header">
+        <div class="modal-title">
+          <lucide-icon [img]="icons.Pencil" [size]="14"></lucide-icon>
+          Modifier la dépense
+        </div>
+        <button class="modal-close" (click)="closeEdit()">
+          <lucide-icon [img]="icons.X" [size]="15"></lucide-icon>
+        </button>
+      </div>
+
+      <!-- Section : Payé par -->
+      <div class="modal-section">
+        <label class="field-label">Payé par</label>
+        <div class="paidbby-toggle">
+          <button class="paid-btn" [class.active]="editPaidBy === 'alexis'" (click)="editPaidBy = 'alexis'">Alexis</button>
+          <button class="paid-btn marion" [class.active]="editPaidBy === 'marion'" (click)="editPaidBy = 'marion'">Marion</button>
+        </div>
+      </div>
+
+      <!-- Section : Montant + Date -->
+      <div class="modal-section">
+        <label class="field-label">Montant ($)</label>
+        <input class="field-input" type="number" [(ngModel)]="editAmount" name="editAmount"
+               placeholder="0.00" min="0.01" step="0.01">
+        <label class="field-label">Date</label>
+        <input class="field-input" type="date" [(ngModel)]="editDate" name="editDate">
+      </div>
+
+      <!-- Section : Catégorie › Sous-catégorie › Enseigne -->
+      <div class="modal-section">
+        <label class="field-label">Catégorie</label>
+        <select class="field-input" [ngModel]="editCategory" (ngModelChange)="onEditCategoryChange($event)" name="editCategory">
+          <option value="" disabled>Choisir…</option>
+          @for (cat of categories(); track cat) { <option [value]="cat">{{ cat }}</option> }
+        </select>
+
+        <label class="field-label">Sous-catégorie</label>
+        @if (!addingEditSubcat()) {
+          <select class="field-input" [ngModel]="editSubcategory" (ngModelChange)="onEditSubcategoryChange($event)"
+                  name="editSubcategory" [disabled]="!editCategory">
+            <option value="">Aucune</option>
+            @for (s of editSubcategories(); track s) { <option [value]="s">{{ s }}</option> }
+            @if (editCategory) { <option value="__new__">➕ Nouvelle…</option> }
+          </select>
+        } @else {
+          <div class="new-item-row">
+            <input class="field-input new-item-input" type="text" [(ngModel)]="newEditSubcatName"
+                   name="newEditSubcat" placeholder="Nom…" (keyup.enter)="confirmNewEditSubcat()" autofocus>
+            <button class="new-item-confirm" (click)="confirmNewEditSubcat()" [disabled]="!newEditSubcatName.trim()">OK</button>
+            <button class="new-item-cancel" (click)="addingEditSubcat.set(false)">✕</button>
+          </div>
+        }
+
+        <label class="field-label">Enseigne</label>
+        @if (!addingEditEnseigne()) {
+          <select class="field-input" [ngModel]="editEnseigne" (ngModelChange)="onEditEnseigneSelect($event)"
+                  name="editEnseigne" [disabled]="!editSubcategory">
+            <option value="">Aucune</option>
+            @for (e of editEnseignes(); track e) { <option [value]="e">{{ e }}</option> }
+            @if (editSubcategory) { <option value="__new__">➕ Nouvelle…</option> }
+          </select>
+        } @else {
+          <div class="new-item-row">
+            <input class="field-input new-item-input" type="text" [(ngModel)]="newEditEnseigneName"
+                   name="newEditEnseigne" placeholder="Nom…" (keyup.enter)="confirmNewEditEnseigne()" autofocus>
+            <button class="new-item-confirm" (click)="confirmNewEditEnseigne()" [disabled]="!newEditEnseigneName.trim()">OK</button>
+            <button class="new-item-cancel" (click)="addingEditEnseigne.set(false)">✕</button>
+          </div>
+        }
+      </div>
+
+      <!-- Section : Commentaire -->
+      <div class="modal-section">
+        <label class="field-label">Commentaire <span class="optional-hint">(optionnel)</span></label>
+        <input class="field-input" type="text" [(ngModel)]="editComment" name="editComment"
+               placeholder="Numéro de commande, détails…">
+      </div>
+
+      <!-- Footer -->
+      <div class="modal-footer">
+        <button class="cancel-edit-btn" (click)="closeEdit()">Annuler</button>
+        <button class="save-edit-btn" (click)="saveEdit()">Enregistrer</button>
+      </div>
+
+    </div>
+  </div>
+}

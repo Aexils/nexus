@@ -1,0 +1,411 @@
+<!-- ── Header ── -->
+<div class="page-header">
+  <div class="header-left">
+    <div class="user-avatar" [class]="'avatar-' + userId">
+      {{ profile.avatarInitial }}
+    </div>
+    <div>
+      <div class="page-title">Espace <span>{{ profile.displayName }}</span></div>
+      <div class="page-subtitle">Dashboard personnel · services filtrés par profil</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Cards DnD ── -->
+<div cdkDropList cdkDropListOrientation="mixed" (cdkDropListDropped)="onCardDrop($event)" class="me-grid">
+  @for (cardId of cardOrder(); track cardId) {
+    <div cdkDrag class="card-drag-wrap">
+
+      <!-- Card drag handle -->
+      <div class="card-drag-handle" cdkDragHandle title="Déplacer">
+        <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor">
+          <circle cx="5" cy="3" r="1.5"/><circle cx="11" cy="3" r="1.5"/>
+          <circle cx="5" cy="8" r="1.5"/><circle cx="11" cy="8" r="1.5"/>
+          <circle cx="5" cy="13" r="1.5"/><circle cx="11" cy="13" r="1.5"/>
+        </svg>
+      </div>
+
+      <!-- ── Audiobookshelf ── -->
+      @if (cardId === 'abs') {
+        <div class="me-card abs-card" [class.offline]="!abs().connected">
+          <div class="card-top">
+            <div class="card-logo abs-logo">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                <path d="M3 18v-6a9 9 0 0 1 18 0v6"/>
+                <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>
+              </svg>
+            </div>
+            <div class="card-title-group">
+              <div class="card-title">Audiobookshelf</div>
+              <div class="card-sub">Livres audio · {{ profile.displayName }}</div>
+            </div>
+            <app-status-badge
+              [status]="abs().connected ? (abs().activeSessions.length > 0 ? 'playing' : 'running') : 'error'"
+              [customLabel]="abs().connected ? (abs().activeSessions.length > 0 ? 'Écoute' : 'Up') : 'Down'">
+            </app-status-badge>
+          </div>
+
+          @if (!abs().connected) {
+            <div class="card-empty">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M1 1l22 22M16.72 11.06A10.94 10.94 0 0 1 19 12.55M5 12.55a10.94 10.94 0 0 1 5.17-2.39M10.71 5.05A16 16 0 0 1 22.56 9M1.42 9a15.91 15.91 0 0 1 4.7-2.88M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01"/>
+              </svg>
+              Audiobookshelf inaccessible
+            </div>
+          } @else if (abs().activeSessions.length > 0) {
+            <!-- Active sessions -->
+            <div class="abs-sessions">
+              @for (s of abs().activeSessions; track s.id) {
+                <div class="abs-session-row">
+                  <div class="abs-cover" [style.background]="'linear-gradient(135deg,#f59e0b,#d97706)'">
+                    <img [src]="coverUrl(s.libraryItemId)" [alt]="s.title" (error)="$any($event.target).style.display='none'">
+                  </div>
+                  <div class="abs-details">
+                    <div class="abs-title">{{ s.title }}</div>
+                    @if (s.author) { <div class="abs-author">{{ s.author }}</div> }
+                    <div class="abs-progress-bg">
+                      <div class="abs-progress-fill" [style.width.%]="absProgress(s.currentTime, s.duration)"></div>
+                    </div>
+                    <div class="abs-time-row">
+                      <span class="abs-time">{{ formatDurationHuman(s.currentTime) }}</span>
+                      <span class="abs-time muted">/ {{ formatDurationHuman(s.duration) }}</span>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          } @else if (abs().lastSession; as ls) {
+            <!-- Last session -->
+            <div class="abs-sessions last-only">
+              <div class="abs-session-row">
+                <div class="abs-cover" [style.background]="'linear-gradient(135deg,#f59e0b,#d97706)'">
+                  <img [src]="coverUrl(ls.libraryItemId)" [alt]="ls.title" (error)="$any($event.target).style.display='none'">
+                </div>
+                <div class="abs-details">
+                  <div class="abs-title">{{ ls.title }}</div>
+                  @if (ls.author) { <div class="abs-author">{{ ls.author }}</div> }
+                  <div class="abs-last-label">Dernière écoute · {{ formatRelativeIso(ls.stoppedAt) }}</div>
+                  <div class="abs-progress-bg">
+                    <div class="abs-progress-fill" [style.width.%]="absProgress(ls.currentTime, ls.duration)"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          } @else {
+            <div class="card-empty">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M3 18v-6a9 9 0 0 1 18 0v6"/>
+                <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>
+              </svg>
+              Aucune écoute récente
+            </div>
+          }
+
+          <div class="card-footer">
+            <button class="open-btn" (click)="openAbs()">Ouvrir Audiobookshelf →</button>
+          </div>
+        </div>
+      }
+
+      <!-- ── Booklore ── -->
+      @if (cardId === 'booklore') {
+        <div class="me-card bl-card" [class.offline]="!booklore().connected" (click)="openBooklore()" role="button" tabindex="0">
+          <div class="card-top">
+            <div class="card-logo bl-logo">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+              </svg>
+            </div>
+            <div class="card-title-group">
+              <div class="card-title">Booklore</div>
+              <div class="card-sub">Ebooks · {{ profile.displayName }}</div>
+            </div>
+            <app-status-badge
+              [status]="booklore().connected ? (booklore().currentlyReading.length > 0 ? 'playing' : 'running') : 'error'"
+              [customLabel]="booklore().connected ? (booklore().currentlyReading.length > 0 ? 'Lecture' : 'Up') : 'Down'">
+            </app-status-badge>
+          </div>
+
+          @if (!booklore().connected) {
+            <div class="card-empty">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+              </svg>
+              Booklore inaccessible
+            </div>
+          } @else if (booklore().currentlyReading.length > 0) {
+            <div class="bl-reading-list">
+              @for (b of booklore().currentlyReading; track b.id) {
+                <div class="bl-reading-row">
+                  <div class="bl-cover-mini" [style.background]="'linear-gradient(135deg,#7c3aed,#5b21b6)'">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="2">
+                      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+                    </svg>
+                  </div>
+                  <div class="bl-reading-meta">
+                    <div class="abs-session-title">{{ b.title }}</div>
+                    @if (b.authors.length > 0) {
+                      <div class="abs-session-author">{{ b.authors[0] }}</div>
+                    }
+                    <div class="abs-progress-bar">
+                      <div class="abs-progress-fill" [style.width.%]="b.progress"></div>
+                    </div>
+                    <div class="abs-progress-label">{{ b.progress }}%</div>
+                  </div>
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="card-empty">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+              </svg>
+              Aucune lecture en cours
+              @if (booklore().totalBooks) {
+                · {{ booklore().totalBooks }} livre{{ booklore().totalBooks! > 1 ? 's' : '' }}
+              }
+            </div>
+          }
+
+          <div class="card-footer">
+            <button class="open-btn" (click)="openBooklore()">Ouvrir Booklore →</button>
+          </div>
+        </div>
+      }
+
+      <!-- ── PlayStation Network ── -->
+      @if (cardId === 'psn') {
+        <div class="me-card psn-card" [class.offline]="!psn().connected && !psn().profile">
+          <div class="card-top">
+            <div class="card-logo psn-logo">PS</div>
+            <div class="card-title-group">
+              <div class="card-title">PlayStation Network</div>
+              <div class="card-sub">{{ psn().profile?.onlineId ?? profile.displayName }}</div>
+            </div>
+            <app-status-badge
+              [status]="!psn().connected ? 'error' : psn().profile?.presence === 'ingame' ? 'playing' : psn().profile?.presence === 'offline' ? 'stopped' : 'running'"
+              [customLabel]="!psn().connected ? 'Down' : psn().profile?.presence === 'ingame' ? 'En jeu' : psn().profile?.presence === 'offline' ? 'Hors ligne' : 'En ligne'">
+            </app-status-badge>
+          </div>
+
+          @if (!psn().profile && !psn().currentGame) {
+            <div class="card-empty">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M21.5 2L2 22M8.5 8.5A7 7 0 0 0 5 14m14 0a7 7 0 0 0-3.37-6"/><circle cx="12" cy="14" r="2"/>
+              </svg>
+              PSN inaccessible
+            </div>
+          } @else {
+            <div class="psn-content">
+              <!-- Profile info -->
+              @if (psn().profile; as profile) {
+                <div class="psn-profile-row">
+                  @if (profile.avatarUrl) {
+                    <img class="psn-avatar" [src]="profile.avatarUrl" [alt]="profile.onlineId">
+                  } @else {
+                    <div class="psn-avatar-placeholder">{{ profile.onlineId[0].toUpperCase() }}</div>
+                  }
+                  <div class="psn-profile-info">
+                    <div class="psn-online-id">{{ profile.onlineId }}</div>
+                    <div class="psn-presence" [class]="presenceClass(profile.presence)">
+                      <span class="presence-dot"></span>
+                      {{ presenceLabel(profile.presence) }}
+                      @if (profile.presence === 'offline' && profile.lastOnline) {
+                        · {{ formatRelativeIso(profile.lastOnline) }}
+                      }
+                    </div>
+                  </div>
+                </div>
+              }
+
+              <!-- Current / last game -->
+              @if (psn().currentGame; as game) {
+                <div class="psn-game-row">
+                  <div class="psn-game-cover" [class.has-img]="!!game.imageUrl">
+                    @if (game.imageUrl) {
+                      <img [src]="game.imageUrl" [alt]="game.name">
+                    } @else {
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <rect x="2" y="6" width="20" height="12" rx="2"/><path d="M12 12h.01M8 12h.01M16 12h.01"/>
+                      </svg>
+                    }
+                  </div>
+                  <div class="psn-game-info">
+                    <div class="psn-game-name">{{ game.name }}</div>
+                    <div class="psn-game-meta">En jeu @if (game.platform) { · {{ game.platform }} }</div>
+                  </div>
+                </div>
+              } @else if (psn().recentGames?.[0]; as lastGame) {
+                <div class="psn-game-row">
+                  <div class="psn-game-cover" [class.has-img]="!!lastGame.imageUrl">
+                    @if (lastGame.imageUrl) {
+                      <img [src]="lastGame.imageUrl" [alt]="lastGame.name">
+                    } @else {
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <rect x="2" y="6" width="20" height="12" rx="2"/><path d="M12 12h.01M8 12h.01M16 12h.01"/>
+                      </svg>
+                    }
+                  </div>
+                  <div class="psn-game-info">
+                    <div class="psn-game-name">{{ lastGame.name }}</div>
+                    <div class="psn-game-meta">
+                      Dernière partie
+                      @if (lastGame.lastPlayedAt) { · {{ formatRelativeIso(lastGame.lastPlayedAt) }} }
+                      @if (lastGame.playDuration) { · {{ formatIsoDuration(lastGame.playDuration) }} }
+                    </div>
+                  </div>
+                </div>
+              }
+
+              <!-- Trophy summary -->
+              @if (psn().trophySummary; as t) {
+                <div class="psn-trophy-row">
+                  <span class="trophy-level">Niv. {{ t.level }}</span>
+                  <div class="trophy-bar-bg">
+                    <div class="trophy-bar-fill" [style.width.%]="t.progress"></div>
+                  </div>
+                  <span class="trophy-pct">{{ t.progress }}%</span>
+                  <div class="trophy-counts">
+                    <span class="trophy-plat">🏆 {{ t.platinum }}</span>
+                    <span class="trophy-gold">🥇 {{ t.gold }}</span>
+                    <span class="trophy-silver">🥈 {{ t.silver }}</span>
+                    <span class="trophy-bronze">🥉 {{ t.bronze }}</span>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+
+          <div class="card-footer">
+            <button class="open-btn" (click)="openPsn()">Ouvrir PlayStation →</button>
+          </div>
+        </div>
+      }
+
+      <!-- ── Sideloadly ── -->
+      @if (cardId === 'sideloadly') {
+        <div class="me-card sdly-card" [class.offline]="!sdly().connected">
+          <div class="card-top">
+            <div class="card-logo sdly-logo">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+                <line x1="12" y1="18" x2="12.01" y2="18"/>
+              </svg>
+            </div>
+            <div class="card-title-group">
+              <div class="card-title">Sideloadly</div>
+              <div class="card-sub">{{ profile.displayName }} · {{ sdlyMyApps().length }} app{{ sdlyMyApps().length !== 1 ? 's' : '' }}</div>
+            </div>
+            <app-status-badge
+              [status]="sdly().connected ? (sdlyExpiringCount() > 0 ? 'stopped' : 'running') : 'error'"
+              [customLabel]="sdly().connected ? (sdlyExpiringCount() > 0 ? 'Expire' : 'Up') : 'Down'">
+            </app-status-badge>
+          </div>
+
+          @if (!sdly().connected) {
+            <div class="card-empty">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M1 1l22 22M16.72 11.06A10.94 10.94 0 0 1 19 12.55M5 12.55a10.94 10.94 0 0 1 5.17-2.39M10.71 5.05A16 16 0 0 1 22.56 9M1.42 9a15.91 15.91 0 0 1 4.7-2.88M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01"/>
+              </svg>
+              Données Sideloadly inaccessibles
+            </div>
+          } @else {
+            <div class="sdly-content">
+              <!-- Accounts -->
+              @for (acc of sdlyMyAccounts(); track acc.appleId) {
+                <div class="sdly-account-row">
+                  <span class="sdly-apple-id">{{ acc.appleId.split('@')[0] }}</span>
+                  <span class="sdly-countdown" [class.urgent]="acc.nextRenewalMs < 3_600_000">
+                    Renouvelle dans {{ formatCountdown(acc.nextRenewalMs) }}
+                  </span>
+                </div>
+              }
+              @if (sdlyMyAccounts().length === 0) {
+                <div class="sdly-account-row muted">Aucun compte associé</div>
+              }
+
+              <!-- Apps -->
+              @if (sdlyMyApps().length > 0) {
+                <div class="sdly-apps-list">
+                  @for (app of sdlyMyApps(); track app.bundleId) {
+                    <div class="sdly-app-row">
+                      <span class="sdly-app-name">{{ app.name }}</span>
+                      <span class="sdly-app-status" [class]="appStatusClass(app.status)">
+                        {{ appStatusLabel(app.status) }}
+                      </span>
+                    </div>
+                  }
+                </div>
+              } @else {
+                <div class="sdly-empty muted">Aucune application</div>
+              }
+            </div>
+          }
+
+          <div class="card-footer">
+            <button class="open-btn" (click)="openSdly()">Ouvrir Sideloadly →</button>
+          </div>
+        </div>
+      }
+
+      <!-- ── Budget ── -->
+      @if (cardId === 'budget') {
+        <div class="me-card budget-card">
+          <div class="card-top">
+            <div class="card-logo budget-logo">💰</div>
+            <div class="card-title-group">
+              <div class="card-title">Budget</div>
+              <div class="card-sub">Finances · {{ profile.displayName }}@if (budgetSummary()) { · {{ budgetMonth() }} }</div>
+            </div>
+          </div>
+
+          @if (!budgetSummary() || budgetSummary()!.income === 0) {
+            <div class="card-empty">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/>
+              </svg>
+              Aucun revenu défini — configurez votre budget.
+            </div>
+          } @else {
+            <div class="budget-content">
+              <div class="budget-savings-row">
+                <span class="budget-savings-label">Épargne estimée</span>
+                <span class="budget-savings-val" [class]="budgetSavingsClass()">
+                  {{ budgetSavings()! >= 0 ? '+' : '' }}{{ fmtBudget(budgetSavings()!) }}
+                </span>
+              </div>
+              <div class="budget-rate">
+                Taux : {{ budgetSummary()!.savingsRate.toFixed(1) }}% · Revenu {{ fmtBudget(budgetSummary()!.income) }}
+              </div>
+              <div class="budget-bars">
+                <div class="budget-bar-row">
+                  <span class="budget-bar-label">🏠 Maison</span>
+                  <div class="budget-bar-track">
+                    <div class="budget-bar-fill maison-fill" [style.width.%]="maisonSharePct()"></div>
+                  </div>
+                  <span class="budget-bar-pct">{{ maisonSharePct().toFixed(0) }}%</span>
+                </div>
+                <div class="budget-bar-row">
+                  <span class="budget-bar-label">👤 Perso</span>
+                  <div class="budget-bar-track">
+                    <div class="budget-bar-fill perso-fill" [style.width.%]="personalPct()"></div>
+                  </div>
+                  <span class="budget-bar-pct">{{ personalPct().toFixed(0) }}%</span>
+                </div>
+              </div>
+            </div>
+          }
+
+          <div class="card-footer">
+            <button class="open-btn" (click)="openBudget()">Voir le budget →</button>
+          </div>
+        </div>
+      }
+
+      <!-- CDK drag placeholder -->
+      <div class="card-placeholder" *cdkDragPlaceholder></div>
+    </div>
+  }
+</div>

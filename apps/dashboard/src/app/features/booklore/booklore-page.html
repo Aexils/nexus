@@ -1,0 +1,150 @@
+<!-- ══ Header ══ -->
+<header class="page-header">
+  <div class="brand">
+    <div class="brand-logo">
+      <lucide-icon [img]="icons.BookOpen" [size]="22" strokeWidth="2" color="white"></lucide-icon>
+    </div>
+    <div>
+      <div class="brand-name">Booklore</div>
+      <div class="brand-meta">
+        @if (connected) {
+          {{ totalBooks }} livre{{ totalBooks > 1 ? 's' : '' }}
+          @if (currentlyReading.length > 0) {
+            · {{ currentlyReading.length }} en cours
+          }
+        } @else { Hors ligne }
+      </div>
+    </div>
+  </div>
+  <div class="header-status">
+    @if (connected) {
+      <app-status-badge [status]="currentlyReading.length > 0 ? 'playing' : 'stopped'"></app-status-badge>
+    } @else {
+      <app-status-badge status="error"></app-status-badge>
+    }
+  </div>
+</header>
+
+<!-- ══ Offline ══ -->
+@if (!connected) {
+  <div class="empty-state">
+    <div class="empty-icon"><lucide-icon [img]="icons.WifiOff" [size]="48" strokeWidth="1.2"></lucide-icon></div>
+    <p class="empty-title">Booklore n'est pas accessible</p>
+    <p class="empty-sub">Vérifiez que le service est en cours d'exécution et que <code>BOOKLORE_URL</code> est correctement configuré.</p>
+  </div>
+} @else {
+
+  <!-- ══ En cours de lecture ══ -->
+  @if (currentlyReading.length > 0) {
+    <section class="now-reading">
+      <div class="section-eyebrow">
+        <span class="live-dot"></span>
+        En cours de lecture
+      </div>
+      <div class="reading-cards">
+        @for (b of currentlyReading; track b.id) {
+          <a class="reading-card" [routerLink]="['/booklore', b.id]">
+            <div class="reading-cover" [style.background]="getGradient(b.title)">
+              <lucide-icon [img]="icons.BookOpen" [size]="22" strokeWidth="1.5" color="rgba(255,255,255,0.3)"></lucide-icon>
+              <img loading="lazy" class="reading-cover-img"
+                   [src]="coverUrl(b.id)" [alt]="b.title"
+                   (error)="onImgError($event)">
+            </div>
+            <div class="reading-body">
+              @if (b.seriesName) {
+                <div class="reading-series">{{ b.seriesName }}</div>
+              }
+              <div class="reading-title">{{ b.title }}</div>
+              @if (b.authors.length > 0) {
+                <div class="reading-author">
+                  <lucide-icon [img]="icons.User" [size]="11" strokeWidth="2"></lucide-icon>
+                  {{ b.authors[0] }}
+                </div>
+              }
+              <div class="reading-progress">
+                <div class="prog-bar-track">
+                  <div class="prog-bar-fill" [style.width.%]="b.progress"></div>
+                </div>
+                <div class="prog-label">{{ b.progress }}%</div>
+              </div>
+            </div>
+            <lucide-icon [img]="icons.ChevronRight" [size]="18" strokeWidth="2" class="reading-arrow"></lucide-icon>
+          </a>
+        }
+      </div>
+    </section>
+  }
+
+  <!-- ══ Bibliothèque ══ -->
+  <section class="library-section">
+    <div class="library-header">
+      <div class="section-title">
+        <lucide-icon [img]="icons.BookMarked" [size]="16" strokeWidth="2"></lucide-icon>
+        Bibliothèque
+      </div>
+      <div class="search-box">
+        <lucide-icon [img]="icons.Search" [size]="14" strokeWidth="2" class="search-icon"></lucide-icon>
+        <input class="search-input" type="text" placeholder="Titre, auteur, série…"
+               (input)="onSearch($event)" autocomplete="off">
+      </div>
+    </div>
+
+    @if (libraryLoading()) {
+      <!-- Skeleton -->
+      <div class="books-grid">
+        @for (s of [1,2,3,4,5,6,7,8]; track s) {
+          <div class="book-card skeleton">
+            <div class="book-cover-wrap skeleton-cover"></div>
+            <div class="book-meta">
+              <div class="skeleton-line w80"></div>
+              <div class="skeleton-line w55"></div>
+            </div>
+          </div>
+        }
+      </div>
+    } @else if (filteredLibrary().length === 0) {
+      <div class="empty-library">
+        <lucide-icon [img]="icons.BookOpen" [size]="32" strokeWidth="1.2"></lucide-icon>
+        <p>{{ searchQuery() ? 'Aucun résultat' : 'Bibliothèque vide' }}</p>
+      </div>
+    } @else {
+      @for (group of authorGroups(); track group.name) {
+        <div class="author-group">
+          <div class="author-header">
+            <lucide-icon [img]="icons.User" [size]="13" strokeWidth="2"></lucide-icon>
+            {{ group.name }}
+            <span class="author-count">{{ group.items.length }}</span>
+          </div>
+          <div class="books-grid">
+            @for (book of group.items; track book.id) {
+              <a class="book-card" [routerLink]="['/booklore', book.id]">
+                <div class="book-cover-wrap" [style.background]="getGradient(book.title)">
+                  <div class="book-initials">{{ getInitials(book.title) }}</div>
+                  <img loading="lazy" class="book-cover-img"
+                       [src]="coverUrl(book.id)" [alt]="book.title"
+                       (error)="onImgError($event)">
+                  @if (book.isRead) {
+                    <div class="book-finished-badge">
+                      <lucide-icon [img]="icons.CheckCheck" [size]="11" strokeWidth="2.5"></lucide-icon>
+                    </div>
+                  } @else if (book.progress && book.progress > 0) {
+                    <div class="book-progress-arc">
+                      <div class="prog-mini-bar" [style.width.%]="book.progress"></div>
+                    </div>
+                  }
+                </div>
+                <div class="book-meta">
+                  @if (book.seriesName) {
+                    <div class="book-series">{{ book.seriesName }}{{ book.seriesIndex ? ' #' + book.seriesIndex : '' }}</div>
+                  }
+                  <div class="book-title">{{ book.title }}</div>
+                </div>
+              </a>
+            }
+          </div>
+        </div>
+      }
+    }
+  </section>
+
+}

@@ -1,0 +1,203 @@
+<!-- ── Header ── -->
+<div class="page-header">
+  <div class="header-left">
+    <div class="jf-icon">
+      <lucide-icon [img]="icons.Tv2" [size]="22" strokeWidth="1.5"></lucide-icon>
+    </div>
+    <div>
+      <div class="page-title">Jellyfin</div>
+      <div class="page-meta">
+        @if (connected) {
+          <app-status-badge status="running" customLabel="Connecté"></app-status-badge>
+          @if (sessions.length > 0) {
+            <span class="meta-sep">·</span>
+            <span class="meta-item active">{{ sessions.length }} session{{ sessions.length > 1 ? 's' : '' }} active{{ sessions.length > 1 ? 's' : '' }}</span>
+          } @else {
+            <span class="meta-sep">·</span>
+            <span class="meta-item">Aucune lecture</span>
+          }
+          @if (serverName) {
+            <span class="meta-sep">·</span>
+            <span class="meta-item muted">{{ serverName }}</span>
+          }
+          @if (version) {
+            <span class="meta-sep">·</span>
+            <span class="meta-version">v{{ version }}</span>
+          }
+        } @else {
+          <app-status-badge status="error" customLabel="Déconnecté"></app-status-badge>
+        }
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Sessions actives ── -->
+@if (connected) {
+  @if (sessions.length > 0) {
+    <div class="section-label">Lectures en cours</div>
+    <div class="sessions-grid">
+      @for (session of sessions; track trackSession($index, session)) {
+        <div class="session-card">
+          <!-- Cover -->
+          <div class="session-cover">
+            @if (session.nowPlaying?.itemId) {
+              <img [src]="coverUrl(session.nowPlaying!.itemId)"
+                   [alt]="session.nowPlaying?.name ?? ''"
+                   class="cover-img"
+                   (error)="$any($event.target).style.display='none'">
+            }
+            <div class="cover-overlay">
+              <lucide-icon
+                [img]="session.isPaused ? icons.Pause : icons.Play"
+                [size]="20" strokeWidth="2" class="play-icon">
+              </lucide-icon>
+            </div>
+          </div>
+
+          <!-- Info -->
+          <div class="session-info">
+            <div class="session-title">
+              @if (session.nowPlaying?.seriesName) {
+                <span class="series-name">{{ session.nowPlaying!.seriesName }}</span>
+                <span class="episode-sep">—</span>
+              }
+              <span class="item-name">{{ session.nowPlaying?.name ?? '?' }}</span>
+            </div>
+
+            @if (session.nowPlaying?.productionYear) {
+              <div class="session-year">{{ session.nowPlaying!.productionYear }}</div>
+            }
+
+            <div class="session-badges">
+              <span class="type-badge">{{ mediaTypeLabel(session.nowPlaying?.type ?? '') }}</span>
+              <span class="state-badge" [class.paused]="session.isPaused">
+                {{ session.isPaused ? 'En pause' : 'En lecture' }}
+              </span>
+            </div>
+
+            <!-- Progress -->
+            <div class="session-progress">
+              <div class="progress-bar-bg">
+                <div class="progress-bar-fill" [style.width.%]="progressPct(session)"></div>
+              </div>
+              <div class="progress-times">
+                <span>{{ formatTicks(session.positionTicks) }}</span>
+                <span>{{ formatTicks(session.nowPlaying?.runTimeTicks) }}</span>
+              </div>
+            </div>
+
+            <!-- Device / user -->
+            <div class="session-device">
+              <lucide-icon [img]="icons.User" [size]="11" strokeWidth="2" class="device-icon"></lucide-icon>
+              <span>{{ session.userName }}</span>
+              <span class="device-sep">·</span>
+              <lucide-icon [img]="icons.Monitor" [size]="11" strokeWidth="2" class="device-icon"></lucide-icon>
+              <span class="device-name">{{ session.deviceName }}</span>
+              @if (session.client) {
+                <span class="device-sep">·</span>
+                <span class="client-name">{{ session.client }}</span>
+              }
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  } @else {
+    <div class="empty-state no-sessions">
+      <lucide-icon [img]="icons.Tv2" [size]="28" strokeWidth="1" class="empty-icon"></lucide-icon>
+      <p class="empty-text">Aucune lecture en cours</p>
+    </div>
+  }
+
+  <!-- ── Bibliothèque ── -->
+  <div class="library-header">
+    <div class="library-title-row">
+      <span class="section-label" style="margin-bottom: 0">
+        Bibliothèque
+        @if (library().length > 0) {
+          <span class="lib-count">{{ library().length }}</span>
+        }
+      </span>
+      @if (loading()) {
+        <span class="lib-loading">Chargement…</span>
+      }
+    </div>
+
+    @if (library().length > 0) {
+      <div class="lib-toolbar">
+        <!-- Filter tabs -->
+        <div class="lib-filters">
+          <button class="lib-filter-btn" [class.active]="libraryFilter() === 'all'" (click)="setFilter('all')">
+            Tout <span class="lib-filter-count">{{ library().length }}</span>
+          </button>
+          <button class="lib-filter-btn" [class.active]="libraryFilter() === 'Movie'" (click)="setFilter('Movie')">
+            Films <span class="lib-filter-count">{{ movieCount() }}</span>
+          </button>
+          <button class="lib-filter-btn" [class.active]="libraryFilter() === 'Series'" (click)="setFilter('Series')">
+            Séries <span class="lib-filter-count">{{ seriesCount() }}</span>
+          </button>
+        </div>
+
+        <!-- Search -->
+        <div class="lib-search-wrap">
+          <lucide-icon [img]="icons.Search" [size]="13" strokeWidth="2" class="lib-search-icon"></lucide-icon>
+          <input class="lib-search" type="text" placeholder="Rechercher…" (input)="onSearch($event)">
+        </div>
+      </div>
+    }
+  </div>
+
+  @if (library().length > 0) {
+    <div class="lib-grid">
+      @for (item of filteredLibrary(); track trackItem($index, item)) {
+        <div class="lib-card">
+          <div class="lib-poster" [class.has-poster]="item.hasPoster">
+            @if (item.hasPoster) {
+              <img [src]="coverUrl(item.id)"
+                   [alt]="item.name"
+                   class="lib-poster-img"
+                   (error)="$any($event.target).parentElement.classList.remove('has-poster')">
+            } @else {
+              <lucide-icon
+                [img]="item.type === 'Movie' ? icons.Film : icons.Clapperboard"
+                [size]="28" strokeWidth="1.2" class="lib-poster-icon">
+              </lucide-icon>
+            }
+            <div class="lib-poster-overlay">
+              <span class="lib-type-badge">{{ typeLabel(item.type) }}</span>
+              @if (item.type === 'Series' && item.childCount) {
+                <span class="lib-seasons">{{ item.childCount }} saison{{ item.childCount > 1 ? 's' : '' }}</span>
+              }
+            </div>
+          </div>
+          <div class="lib-info">
+            <div class="lib-name" [title]="item.name">{{ item.name }}</div>
+            <div class="lib-sub">
+              @if (item.year) { <span class="lib-year">{{ item.year }}</span> }
+              @if (item.communityRating) {
+                <span class="lib-rating">
+                  <lucide-icon [img]="icons.Star" [size]="9" strokeWidth="2.5" class="star-icon"></lucide-icon>
+                  {{ item.communityRating | number:'1.1-1' }}
+                </span>
+              }
+              @if (item.officialRating) {
+                <span class="lib-cert">{{ item.officialRating }}</span>
+              }
+            </div>
+          </div>
+        </div>
+      }
+      @if (filteredLibrary().length === 0) {
+        <div class="lib-empty">Aucun résultat pour « {{ searchQuery() }} »</div>
+      }
+    </div>
+  }
+
+} @else {
+  <div class="offline-state">
+    <lucide-icon [img]="icons.WifiOff" [size]="40" strokeWidth="1" class="empty-icon"></lucide-icon>
+    <p class="empty-text">Jellyfin inaccessible</p>
+    <p class="empty-sub">Vérifiez que le service est démarré sur le port 8096</p>
+  </div>
+}

@@ -1,0 +1,112 @@
+<!-- ══ Back button ══ -->
+<div class="detail-nav">
+  <button class="back-btn" (click)="back()">
+    <lucide-icon [img]="icons.ChevronLeft" [size]="16" strokeWidth="2.5"></lucide-icon>
+    Booklore
+  </button>
+</div>
+
+@if (!book()) {
+  <div class="not-found">
+    <lucide-icon [img]="icons.BookOpen" [size]="40" strokeWidth="1.2"></lucide-icon>
+    <p>Livre introuvable</p>
+    <button class="back-btn" (click)="back()">← Retour</button>
+  </div>
+} @else {
+
+  <!-- ══ Hero ══ -->
+  <div class="detail-hero">
+    <div class="hero-cover" [style.background]="getGradient(book()!.title)">
+      <div class="hero-initials">{{ getInitials(book()!.title) }}</div>
+      <img class="hero-cover-img" [src]="coverUrl(book()!.id)" [alt]="book()!.title" (error)="onImgError($event)">
+      @if (book()!.isRead) {
+        <div class="finished-ribbon">
+          <lucide-icon [img]="icons.CheckCheck" [size]="14" strokeWidth="2.5"></lucide-icon>
+          Terminé
+        </div>
+      }
+    </div>
+
+    <div class="hero-info">
+      @if (book()!.seriesName) {
+        <div class="detail-series">
+          {{ book()!.seriesName }}{{ book()!.seriesIndex ? ' #' + book()!.seriesIndex : '' }}
+        </div>
+      }
+      <h1 class="detail-title">{{ book()!.title }}</h1>
+
+      <!-- Meta rows -->
+      <div class="meta-list">
+        @if (book()!.authors.length > 0) {
+          <div class="meta-row">
+            <lucide-icon [img]="icons.User" [size]="13" strokeWidth="2" class="meta-icon"></lucide-icon>
+            <span class="meta-val">{{ book()!.authors.join(', ') }}</span>
+          </div>
+        }
+        @if (book()!.publisher) {
+          <div class="meta-row">
+            <lucide-icon [img]="icons.Building2" [size]="13" strokeWidth="2" class="meta-icon"></lucide-icon>
+            <span class="meta-val">{{ book()!.publisher }}</span>
+          </div>
+        }
+        @if (book()!.publishedYear) {
+          <div class="meta-row">
+            <lucide-icon [img]="icons.Calendar" [size]="13" strokeWidth="2" class="meta-icon"></lucide-icon>
+            <span class="meta-val">{{ book()!.publishedYear }}</span>
+          </div>
+        }
+        @if (book()!.pageCount) {
+          <div class="meta-row">
+            <lucide-icon [img]="icons.FileText" [size]="13" strokeWidth="2" class="meta-icon"></lucide-icon>
+            <span class="meta-val">{{ book()!.pageCount }} pages</span>
+          </div>
+        }
+        @if (book()!.libraryName) {
+          <div class="meta-row">
+            <lucide-icon [img]="icons.BookOpen" [size]="13" strokeWidth="2" class="meta-icon"></lucide-icon>
+            <span class="meta-val">{{ book()!.libraryName }}</span>
+          </div>
+        }
+      </div>
+
+      <!-- Genres -->
+      @if (book()!.categories.length > 0) {
+        <div class="genre-list">
+          @for (cat of book()!.categories; track cat) {
+            <span class="genre-tag">{{ cat }}</span>
+          }
+        </div>
+      }
+
+      <!-- Progress -->
+      @if (book()!.isRead) {
+        <div class="progress-finished">
+          <lucide-icon [img]="icons.CheckCheck" [size]="15" strokeWidth="2.5"></lucide-icon>
+          Lu
+        </div>
+      } @else if (book()!.progress && book()!.progress! > 0) {
+        <div class="progress-section">
+          <div class="progress-header">
+            <span class="progress-label">Progression</span>
+            <span class="progress-pct">{{ book()!.progress }}%</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" [style.width.%]="book()!.progress"></div>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- ══ Description ══ -->
+  @if (book()!.description) {
+    <div class="detail-description">
+      <div class="desc-label">
+        <lucide-icon [img]="icons.FileText" [size]="14" strokeWidth="2"></lucide-icon>
+        Synopsis
+      </div>
+      <p class="desc-text">{{ book()!.description }}</p>
+    </div>
+  }
+
+}

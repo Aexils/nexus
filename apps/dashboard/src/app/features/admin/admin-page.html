@@ -1,0 +1,349 @@
+<!-- ── Header ── -->
+<div class="page-header">
+  <div class="brand">
+    <div class="brand-logo">
+      <lucide-icon [img]="icons.Database" [size]="22"></lucide-icon>
+    </div>
+    <div>
+      <div class="brand-name">Admin DB</div>
+      <div class="brand-meta">Gestion directe de la base de données</div>
+    </div>
+  </div>
+  <button class="refresh-btn" (click)="loadAll()" title="Rafraîchir">
+    <lucide-icon [img]="icons.RefreshCw" [size]="14"></lucide-icon>
+    Rafraîchir
+  </button>
+</div>
+
+<!-- ── Tabs ── -->
+<div class="tabs">
+  <button class="tab-btn" [class.active]="activeTab() === 'categories'"    (click)="activeTab.set('categories')">
+    <lucide-icon [img]="icons.Tag"         [size]="13"></lucide-icon>
+    Catégories
+    <span class="tab-count">{{ cats().length }}</span>
+  </button>
+  <button class="tab-btn" [class.active]="activeTab() === 'subcategories'" (click)="activeTab.set('subcategories')">
+    <lucide-icon [img]="icons.Layers"      [size]="13"></lucide-icon>
+    Sous-catégories
+    <span class="tab-count">{{ subcats().length }}</span>
+  </button>
+  <button class="tab-btn" [class.active]="activeTab() === 'enseignes'"     (click)="activeTab.set('enseignes')">
+    <lucide-icon [img]="icons.Store"       [size]="13"></lucide-icon>
+    Enseignes
+    <span class="tab-count">{{ ensRows().length }}</span>
+  </button>
+  <button class="tab-btn" [class.active]="activeTab() === 'expenses'"      (click)="activeTab.set('expenses')">
+    <lucide-icon [img]="icons.ReceiptText" [size]="13"></lucide-icon>
+    Dépenses
+    <span class="tab-count">{{ allExpenses().length }}</span>
+  </button>
+  <button class="tab-btn" [class.active]="activeTab() === 'database'"     (click)="activeTab.set('database'); loadSchema()">
+    <lucide-icon [img]="icons.Database"    [size]="13"></lucide-icon>
+    Database
+  </button>
+</div>
+
+<!-- ══ Tab : Catégories ══ -->
+@if (activeTab() === 'categories') {
+  <div class="table-card">
+    @if (!cats().length) {
+      <div class="empty">Aucune catégorie.</div>
+    } @else {
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Nom</th>
+            <th class="col-count">Dépenses</th>
+            <th class="col-actions"></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (cat of cats(); track trackCat($index, cat)) {
+            @if (editCat() === cat.name) {
+              <!-- Edit row -->
+              <tr class="edit-row">
+                <td colspan="3">
+                  <div class="edit-form">
+                    <input class="edit-input" type="text" [(ngModel)]="editCatName"
+                           name="editCatName" (keyup.enter)="saveEditCat(cat.name)" (keyup.escape)="cancelEditCat()" autofocus>
+                    <label class="cascade-label">
+                      <input type="checkbox" [(ngModel)]="editCatCascade" name="editCatCascade">
+                      Mettre à jour les dépenses
+                    </label>
+                    <button class="btn-save"   (click)="saveEditCat(cat.name)"  [disabled]="!editCatName.trim()">
+                      <lucide-icon [img]="icons.Check" [size]="13"></lucide-icon>
+                    </button>
+                    <button class="btn-cancel" (click)="cancelEditCat()">
+                      <lucide-icon [img]="icons.X" [size]="13"></lucide-icon>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            } @else {
+              <tr>
+                <td class="name-cell">{{ cat.name }}</td>
+                <td class="col-count">
+                  <span class="count-badge" [class.has-refs]="cat.count > 0">{{ cat.count }}</span>
+                </td>
+                <td class="col-actions">
+                  <div class="row-actions">
+                    <button class="btn-edit"   (click)="startEditCat(cat)" title="Renommer">
+                      <lucide-icon [img]="icons.Pencil" [size]="12"></lucide-icon>
+                    </button>
+                    <button class="btn-delete" (click)="deleteCat(cat.name)" title="Supprimer">
+                      <lucide-icon [img]="icons.Trash2" [size]="12"></lucide-icon>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    }
+  </div>
+}
+
+<!-- ══ Tab : Sous-catégories ══ -->
+@if (activeTab() === 'subcategories') {
+  <div class="table-card">
+    @if (!subcats().length) {
+      <div class="empty">Aucune sous-catégorie.</div>
+    } @else {
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Sous-catégorie</th>
+            <th>Catégorie parente</th>
+            <th class="col-count">Dépenses</th>
+            <th class="col-actions"></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (s of subcats(); track trackSubcat($index, s)) {
+            @if (editSubcat() === subcatKey(s)) {
+              <tr class="edit-row">
+                <td colspan="4">
+                  <div class="edit-form">
+                    <input class="edit-input" type="text" [(ngModel)]="editSubcatName"
+                           name="editSubcatName" (keyup.enter)="saveEditSubcat(s)" (keyup.escape)="cancelEditSubcat()" autofocus>
+                    <span class="edit-sep">dans</span>
+                    <select class="edit-select" [(ngModel)]="editSubcatCategory" name="editSubcatCat">
+                      @for (c of catNames(); track c) { <option [value]="c">{{ c }}</option> }
+                    </select>
+                    <label class="cascade-label">
+                      <input type="checkbox" [(ngModel)]="editSubcatCascade" name="editSubcatCascade">
+                      Mettre à jour les dépenses
+                    </label>
+                    <button class="btn-save"   (click)="saveEditSubcat(s)" [disabled]="!editSubcatName.trim()">
+                      <lucide-icon [img]="icons.Check" [size]="13"></lucide-icon>
+                    </button>
+                    <button class="btn-cancel" (click)="cancelEditSubcat()">
+                      <lucide-icon [img]="icons.X" [size]="13"></lucide-icon>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            } @else {
+              <tr>
+                <td class="name-cell">{{ s.name }}</td>
+                <td><span class="parent-badge">{{ s.category }}</span></td>
+                <td class="col-count">
+                  <span class="count-badge" [class.has-refs]="s.count > 0">{{ s.count }}</span>
+                </td>
+                <td class="col-actions">
+                  <div class="row-actions">
+                    <button class="btn-edit"   (click)="startEditSubcat(s)" title="Renommer / Déplacer">
+                      <lucide-icon [img]="icons.Pencil" [size]="12"></lucide-icon>
+                    </button>
+                    <button class="btn-delete" (click)="deleteSubcat(s)" title="Supprimer">
+                      <lucide-icon [img]="icons.Trash2" [size]="12"></lucide-icon>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    }
+  </div>
+}
+
+<!-- ══ Tab : Enseignes ══ -->
+@if (activeTab() === 'enseignes') {
+  <div class="table-card">
+    @if (!ensRows().length) {
+      <div class="empty">Aucune enseigne.</div>
+    } @else {
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Enseigne</th>
+            <th>Sous-catégorie parente</th>
+            <th class="col-count">Dépenses</th>
+            <th class="col-actions"></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (e of ensRows(); track trackEns($index, e)) {
+            @if (editEns() === ensKey(e)) {
+              <tr class="edit-row">
+                <td colspan="4">
+                  <div class="edit-form">
+                    <input class="edit-input" type="text" [(ngModel)]="editEnsName"
+                           name="editEnsName" (keyup.enter)="saveEditEns(e)" (keyup.escape)="cancelEditEns()" autofocus>
+                    <span class="edit-sep">dans</span>
+                    <select class="edit-select" [(ngModel)]="editEnsSubcat" name="editEnsSubcat">
+                      @for (s of subcatNames(); track s) { <option [value]="s">{{ s }}</option> }
+                    </select>
+                    <label class="cascade-label">
+                      <input type="checkbox" [(ngModel)]="editEnsCascade" name="editEnsCascade">
+                      Mettre à jour les dépenses
+                    </label>
+                    <button class="btn-save"   (click)="saveEditEns(e)" [disabled]="!editEnsName.trim()">
+                      <lucide-icon [img]="icons.Check" [size]="13"></lucide-icon>
+                    </button>
+                    <button class="btn-cancel" (click)="cancelEditEns()">
+                      <lucide-icon [img]="icons.X" [size]="13"></lucide-icon>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            } @else {
+              <tr>
+                <td class="name-cell">{{ e.name }}</td>
+                <td><span class="parent-badge">{{ e.subcategory }}</span></td>
+                <td class="col-count">
+                  <span class="count-badge" [class.has-refs]="e.count > 0">{{ e.count }}</span>
+                </td>
+                <td class="col-actions">
+                  <div class="row-actions">
+                    <button class="btn-edit"   (click)="startEditEns(e)" title="Renommer / Déplacer">
+                      <lucide-icon [img]="icons.Pencil" [size]="12"></lucide-icon>
+                    </button>
+                    <button class="btn-delete" (click)="deleteEns(e)" title="Supprimer">
+                      <lucide-icon [img]="icons.Trash2" [size]="12"></lucide-icon>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    }
+  </div>
+}
+
+<!-- ══ Tab : Database ══ -->
+@if (activeTab() === 'database') {
+  <div class="db-layout">
+    <!-- Table list -->
+    <div class="db-table-list">
+      @if (!dbSchema().length) {
+        <div class="empty" style="padding: 16px; font-size: 12px;">Chargement…</div>
+      }
+      @for (t of dbSchema(); track t.name) {
+        <div class="db-table-pill" [class.active]="selectedDbTable() === t.name" (click)="selectDbTable(t.name)">
+          <span>{{ t.name }}</span>
+          <span class="row-count">{{ t.rowCount }}</span>
+        </div>
+      }
+    </div>
+    <!-- Grid -->
+    <div class="db-grid-wrap">
+      @if (dbLoading()) {
+        <div class="empty">Chargement…</div>
+      } @else if (dbTableData(); as td) {
+        @if (!td.rows.length) {
+          <div class="empty">Table vide.</div>
+        } @else {
+          <table class="db-grid">
+            <thead>
+              <tr>
+                @for (col of td.columns; track col) {
+                  <th>{{ col }}</th>
+                }
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of td.rows; track $index) {
+                <tr>
+                  @for (cell of row; track $index) {
+                    <td>{{ cell ?? '—' }}</td>
+                  }
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      } @else {
+        <div class="empty">Sélectionner une table →</div>
+      }
+    </div>
+  </div>
+}
+
+<!-- ══ Tab : Dépenses ══ -->
+@if (activeTab() === 'expenses') {
+  <div class="expenses-bar">
+    <input class="search-input" type="text" [ngModel]="expFilter()"
+           (ngModelChange)="expFilter.set($event)"
+           placeholder="Filtrer par catégorie, enseigne, qui, montant, date…">
+    <span class="search-count">{{ filteredExpenses().length }} / {{ allExpenses().length }}</span>
+  </div>
+
+  <div class="table-card">
+    @if (!filteredExpenses().length) {
+      <div class="empty">Aucune dépense.</div>
+    } @else {
+      <table class="admin-table expenses-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Qui</th>
+            <th>Catégorie</th>
+            <th>Sous-cat.</th>
+            <th>Enseigne</th>
+            <th>Commentaire</th>
+            <th class="col-count">Montant</th>
+            <th class="col-actions"></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (e of filteredExpenses(); track trackExp($index, e)) {
+            <tr [class.confirm-row]="confirmDeleteId() === e.id">
+              <td class="date-cell">{{ formatDate(e.date) }}</td>
+              <td>
+                <span class="paid-badge" [class]="e.paidBy">{{ e.paidBy === 'alexis' ? 'Alexis' : 'Marion' }}</span>
+              </td>
+              <td>{{ e.category }}</td>
+              <td class="muted">{{ e.subcategory || '—' }}</td>
+              <td>{{ e.enseigne || '—' }}</td>
+              <td class="muted comment-cell">{{ e.comment || '' }}</td>
+              <td class="amount-cell">{{ fmt(e.amount) }}</td>
+              <td class="col-actions">
+                @if (confirmDeleteId() === e.id) {
+                  <div class="confirm-btns">
+                    <span class="confirm-label">Supprimer ?</span>
+                    <button class="btn-save"   (click)="deleteExpense(e.id)">
+                      <lucide-icon [img]="icons.Check" [size]="12"></lucide-icon>
+                    </button>
+                    <button class="btn-cancel" (click)="confirmDeleteId.set(null)">
+                      <lucide-icon [img]="icons.X" [size]="12"></lucide-icon>
+                    </button>
+                  </div>
+                } @else {
+                  <button class="btn-delete" (click)="confirmDeleteId.set(e.id)" title="Supprimer">
+                    <lucide-icon [img]="icons.Trash2" [size]="12"></lucide-icon>
+                  </button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </div>
+}

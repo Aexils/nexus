@@ -1,0 +1,183 @@
+<!-- ── Hero Header ── -->
+<div class="budget-header">
+  <div class="hero-left">
+    <button class="back-btn" [routerLink]="backUrl()">
+      <lucide-icon [img]="icons.ChevronLeft" [size]="15"></lucide-icon>
+    </button>
+    <div class="hero-avatar" [class]="'avatar-' + userId">{{ displayName[0] }}</div>
+    <div>
+      <div class="hero-title">Budget <span>{{ displayName }}</span></div>
+      <div class="hero-sub">Finances personnelles</div>
+    </div>
+  </div>
+  <div class="month-nav">
+    <button class="month-btn" (click)="prevMonth()">
+      <lucide-icon [img]="icons.ChevronLeft" [size]="16"></lucide-icon>
+    </button>
+    <span class="month-label">{{ monthDisplayLabel(selectedMonth()) }}</span>
+    <button class="month-btn" (click)="nextMonth()" [disabled]="isCurrentMonth()">
+      <lucide-icon [img]="icons.ChevronRight" [size]="16"></lucide-icon>
+    </button>
+  </div>
+</div>
+
+<!-- ── Income Card ── -->
+<div class="income-card" (click)="!editingIncome() && startEditIncome()">
+  <div class="income-label">Revenu mensuel</div>
+  @if (editingIncome()) {
+    <div class="income-edit-row" (click)="$event.stopPropagation()">
+      <input class="income-input" type="number" [(ngModel)]="incomeInput" placeholder="0"
+             min="0" step="100" (keyup.enter)="saveIncome()" autofocus>
+      <button class="income-save-btn" (click)="saveIncome()">
+        <lucide-icon [img]="icons.CheckCircle" [size]="18"></lucide-icon>
+      </button>
+      <button class="income-cancel-btn" (click)="cancelEditIncome()">✕</button>
+    </div>
+  } @else {
+    <div class="income-val">
+      @if (income() > 0) { {{ fmt(income()) }} }
+      @else { <span class="income-placeholder">Cliquer pour définir…</span> }
+    </div>
+    <div class="income-edit-hint">
+      <lucide-icon [img]="icons.Pencil" [size]="11"></lucide-icon>
+      Modifier
+    </div>
+  }
+</div>
+
+<!-- ── Stat cards ── -->
+<div class="stat-grid">
+  <div class="stat-card maison-card">
+    <div class="stat-icon">🏠</div>
+    <div class="stat-label">Part Maison</div>
+    <div class="stat-val">{{ fmt(maisonShare()) }}</div>
+    @if (income() > 0) {
+      <div class="stat-pct">{{ (maisonShare() / income() * 100).toFixed(0) }}% du revenu</div>
+    }
+  </div>
+  <div class="stat-card perso-card">
+    <div class="stat-icon">👤</div>
+    <div class="stat-label">Dépenses perso</div>
+    <div class="stat-val">{{ fmt(personalTotal()) }}</div>
+    @if (income() > 0) {
+      <div class="stat-pct">{{ (personalTotal() / income() * 100).toFixed(0) }}% du revenu</div>
+    }
+  </div>
+  <div class="stat-card savings-card" [class.savings-neg]="savings() < 0">
+    <div class="stat-icon">{{ savings() >= 0 ? '💚' : '🔴' }}</div>
+    <div class="stat-label">Épargne estimée</div>
+    <div class="stat-val savings-val" [class]="savingsClass()">{{ fmtSigned(savings()) }}</div>
+    @if (income() > 0) {
+      <div class="stat-pct">{{ savingsRate().toFixed(1) }}% du revenu</div>
+    }
+  </div>
+</div>
+
+<!-- ── Insights ── -->
+@if (insights().length > 0) {
+  <div class="insights-section">
+    <div class="section-title">Analyse</div>
+    <div class="insights-scroll">
+      @for (ins of insights(); track ins.title) {
+        <div class="insight-card" [class]="insightClass(ins.type)">
+          <div class="insight-icon">{{ ins.icon }}</div>
+          <div class="insight-body">
+            <div class="insight-title">{{ ins.title }}</div>
+            <div class="insight-desc">{{ ins.body }}</div>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+}
+
+<!-- ── Savings history ── -->
+@if (savingsBarData().length > 1) {
+  <div class="history-section">
+    <div class="section-title">Épargne sur 12 mois</div>
+    <div class="savings-bars">
+      @for (b of savingsBarData(); track b.month) {
+        <div class="bar-col" [class.bar-current]="b.isCurrent" (click)="selectedMonth.set(b.month); loadExpenses(); loadBudget()">
+          <div class="bar-label-top" [class.positive]="b.positive" [class.negative]="!b.positive">
+            {{ b.savings !== 0 ? (b.positive ? '+' : '−') + Math.round(Math.abs(b.savings)) : '' }}
+          </div>
+          <div class="bar-wrap">
+            <div class="bar-fill" [class.bar-pos]="b.positive" [class.bar-neg]="!b.positive"
+                 [style.height.px]="b.height"></div>
+          </div>
+          <div class="bar-month">{{ b.label }}</div>
+        </div>
+      }
+    </div>
+  </div>
+}
+
+<!-- ── Formulaire ajout ── -->
+<div class="add-section">
+  <div class="section-title">
+    <lucide-icon [img]="icons.PlusCircle" [size]="13"></lucide-icon>
+    Ajouter une dépense perso
+  </div>
+  <div class="add-form">
+    <select class="add-input" [(ngModel)]="formCategory" name="category">
+      @for (cat of personalCategories; track cat) {
+        <option [value]="cat">{{ cat }}</option>
+      }
+    </select>
+    <input class="add-input" type="number" [(ngModel)]="formAmount" placeholder="Montant $"
+           name="amount" min="0.01" step="0.01">
+    <input class="add-input" type="date" [(ngModel)]="formDate" name="date">
+    <input class="add-input add-comment" type="text" [(ngModel)]="formComment" placeholder="Commentaire (optionnel)"
+           name="comment">
+    <button class="add-btn" (click)="submit()" [disabled]="submitting()">
+      @if (submitting()) { … }
+      @else if (success()) {
+        <lucide-icon [img]="icons.CheckCircle" [size]="15"></lucide-icon>
+        Ajouté !
+      } @else {
+        <lucide-icon [img]="icons.PlusCircle" [size]="15"></lucide-icon>
+        Ajouter
+      }
+    </button>
+  </div>
+</div>
+
+<!-- ── Tableau dépenses perso ── -->
+<div class="expenses-section">
+  <div class="section-title">
+    Dépenses · {{ monthDisplayLabel(selectedMonth()) }}
+    <span class="exp-count">{{ expenses().length }}</span>
+  </div>
+  @if (!expenses().length) {
+    <div class="empty-state">Aucune dépense perso ce mois.</div>
+  } @else {
+    <div class="exp-table-wrap">
+      <table class="exp-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Catégorie</th>
+            <th class="col-amount">Montant</th>
+            <th>Commentaire</th>
+            <th class="col-action"></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (e of expenses(); track e.id) {
+            <tr>
+              <td class="col-date">{{ formatDate(e.date) }}</td>
+              <td><span class="cat-badge">{{ e.category }}</span></td>
+              <td class="col-amount">{{ fmt(e.amount) }}</td>
+              <td class="col-comment">{{ e.comment || '—' }}</td>
+              <td class="col-action">
+                <button class="del-btn" (click)="deleteExpense(e.id)" title="Supprimer">
+                  <lucide-icon [img]="icons.Trash2" [size]="12"></lucide-icon>
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>
