@@ -7,4 +7,8 @@ export const WS_EVENTS = {
   SYSTEM_METRICS:      'system:metrics',
   LOG_ENTRY:                  'log:entry',
   SIDELOADLY_STATUS_UPDATE:   'sideloadly:status:update',
+  URBACKUP_STATUS_UPDATE:     'urbackup:status:update',
+  APP_VERSIONS:               'app:versions',
+  JELLYFIN_STATUS_UPDATE:     'jellyfin:status:update',
+  BOOKLORE_STATUS_UPDATE:     'booklore:status:update',
 } as const;

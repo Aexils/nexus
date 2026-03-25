@@ -26,10 +26,34 @@ export interface PsnTrophySummary {
   bronze:   number;
 }
 
+export interface PsnTrophyCounts {
+  bronze:   number;
+  silver:   number;
+  gold:     number;
+  platinum: number;
+}
+
+export interface PsnTrophyTitle {
+  npCommunicationId:    string;
+  trophyTitleName:      string;
+  trophyTitleIconUrl?:  string;
+  trophyTitlePlatform:  string;
+  progress:             number;      // 0–100
+  earnedTrophies:       PsnTrophyCounts;
+  definedTrophies:      PsnTrophyCounts;
+  lastUpdatedDateTime?: string;
+}
+
 export interface PsnStatus {
-  connected:     boolean;
-  profile?:      PsnProfile;
-  currentGame?:  PsnGame;       // game currently being played
-  recentGames?:  PsnGame[];     // last 6 played titles
+  connected:      boolean;
+  profile?:       PsnProfile;
+  currentGame?:   PsnGame;            // game currently being played
+  recentGames?:   PsnGame[];          // last 6 played titles
   trophySummary?: PsnTrophySummary;
+  trophyTitles?:  PsnTrophyTitle[];   // per-game trophy progress (last 15)
+}
+
+export interface PsnStatusMap {
+  alexis: PsnStatus;
+  marion: PsnStatus;
 }

@@ -13,7 +13,7 @@ export interface AppInfo {
 }
 
 export type LogLevel  = 'info' | 'warn' | 'error' | 'ok' | 'debug';
-export type LogSource = 'kodi' | 'abs' | 'psn' | 'sideloadly' | 'system' | 'nexus';
+export type LogSource = 'kodi' | 'abs' | 'psn' | 'sideloadly' | 'urbackup' | 'jellyfin' | 'booklore' | 'system' | 'nexus';
 
 export interface LogEntry {
   id:        string;

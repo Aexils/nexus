@@ -21,6 +21,7 @@ export interface AbsLastSession {
 
 export interface AbsStatus {
   connected:      boolean;
+  version?:       string; // server version e.g. "2.17.4"
   activeSessions: AbsSession[];
   lastSession?:   AbsLastSession | null;
 }
@@ -30,6 +31,11 @@ export interface AbsBookProgress {
   progress: number;    // 0–1
   isFinished: boolean;
   lastUpdate?: number;
+}
+
+export interface AbsStatusMap {
+  alexis: AbsStatus;
+  marion: AbsStatus;
 }
 
 export interface AbsLibraryItem {

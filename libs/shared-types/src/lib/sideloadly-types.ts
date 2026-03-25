@@ -40,6 +40,7 @@ export interface SideloadlyDaemon {
 
 export interface SideloadlyStatus {
   connected: boolean;
+  version?: string;             // daemon version, e.g. "0.60"
   daemon: SideloadlyDaemon;
   accounts: SideloadlyAccount[];
   devices: SideloadlyDevice[];

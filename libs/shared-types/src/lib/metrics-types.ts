@@ -23,5 +23,9 @@ export interface SystemMetrics {
   disks: DiskInfo[];
   gpus: GpuInfo[];
   cpuTempCelsius: number | null;
+  windowsProductName?: string; // e.g. "Windows 11 Pro"
+  windowsBuild?: string;       // e.g. "10.0.26200"
+  pendingUpdates?: number | null;
+  dockerVersion?: string;      // e.g. "4.37.1" (Docker Desktop version)
   timestamp: number;        // Date.now()
 }
