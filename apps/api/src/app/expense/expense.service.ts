@@ -2,7 +2,7 @@ import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import Database from 'better-sqlite3';
 import {
   Expense, ExpenseMonthSummary, MonthlyBreakdown, MonthlySubcategory,
-  PersonalExpense, PersonalBudget, BudgetSummary,
+  PersonalExpense, PersonalBudget, BudgetSummary, IncomeEntry,
 } from '@nexus/shared-types';
 import * as path from 'path';
 
@@ -94,6 +94,13 @@ export class ExpenseService implements OnModuleInit {
         month   TEXT NOT NULL,
         income  REAL NOT NULL DEFAULT 0,
         PRIMARY KEY(user_id, month)
+      );
+      CREATE TABLE IF NOT EXISTS personal_income_entries (
+        id      INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id TEXT    NOT NULL,
+        month   TEXT    NOT NULL,
+        label   TEXT    NOT NULL DEFAULT '',
+        amount  REAL    NOT NULL
       );
     `);
   }
@@ -293,11 +300,14 @@ export class ExpenseService implements OnModuleInit {
   }
 
   getBudget(userId: string, month: string): PersonalBudget | null {
-    const row = this.db.prepare(
-      `SELECT * FROM personal_budgets WHERE user_id = ? AND month = ?`
-    ).get(userId, month) as any;
-    if (!row) return null;
-    return { userId: row.user_id, month: row.month, income: row.income };
+    const income = this.getIncomeTotal(userId, month);
+    if (income === 0) {
+      const hasEntries = (this.db.prepare(
+        `SELECT COUNT(*) as n FROM personal_income_entries WHERE user_id = ? AND month = ?`
+      ).get(userId, month) as any).n;
+      if (!hasEntries) return null;
+    }
+    return { userId: userId as any, month, income };
   }
 
   setBudget(userId: string, month: string, income: number): PersonalBudget {
@@ -306,6 +316,35 @@ export class ExpenseService implements OnModuleInit {
        ON CONFLICT(user_id, month) DO UPDATE SET income = excluded.income`
     ).run(userId, month, income);
     return { userId: userId as any, month, income };
+  }
+
+  // ── Income Entries ────────────────────────────────────────────────────────
+
+  getIncomeEntries(userId: string, month: string): IncomeEntry[] {
+    const rows = this.db.prepare(
+      `SELECT * FROM personal_income_entries WHERE user_id = ? AND month = ? ORDER BY id ASC`
+    ).all(userId, month) as any[];
+    return rows.map(r => ({ id: r.id, userId: r.user_id, month: r.month, label: r.label, amount: r.amount }));
+  }
+
+  addIncomeEntry(userId: string, month: string, label: string, amount: number): IncomeEntry {
+    const info = this.db.prepare(
+      `INSERT INTO personal_income_entries (user_id, month, label, amount) VALUES (?, ?, ?, ?)`
+    ).run(userId, month, label, amount);
+    const row = this.db.prepare('SELECT * FROM personal_income_entries WHERE id = ?').get(info.lastInsertRowid) as any;
+    return { id: row.id, userId: row.user_id, month: row.month, label: row.label, amount: row.amount };
+  }
+
+  deleteIncomeEntry(id: number): boolean {
+    const result = this.db.prepare('DELETE FROM personal_income_entries WHERE id = ?').run(id);
+    return result.changes > 0;
+  }
+
+  private getIncomeTotal(userId: string, month: string): number {
+    const row = this.db.prepare(
+      `SELECT COALESCE(SUM(amount), 0) as total FROM personal_income_entries WHERE user_id = ? AND month = ?`
+    ).get(userId, month) as any;
+    return row.total;
   }
 
   getBudgetSummaries(userId: string): BudgetSummary[] {
@@ -321,7 +360,8 @@ export class ExpenseService implements OnModuleInit {
     `).all(userId) as { month: string; category: string; total: number }[];
 
     const budgetRows = this.db.prepare(`
-      SELECT month, income FROM personal_budgets WHERE user_id = ? ORDER BY month DESC LIMIT 12
+      SELECT month, SUM(amount) as income FROM personal_income_entries WHERE user_id = ?
+      GROUP BY month ORDER BY month DESC LIMIT 12
     `).all(userId) as { month: string; income: number }[];
 
     const monthSet = new Set<string>();

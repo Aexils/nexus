@@ -94,10 +94,8 @@
 .income-card {
   background: linear-gradient(135deg, #7c3aed, #5b21b6);
   border-radius: 18px;
-  padding: 24px 28px;
+  padding: 20px 24px;
   margin-bottom: 20px;
-  cursor: pointer;
-  transition: box-shadow 0.2s, transform 0.15s;
   box-shadow: 0 8px 28px rgba(124,58,237,.4), 0 0 0 1px rgba(255,255,255,.08) inset;
   position: relative;
   overflow: hidden;
@@ -110,61 +108,122 @@
   width: 140px; height: 140px;
   border-radius: 50%;
   background: rgba(255,255,255,.06);
+  pointer-events: none;
 }
-.income-card:hover { transform: translateY(-2px); box-shadow: 0 12px 36px rgba(124,58,237,.5); }
+
+.income-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
 
 .income-label {
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: rgba(255,255,255,.65);
-  margin-bottom: 10px;
+  letter-spacing: 0.08em;
+  color: rgba(255,255,255,.75);
 }
 
-.income-val {
-  font-size: 40px;
+.income-add-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 13px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,.35);
+  background: rgba(255,255,255,.15);
+  color: #fff;
+  font-size: 12px; font-weight: 700; font-family: inherit;
+  cursor: pointer; transition: all 0.15s;
+}
+.income-add-btn:hover { background: rgba(255,255,255,.28); }
+
+.income-entries {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.income-entry {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255,255,255,.1);
+  border: 1px solid rgba(255,255,255,.15);
+  border-radius: 10px;
+  padding: 9px 12px;
+}
+
+.entry-label {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255,255,255,.9);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.entry-amount {
+  font-size: 15px;
   font-weight: 800;
   color: #fff;
-  letter-spacing: -0.03em;
-  line-height: 1;
-}
-.income-placeholder { font-size: 20px; opacity: 0.5; font-style: italic; }
-
-.income-edit-hint {
-  display: flex; align-items: center; gap: 4px;
-  font-size: 11px; color: rgba(255,255,255,.5);
-  margin-top: 8px;
+  white-space: nowrap;
 }
 
-.income-edit-row {
-  display: flex; align-items: center; gap: 10px; margin-top: 4px;
+.entry-del-btn {
+  width: 26px; height: 26px;
+  border-radius: 7px;
+  border: 1px solid rgba(255,255,255,.2);
+  background: transparent;
+  color: rgba(255,255,255,.55);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.15s;
+  flex-shrink: 0;
+}
+.entry-del-btn:hover { background: rgba(255,60,60,.35); border-color: rgba(255,60,60,.5); color: #fff; }
+
+.income-placeholder {
+  font-size: 13px; color: rgba(255,255,255,.45); font-style: italic;
+  padding: 6px 0 2px;
+}
+
+.income-add-form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
 }
 
 .income-input {
-  flex: 1;
   background: rgba(255,255,255,.15);
   border: 1px solid rgba(255,255,255,.3);
-  border-radius: 10px;
-  padding: 10px 14px;
-  font-size: 28px;
-  font-weight: 700;
+  border-radius: 9px;
+  padding: 8px 13px;
+  font-size: 14px;
+  font-weight: 600;
   color: #fff;
   font-family: inherit;
   outline: none;
-  max-width: 200px;
+  flex: 1;
+  min-width: 120px;
 }
+.income-input-amount { max-width: 150px; flex: 0 0 auto; }
 .income-input::placeholder { color: rgba(255,255,255,.4); }
 .income-input:focus { border-color: rgba(255,255,255,.6); }
 
 .income-save-btn, .income-cancel-btn {
-  width: 38px; height: 38px;
-  border-radius: 10px;
+  width: 36px; height: 36px;
+  border-radius: 9px;
   border: 1px solid rgba(255,255,255,.3);
   background: rgba(255,255,255,.15);
   color: #fff;
   display: flex; align-items: center; justify-content: center;
   cursor: pointer; font-size: 16px; transition: all 0.15s;
+  flex-shrink: 0;
 }
 .income-save-btn:hover { background: rgba(255,255,255,.3); }
 .income-cancel-btn:hover { background: rgba(255,0,0,.25); border-color: rgba(255,0,0,.4); }

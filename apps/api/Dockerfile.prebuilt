@@ -1,0 +1,11 @@
+# Lightweight image using pre-built dist/apps/api from the host.
+# Run `npx nx build api --configuration=production` before using this.
+FROM node:22-alpine
+WORKDIR /app
+
+COPY dist/apps/api ./
+COPY package-lock.json ./
+RUN npm ci --omit=dev
+
+EXPOSE 3000
+CMD ["node", "main.js"]

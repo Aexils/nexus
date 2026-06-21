@@ -22,25 +22,41 @@
 </div>
 
 <!-- ── Income Card ── -->
-<div class="income-card" (click)="!editingIncome() && startEditIncome()">
-  <div class="income-label">Revenu mensuel</div>
-  @if (editingIncome()) {
-    <div class="income-edit-row" (click)="$event.stopPropagation()">
-      <input class="income-input" type="number" [(ngModel)]="incomeInput" placeholder="0"
-             min="0" step="100" (keyup.enter)="saveIncome()" autofocus>
-      <button class="income-save-btn" (click)="saveIncome()">
-        <lucide-icon [img]="icons.CheckCircle" [size]="18"></lucide-icon>
-      </button>
-      <button class="income-cancel-btn" (click)="cancelEditIncome()">✕</button>
+<div class="income-card">
+  <div class="income-header">
+    <div class="income-label">Revenus · {{ fmt(income()) }}</div>
+    <button class="income-add-btn" (click)="addingIncome.set(!addingIncome())">
+      <lucide-icon [img]="icons.PlusCircle" [size]="15"></lucide-icon>
+      Ajouter
+    </button>
+  </div>
+
+  @if (incomeEntries().length > 0) {
+    <div class="income-entries">
+      @for (entry of incomeEntries(); track entry.id) {
+        <div class="income-entry">
+          <span class="entry-label">{{ entry.label || 'Revenu' }}</span>
+          <span class="entry-amount">{{ fmt(entry.amount) }}</span>
+          <button class="entry-del-btn" (click)="deleteIncomeEntry(entry.id)" title="Supprimer">
+            <lucide-icon [img]="icons.Trash2" [size]="12"></lucide-icon>
+          </button>
+        </div>
+      }
     </div>
   } @else {
-    <div class="income-val">
-      @if (income() > 0) { {{ fmt(income()) }} }
-      @else { <span class="income-placeholder">Cliquer pour définir…</span> }
-    </div>
-    <div class="income-edit-hint">
-      <lucide-icon [img]="icons.Pencil" [size]="11"></lucide-icon>
-      Modifier
+    <div class="income-placeholder">Aucun revenu défini — cliquez sur Ajouter.</div>
+  }
+
+  @if (addingIncome()) {
+    <div class="income-add-form" (click)="$event.stopPropagation()">
+      <input class="income-input" type="text" [(ngModel)]="incomeLabel"
+             placeholder="Libellé (ex: Salaire, Prime…)">
+      <input class="income-input income-input-amount" type="number" [(ngModel)]="incomeAmount"
+             placeholder="Montant $" min="0.01" step="100" (keyup.enter)="addIncomeEntry()">
+      <button class="income-save-btn" (click)="addIncomeEntry()">
+        <lucide-icon [img]="icons.CheckCircle" [size]="18"></lucide-icon>
+      </button>
+      <button class="income-cancel-btn" (click)="addingIncome.set(false)">✕</button>
     </div>
   }
 </div>
@@ -97,7 +113,7 @@
     <div class="section-title">Épargne sur 12 mois</div>
     <div class="savings-bars">
       @for (b of savingsBarData(); track b.month) {
-        <div class="bar-col" [class.bar-current]="b.isCurrent" (click)="selectedMonth.set(b.month); loadExpenses(); loadBudget()">
+        <div class="bar-col" [class.bar-current]="b.isCurrent" (click)="selectedMonth.set(b.month); loadExpenses(); loadIncomeEntries()">
           <div class="bar-label-top" [class.positive]="b.positive" [class.negative]="!b.positive">
             {{ b.savings !== 0 ? (b.positive ? '+' : '−') + Math.round(Math.abs(b.savings)) : '' }}
           </div>

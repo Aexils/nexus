@@ -72,6 +72,14 @@ export interface PersonalBudget {
   income: number;
 }
 
+export interface IncomeEntry {
+  id: number;
+  userId: ExpensePaidBy;
+  month: string;       // YYYY-MM
+  label: string;
+  amount: number;
+}
+
 export interface BudgetSummary {
   month: string;
   income: number;

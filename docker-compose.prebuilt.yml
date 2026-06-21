@@ -1,0 +1,13 @@
+# Override pour déploiement avec artefacts pré-buildés localement.
+# Usage : ./deploy.sh
+# (ou manuellement : npx nx build api && npx nx build dashboard && docker compose -f docker-compose.yml -f docker-compose.prebuilt.yml up -d --build)
+services:
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile.prebuilt
+
+  dashboard:
+    build:
+      context: .
+      dockerfile: apps/dashboard/Dockerfile.prebuilt

@@ -7,10 +7,10 @@ import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   LucideAngularModule,
-  ChevronLeft, ChevronRight, PlusCircle, Trash2, CheckCircle, Pencil,
+  ChevronLeft, ChevronRight, PlusCircle, Trash2, CheckCircle,
 } from 'lucide-angular';
 import {
-  PersonalExpense, PersonalBudget, BudgetSummary, PERSONAL_CATEGORIES, NexusUser,
+  PersonalExpense, BudgetSummary, PERSONAL_CATEGORIES, NexusUser, IncomeEntry,
 } from '@nexus/shared-types';
 
 const MONTH_LABELS: Record<string, string> = {
@@ -39,7 +39,7 @@ export class BudgetPage implements OnInit {
   private readonly route  = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
-  readonly icons = { ChevronLeft, ChevronRight, PlusCircle, Trash2, CheckCircle, Pencil };
+  readonly icons = { ChevronLeft, ChevronRight, PlusCircle, Trash2, CheckCircle };
   readonly Math = Math;
 
   // ── State ──────────────────────────────────────────────────────────────────
@@ -50,13 +50,13 @@ export class BudgetPage implements OnInit {
   readonly selectedMonth  = signal(this.currentMonthStr());
   readonly expenses       = signal<PersonalExpense[]>([]);
   readonly summaries      = signal<BudgetSummary[]>([]);
-  readonly currentBudget  = signal<PersonalBudget | null>(null);
+  readonly incomeEntries   = signal<IncomeEntry[]>([]);
+  readonly addingIncome    = signal(false);
+  readonly submitting      = signal(false);
+  readonly success         = signal(false);
 
-  readonly editingIncome  = signal(false);
-  readonly submitting     = signal(false);
-  readonly success        = signal(false);
-
-  incomeInput = '';
+  incomeLabel  = '';
+  incomeAmount = '';
   formCategory: string = PERSONAL_CATEGORIES[0];
   formAmount   = '';
   formDate     = this.todayStr();
@@ -66,7 +66,7 @@ export class BudgetPage implements OnInit {
 
   // ── Computeds ──────────────────────────────────────────────────────────────
 
-  readonly income = computed(() => this.currentBudget()?.income ?? 0);
+  readonly income = computed(() => this.incomeEntries().reduce((s, e) => s + e.amount, 0));
 
   readonly currentSummary = computed(() =>
     this.summaries().find(s => s.month === this.selectedMonth()) ?? null
@@ -155,7 +155,7 @@ export class BudgetPage implements OnInit {
   ngOnInit(): void {
     this.loadSummaries();
     this.loadExpenses();
-    this.loadBudget();
+    this.loadIncomeEntries();
   }
 
   // ── Data ───────────────────────────────────────────────────────────────────
@@ -172,44 +172,49 @@ export class BudgetPage implements OnInit {
     }).subscribe({ next: d => this.summaries.set(d) });
   }
 
-  loadBudget(): void {
-    this.http.get<PersonalBudget | null>('/api/expenses/budget', {
+  loadIncomeEntries(): void {
+    this.http.get<IncomeEntry[]>('/api/expenses/income', {
       params: { userId: this.userId, month: this.selectedMonth() },
-    }).subscribe({ next: d => this.currentBudget.set(d ?? null) });
+    }).subscribe({ next: d => this.incomeEntries.set(d) });
   }
 
   // ── Month navigation ───────────────────────────────────────────────────────
 
   prevMonth(): void {
     this.selectedMonth.update(m => this.offsetMonth(m, -1));
-    this.loadExpenses(); this.loadBudget();
+    this.loadExpenses(); this.loadIncomeEntries();
   }
 
   nextMonth(): void {
     this.selectedMonth.update(m => this.offsetMonth(m, 1));
-    this.loadExpenses(); this.loadBudget();
+    this.loadExpenses(); this.loadIncomeEntries();
   }
 
-  // ── Income edit ────────────────────────────────────────────────────────────
+  // ── Income entries ────────────────────────────────────────────────────────
 
-  startEditIncome(): void {
-    this.incomeInput = this.income() > 0 ? String(this.income()) : '';
-    this.editingIncome.set(true);
-  }
-
-  saveIncome(): void {
-    const val = parseFloat(this.incomeInput);
-    if (isNaN(val) || val < 0) { this.editingIncome.set(false); return; }
-    this.http.put<PersonalBudget>('/api/expenses/budget', {
-      userId: this.userId, month: this.selectedMonth(), income: val,
-    }).subscribe({ next: b => {
-      this.currentBudget.set(b);
+  addIncomeEntry(): void {
+    const amount = parseFloat(this.incomeAmount);
+    if (isNaN(amount) || amount <= 0) return;
+    this.http.post<IncomeEntry>('/api/expenses/income', {
+      userId: this.userId, month: this.selectedMonth(),
+      label: this.incomeLabel.trim(), amount,
+    }).subscribe({ next: entry => {
+      this.incomeEntries.update(l => [...l, entry]);
+      this.incomeLabel  = '';
+      this.incomeAmount = '';
+      this.addingIncome.set(false);
       this.loadSummaries();
-      this.editingIncome.set(false);
     }});
   }
 
-  cancelEditIncome(): void { this.editingIncome.set(false); }
+  deleteIncomeEntry(id: number): void {
+    this.http.delete(`/api/expenses/income/${id}`).subscribe({
+      next: () => {
+        this.incomeEntries.update(l => l.filter(e => e.id !== id));
+        this.loadSummaries();
+      },
+    });
+  }
 
   // ── Expense form ───────────────────────────────────────────────────────────
 

@@ -35,6 +35,25 @@ export class ExpenseController {
     return { deleted: this.svc.deletePersonalExpense(id) };
   }
 
+  @Get('income')
+  getIncomeEntries(@Query('userId') userId: string, @Query('month') month: string) {
+    if (!userId || !month) throw new BadRequestException('userId et month requis');
+    return this.svc.getIncomeEntries(userId, month);
+  }
+
+  @Post('income')
+  addIncomeEntry(@Body() body: { userId: string; month: string; label?: string; amount: number }) {
+    const { userId, month, label = '', amount } = body;
+    if (!userId || !month || !amount) throw new BadRequestException('Champs manquants');
+    if (!['alexis', 'marion'].includes(userId)) throw new BadRequestException('userId invalide');
+    return this.svc.addIncomeEntry(userId, month, label, Number(amount));
+  }
+
+  @Delete('income/:id')
+  deleteIncomeEntry(@Param('id', ParseIntPipe) id: number) {
+    return { deleted: this.svc.deleteIncomeEntry(id) };
+  }
+
   @Get('budget-summary')
   getBudgetSummaries(@Query('userId') userId: string) {
     if (!userId) throw new BadRequestException('userId requis');
