@@ -29,7 +29,9 @@
       "WebFetch(domain:booklore-app.github.io)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(git rm:*)"
+      "Bash(git rm:*)",
+      "Bash(git push:*)",
+      "Bash(git remote:*)"
     ]
   }
 }
