@@ -6,6 +6,7 @@ on:
     paths-ignore:
       - "charts/**"
       - "**.md"
+      - ".claude/**"
 
 env:
   REGISTRY: ghcr.io
