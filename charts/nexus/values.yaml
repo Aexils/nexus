@@ -1,0 +1,47 @@
+# Values par défaut de la chart nexus.
+# Les values d'environnement (homelab, etc.) surchargent ce fichier — voir le
+# repo d'infra (pattern multi-sources ArgoCD).
+
+image:
+  registry: ghcr.io/aexils
+  tag: latest
+  pullPolicy: Always   # cohérent avec le tag mouvant "latest"
+
+api:
+  # Variables d'environnement injectées telles quelles dans le conteneur api.
+  # Les intégrations (Kodi, Jellyfin, PSN...) sont volontairement absentes :
+  # services down en attendant le refactor. Les ajouter ici le moment venu
+  # (et les secrets via un Secret référencé, jamais en clair dans les values).
+  env:
+    PORT: "3000"
+    CORS_ORIGIN: "*"
+    EXPENSE_DB_PATH: /nexus-state/expenses.db
+    KODI_STATE_PATH: /nexus-state/kodi-state.json
+    ABS_STATE_PATH: /nexus-state/abs-state.json
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      memory: 256Mi
+
+dashboard:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      memory: 64Mi
+
+persistence:
+  size: 1Gi
+  # vide = StorageClass par défaut du cluster
+  storageClassName: ""
+
+route:
+  enabled: true
+  hostname: nexus.example.com
+  parentRef:
+    name: homelab-gw
+    namespace: envoy-gateway-system

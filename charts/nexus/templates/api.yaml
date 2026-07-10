@@ -1,0 +1,64 @@
+# Le Service DOIT s'appeler "api" : le nginx du dashboard proxifie
+# /api et /socket.io vers http://api:3000 (résolution DNS du namespace).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+  labels:
+    app.kubernetes.io/name: api
+    app.kubernetes.io/part-of: nexus
+spec:
+  replicas: 1          # SQLite dans le volume RWO : une seule instance, toujours
+  strategy:
+    type: Recreate     # évite deux pods sur la même base pendant un rollout
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: api
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: api
+        app.kubernetes.io/part-of: nexus
+    spec:
+      containers:
+        - name: api
+          image: "{{ .Values.image.registry }}/nexus-api:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: 3000
+          env:
+            {{- range $k, $v := .Values.api.env }}
+            - name: {{ $k }}
+              value: {{ $v | quote }}
+            {{- end }}
+          volumeMounts:
+            - name: state
+              mountPath: /nexus-state
+          readinessProbe:
+            tcpSocket:
+              port: 3000
+            initialDelaySeconds: 5
+          livenessProbe:
+            tcpSocket:
+              port: 3000
+            initialDelaySeconds: 15
+          resources:
+            {{- toYaml .Values.api.resources | nindent 12 }}
+      volumes:
+        - name: state
+          persistentVolumeClaim:
+            claimName: nexus-state
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api
+  labels:
+    app.kubernetes.io/name: api
+    app.kubernetes.io/part-of: nexus
+spec:
+  selector:
+    app.kubernetes.io/name: api
+  ports:
+    - port: 3000
+      targetPort: 3000

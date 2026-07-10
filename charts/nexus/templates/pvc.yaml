@@ -1,0 +1,16 @@
+# État persistant de l'api : expenses.db + états de lecture (kodi/abs).
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nexus-state
+  labels:
+    app.kubernetes.io/part-of: nexus
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.persistence.size }}
+  {{- with .Values.persistence.storageClassName }}
+  storageClassName: {{ . }}
+  {{- end }}
