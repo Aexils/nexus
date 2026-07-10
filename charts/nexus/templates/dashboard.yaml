@@ -18,8 +18,8 @@ spec:
     spec:
       containers:
         - name: dashboard
-          image: "{{ .Values.image.registry }}/nexus-dashboard:{{ .Values.image.tag }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          image: "{{ .Values.dashboard.image.repository }}:{{ .Values.dashboard.image.tag }}"
+          imagePullPolicy: {{ .Values.dashboard.image.pullPolicy }}
           ports:
             - containerPort: 80
           readinessProbe:

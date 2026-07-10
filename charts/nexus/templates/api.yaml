@@ -22,8 +22,8 @@ spec:
     spec:
       containers:
         - name: api
-          image: "{{ .Values.image.registry }}/nexus-api:{{ .Values.image.tag }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          image: "{{ .Values.api.image.repository }}:{{ .Values.api.image.tag }}"
+          imagePullPolicy: {{ .Values.api.image.pullPolicy }}
           ports:
             - containerPort: 3000
           env:

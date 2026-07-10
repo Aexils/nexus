@@ -2,12 +2,13 @@
 # Les values d'environnement (homelab, etc.) surchargent ce fichier — voir le
 # repo d'infra (pattern multi-sources ArgoCD).
 
-image:
-  registry: ghcr.io/aexils
-  tag: latest
-  pullPolicy: Always   # cohérent avec le tag mouvant "latest"
-
 api:
+  image:
+    repository: ghcr.io/aexils/nexus-api
+    # Tag immuable (SHA du commit) écrit par ArgoCD Image Updater dans les
+    # values d'environnement — "latest" n'est que le défaut de bootstrap.
+    tag: latest
+    pullPolicy: IfNotPresent
   # Variables d'environnement injectées telles quelles dans le conteneur api.
   # Les intégrations (Kodi, Jellyfin, PSN...) sont volontairement absentes :
   # services down en attendant le refactor. Les ajouter ici le moment venu
@@ -26,6 +27,10 @@ api:
       memory: 256Mi
 
 dashboard:
+  image:
+    repository: ghcr.io/aexils/nexus-dashboard
+    tag: latest
+    pullPolicy: IfNotPresent
   replicas: 1
   resources:
     requests:
