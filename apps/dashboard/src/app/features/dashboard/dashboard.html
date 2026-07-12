@@ -2,367 +2,45 @@
 <div class="page-header">
   <div>
     <div class="page-title">Dashboard <span>Nexus</span></div>
-    <div class="page-subtitle">{{ connectedCount }}/7 services connectés</div>
-  </div>
-  <div class="ws-indicator" [class.connected]="connectedCount > 0">
-    <span class="ws-dot"></span>
-    {{ connectedCount > 0 ? 'WebSocket OK' : 'En attente...' }}
+    <div class="page-subtitle">Homelab Kubernetes</div>
   </div>
 </div>
 
-<!-- ── Sections draggables (grid + log) ── -->
-<div cdkDropList cdkDropListOrientation="vertical" (cdkDropListDropped)="onSectionDrop($event)" class="sections-list">
-  @for (sectionId of sectionOrder(); track sectionId) {
-    <div cdkDrag class="section-drag-item">
+<div class="dashboard">
 
-      <!-- Section drag handle -->
-      <div class="section-drag-handle" cdkDragHandle title="Déplacer la section">
-        <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
-          <circle cx="5" cy="3" r="1.5"/><circle cx="11" cy="3" r="1.5"/>
-          <circle cx="5" cy="8" r="1.5"/><circle cx="11" cy="8" r="1.5"/>
-          <circle cx="5" cy="13" r="1.5"/><circle cx="11" cy="13" r="1.5"/>
-        </svg>
+  <!-- Emplacement des futures cartes cluster (nœuds / pods / apps) — refonte en cours -->
+  <section class="cluster-grid-placeholder">
+    <p class="placeholder-hint">Vue cluster à venir (nœuds, pods, apps du homelab).</p>
+  </section>
+
+  <!-- ── Journal temps réel (WebSocket) ── -->
+  <section class="log-panel">
+    <header class="log-header">
+      <span class="log-title">Journal</span>
+      <div class="log-actions">
+        <button type="button" (click)="toggleDebug()" [class.active]="showDebug()">Debug</button>
+        <button type="button" (click)="clearLogs()">Effacer</button>
       </div>
+    </header>
 
-      @if (sectionId === 'grid') {
-        <!-- ── Services Grid ── -->
-        <div cdkDropList cdkDropListOrientation="mixed" (cdkDropListDropped)="onCardDrop($event)" class="services-grid">
-          @for (cardId of cardOrder(); track cardId) {
-            <div cdkDrag class="card-drag-wrap">
-
-              <!-- Card drag handle -->
-              <div class="card-drag-handle" cdkDragHandle title="Déplacer">
-                <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor">
-                  <circle cx="5" cy="3" r="1.5"/><circle cx="11" cy="3" r="1.5"/>
-                  <circle cx="5" cy="8" r="1.5"/><circle cx="11" cy="8" r="1.5"/>
-                  <circle cx="5" cy="13" r="1.5"/><circle cx="11" cy="13" r="1.5"/>
-                </svg>
-              </div>
-
-              <!-- ── Kodi ── -->
-              @if (cardId === 'kodi') {
-                <div class="service-card kodi-card" [class.offline]="!kodiConnected"
-                     (click)="openKodi()" role="button" tabindex="0">
-                  <div class="card-top">
-                    <div class="service-logo kodi-logo">K</div>
-                    <div class="service-info">
-                      <div class="service-name">Kodi</div>
-                      <div class="service-meta">Media Center · JSON-RPC</div>
-                    </div>
-                    <app-status-badge
-                      [status]="kodiConnected ? 'running' : 'error'"
-                      [customLabel]="kodiConnected ? 'Up' : 'Down'"
-                      [dotOnly]="kodiConnected">
-                    </app-status-badge>
-                  </div>
-                  <div class="card-stats">
-                    @if (kodiConnected) {
-                      @if (kodiLastActivity; as ts) {
-                        <div class="stat-row">
-                          <span class="stat-label">Dernière activité</span>
-                          <span class="stat-val">{{ formatRelativeTs(ts) }}</span>
-                        </div>
-                      } @else {
-                        <div class="stat-row muted">Aucune activité récente</div>
-                      }
-                    } @else {
-                      <div class="stat-row muted">Service inaccessible</div>
-                    }
-                  </div>
-                  <div class="card-footer"><span class="open-hint">Ouvrir Kodi →</span></div>
-                </div>
-              }
-
-              <!-- ── Audiobookshelf ── -->
-              @if (cardId === 'abs') {
-                <div class="service-card abs-card" [class.offline]="!absConnected"
-                     (click)="openAbs()" role="button" tabindex="0">
-                  <div class="card-top">
-                    <div class="service-logo abs-logo">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-                        <path d="M3 18v-6a9 9 0 0 1 18 0v6"/>
-                        <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>
-                      </svg>
-                    </div>
-                    <div class="service-info">
-                      <div class="service-name">Audiobookshelf</div>
-                      <div class="service-meta">REST API · Port 13378{{ absVersion ? ' · v' + absVersion : '' }}</div>
-                    </div>
-                    <app-status-badge
-                      [status]="absConnected ? 'running' : 'error'"
-                      [customLabel]="absConnected ? 'Up' : 'Down'"
-                      [dotOnly]="absConnected">
-                    </app-status-badge>
-                  </div>
-                  <div class="card-stats">
-                    @if (absConnected) {
-                      <div class="stat-row">
-                        <span class="stat-label">Sessions actives</span>
-                        <span class="stat-val" [class.highlighted]="absTotalSessions > 0">{{ absTotalSessions }}</span>
-                      </div>
-                      <div class="stat-row muted">2 comptes configurés</div>
-                    } @else {
-                      <div class="stat-row muted">Service inaccessible</div>
-                    }
-                  </div>
-                  <div class="card-footer"><span class="open-hint">Ouvrir Audiobookshelf →</span></div>
-                </div>
-              }
-
-              <!-- ── Booklore ── -->
-              @if (cardId === 'booklore') {
-                <div class="service-card bl-card" [class.offline]="!blConnected"
-                     (click)="openBooklore()" role="button" tabindex="0">
-                  <div class="card-top">
-                    <div class="service-logo bl-logo">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
-                        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
-                      </svg>
-                    </div>
-                    <div class="service-info">
-                      <div class="service-name">Booklore</div>
-                      <div class="service-meta">Bibliothèque ebooks · Port 6060{{ blVersion ? ' · v' + blVersion : '' }}</div>
-                    </div>
-                    <app-status-badge
-                      [status]="blConnected ? 'running' : 'error'"
-                      [customLabel]="blConnected ? 'Up' : 'Down'"
-                      [dotOnly]="blConnected">
-                    </app-status-badge>
-                  </div>
-                  <div class="card-stats">
-                    @if (blConnected) {
-                      <div class="stat-row">
-                        <span class="stat-label">Total livres</span>
-                        <span class="stat-val">{{ blTotalBooks }}</span>
-                      </div>
-                      <div class="stat-row">
-                        <span class="stat-label">En cours de lecture</span>
-                        <span class="stat-val" [class.highlighted]="blReadingCount > 0">{{ blReadingCount }}</span>
-                      </div>
-                    } @else {
-                      <div class="stat-row muted">Service inaccessible</div>
-                    }
-                  </div>
-                  <div class="card-footer"><span class="open-hint">Ouvrir Booklore →</span></div>
-                </div>
-              }
-
-              <!-- ── Jellyfin ── -->
-              @if (cardId === 'jellyfin') {
-                <div class="service-card jf-card" [class.offline]="!jfConnected"
-                     (click)="openJellyfin()" role="button" tabindex="0">
-                  <div class="card-top">
-                    <div class="service-logo jf-logo">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-                        <polygon points="23 7 16 12 23 17 23 7"/>
-                        <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
-                      </svg>
-                    </div>
-                    <div class="service-info">
-                      <div class="service-name">Jellyfin</div>
-                      <div class="service-meta">{{ jfServerName ?? 'Media Server' }} · Port 8096{{ jfVersion ? ' · v' + jfVersion : '' }}</div>
-                    </div>
-                    <app-status-badge
-                      [status]="jfConnected ? (jfActiveSessions > 0 ? 'playing' : 'running') : 'error'"
-                      [customLabel]="jfConnected ? (jfActiveSessions > 0 ? 'En lecture' : 'Up') : 'Down'"
-                      [dotOnly]="jfConnected && jfActiveSessions === 0">
-                    </app-status-badge>
-                  </div>
-                  <div class="card-stats">
-                    @if (jfConnected) {
-                      <div class="stat-row">
-                        <span class="stat-label">Sessions actives</span>
-                        <span class="stat-val" [class.highlighted]="jfActiveSessions > 0">{{ jfActiveSessions }}</span>
-                      </div>
-                    } @else {
-                      <div class="stat-row muted">Service inaccessible</div>
-                    }
-                  </div>
-                  <div class="card-footer"><span class="open-hint">Ouvrir Jellyfin →</span></div>
-                </div>
-              }
-
-              <!-- ── PlayStation Network ── -->
-              @if (cardId === 'psn') {
-                <div class="service-card psn-card" [class.offline]="!psnAnyConnected"
-                     (click)="openPsn()" role="button" tabindex="0">
-                  <div class="card-top">
-                    <div class="service-logo psn-logo">PS</div>
-                    <div class="service-info">
-                      <div class="service-name">PlayStation Network</div>
-                      <div class="service-meta">PSN API</div>
-                    </div>
-                    <app-status-badge
-                      [status]="psnAnyConnected ? 'running' : 'error'"
-                      [customLabel]="psnBothConnected ? '2/2' : psnAnyConnected ? '1/2' : 'Down'">
-                    </app-status-badge>
-                  </div>
-                  <div class="card-stats">
-                    @if (psnAnyConnected) {
-                      <div class="stat-row">
-                        <span class="stat-label">Comptes connectés</span>
-                        <span class="stat-val">{{ psnBothConnected ? 'Alexis & Marion' : '1 sur 2' }}</span>
-                      </div>
-                    } @else {
-                      <div class="stat-row muted">API inaccessible</div>
-                    }
-                    <div class="stat-row muted">2 comptes configurés</div>
-                  </div>
-                  <div class="card-footer"><span class="open-hint">Ouvrir PlayStation →</span></div>
-                </div>
-              }
-
-              <!-- ── Sideloadly ── -->
-              @if (cardId === 'sideloadly') {
-                <div class="service-card sdly-card" [class.offline]="!sdlyConnected"
-                     (click)="openSdly()" role="button" tabindex="0">
-                  <div class="card-top">
-                    <div class="service-logo sdly-logo">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-                        <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
-                        <line x1="12" y1="18" x2="12.01" y2="18"/>
-                      </svg>
-                    </div>
-                    <div class="service-info">
-                      <div class="service-name">Sideloadly</div>
-                      <div class="service-meta">Daemon · Docker{{ sdlyVersion ? ' · v' + sdlyVersion : '' }}</div>
-                    </div>
-                    <app-status-badge
-                      [status]="sdlyConnected ? (sdlyDaemonAlive ? 'running' : 'stopped') : 'error'"
-                      [customLabel]="sdlyConnected ? (sdlyDaemonAlive ? 'Up' : 'Arrêté') : 'Down'"
-                      [dotOnly]="sdlyConnected && sdlyDaemonAlive">
-                    </app-status-badge>
-                  </div>
-                  <div class="card-stats">
-                    @if (sdlyConnected) {
-                      <div class="stat-row">
-                        <span class="stat-label">Applications</span>
-                        <span class="stat-val" [class.warn]="sdlyExpiringCount > 0">
-                          {{ sdlyAppCount }} app{{ sdlyAppCount !== 1 ? 's' : '' }}
-                          @if (sdlyExpiringCount > 0) { · {{ sdlyExpiringCount }} expire }
-                        </span>
-                      </div>
-                      @if (sdlyNearestMs !== null) {
-                        <div class="stat-row">
-                          <span class="stat-label">Prochain renouvellement</span>
-                          <span class="stat-val" [class.warn]="sdlyNearestMs < 3_600_000">{{ formatCountdownShort(sdlyNearestMs) }}</span>
-                        </div>
-                      }
-                    } @else {
-                      <div class="stat-row muted">Données inaccessibles</div>
-                    }
-                  </div>
-                  <div class="card-footer"><span class="open-hint">Ouvrir Sideloadly →</span></div>
-                </div>
-              }
-
-              <!-- ── UrBackup ── -->
-              @if (cardId === 'urbackup') {
-                <div class="service-card urb-card" [class.offline]="!urbConnected"
-                     (click)="openUrb()" role="button" tabindex="0">
-                  <div class="card-top">
-                    <div class="service-logo urb-logo">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-                        <line x1="22" y1="12" x2="2" y2="12"/>
-                        <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>
-                        <line x1="6" y1="16" x2="6.01" y2="16"/>
-                        <line x1="10" y1="16" x2="10.01" y2="16"/>
-                      </svg>
-                    </div>
-                    <div class="service-info">
-                      <div class="service-name">UrBackup</div>
-                      <div class="service-meta">Serveur de sauvegarde</div>
-                    </div>
-                    <app-status-badge
-                      [status]="urbConnected ? (urbIsRunning ? 'playing' : 'running') : 'error'"
-                      [customLabel]="urbConnected ? (urbIsRunning ? 'Backup' : 'Up') : 'Down'"
-                      [dotOnly]="urbConnected && !urbIsRunning">
-                    </app-status-badge>
-                  </div>
-                  <div class="card-stats">
-                    @if (urbConnected) {
-                      <div class="stat-row">
-                        <span class="stat-label">Clients en ligne</span>
-                        <span class="stat-val">{{ urbOnlineCount }}/{{ urbTotalClients }}</span>
-                      </div>
-                      @if (urbLastBackupTs; as ts) {
-                        <div class="stat-row">
-                          <span class="stat-label">Dernier backup</span>
-                          <span class="stat-val">{{ formatRelativeTs(ts) }}</span>
-                        </div>
-                      }
-                    } @else {
-                      <div class="stat-row muted">Serveur inaccessible</div>
-                    }
-                  </div>
-                  <div class="card-footer"><span class="open-hint">Ouvrir UrBackup →</span></div>
-                </div>
-              }
-
-              <!-- CDK drag placeholder -->
-              <div class="card-placeholder" *cdkDragPlaceholder></div>
-            </div>
-          }
-        </div>
+    <div class="log-filters">
+      @for (lvl of ['all','info','ok','warn','error']; track lvl) {
+        <button type="button" [class.active]="filterLevel() === lvl" (click)="setFilterLevel($any(lvl))">{{ lvl }}</button>
       }
-
-      @if (sectionId === 'log') {
-        <!-- ── Event Log ── -->
-        <div class="panel">
-          <div class="panel-header">
-            <span class="panel-title">Journal d'Événements</span>
-            <div class="log-controls">
-              <!-- Source filter -->
-              <div class="filter-group">
-                <button class="filter-chip" [class.active]="filterSource() === 'all'"        (click)="setFilterSource('all')">Tous</button>
-                <button class="filter-chip" [class.active]="filterSource() === 'kodi'"       (click)="setFilterSource('kodi')">Kodi</button>
-                <button class="filter-chip" [class.active]="filterSource() === 'abs'"        (click)="setFilterSource('abs')">ABS</button>
-                <button class="filter-chip" [class.active]="filterSource() === 'psn'"        (click)="setFilterSource('psn')">PSN</button>
-                <button class="filter-chip" [class.active]="filterSource() === 'nexus'"      (click)="setFilterSource('nexus')">Nexus</button>
-                <button class="filter-chip" [class.active]="filterSource() === 'sideloadly'" (click)="setFilterSource('sideloadly')">Sdly</button>
-                <button class="filter-chip" [class.active]="filterSource() === 'urbackup'"   (click)="setFilterSource('urbackup')">UB</button>
-                <button class="filter-chip" [class.active]="filterSource() === 'jellyfin'"  (click)="setFilterSource('jellyfin')">JF</button>
-              </div>
-              <!-- Level filter -->
-              <div class="filter-group">
-                <button class="filter-chip"       [class.active]="filterLevel() === 'all'"   (click)="setFilterLevel('all')">Tous</button>
-                <button class="filter-chip ok"    [class.active]="filterLevel() === 'ok'"    (click)="setFilterLevel('ok')">OK</button>
-                <button class="filter-chip info"  [class.active]="filterLevel() === 'info'"  (click)="setFilterLevel('info')">Info</button>
-                <button class="filter-chip warn"  [class.active]="filterLevel() === 'warn'"  (click)="setFilterLevel('warn')">Warn</button>
-                <button class="filter-chip error" [class.active]="filterLevel() === 'error'" (click)="setFilterLevel('error')">Error</button>
-              </div>
-              <button class="btn btn-ghost btn-xs debug-toggle" [class.active]="showDebug()" (click)="toggleDebug()" title="Afficher les logs serveur internes">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                </svg>
-                Serveur
-              </button>
-              <button class="btn btn-ghost btn-xs" (click)="clearLogs()">Clear</button>
-            </div>
-          </div>
-          <div class="panel-body">
-            <div class="log-list">
-              @for (entry of filteredLogs(); track entry.id) {
-                <div class="log-entry" [class.is-debug]="entry.level === 'debug'">
-                  <span class="log-time">{{ formatTime(entry.timestamp) }}</span>
-                  <span class="log-source">{{ entry.source }}</span>
-                  <span class="log-level" [class]="logLevelClass(entry.level)">
-                    {{ logLevelLabel(entry.level) }}
-                  </span>
-                  <span class="log-msg">{{ entry.message }}</span>
-                </div>
-              }
-              @if (filteredLogs().length === 0) {
-                <p class="log-empty">Aucun événement</p>
-              }
-            </div>
-          </div>
-        </div>
-      }
-
-      <!-- Section drag placeholder -->
-      <div class="section-placeholder" *cdkDragPlaceholder></div>
     </div>
-  }
+
+    <ul class="log-list">
+      @for (entry of filteredLogs(); track entry) {
+        <li class="log-entry" [class]="logLevelClass(entry.level)">
+          <span class="log-time">{{ formatTime(entry.timestamp) }}</span>
+          <span class="log-level">{{ logLevelLabel(entry.level) }}</span>
+          <span class="log-source">{{ entry.source }}</span>
+          <span class="log-message">{{ entry.message }}</span>
+        </li>
+      } @empty {
+        <li class="log-empty">Aucun log pour ce filtre.</li>
+      }
+    </ul>
+  </section>
+
 </div>
