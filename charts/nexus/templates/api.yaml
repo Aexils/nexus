@@ -20,6 +20,7 @@ spec:
         app.kubernetes.io/name: api
         app.kubernetes.io/part-of: nexus
     spec:
+      serviceAccountName: {{ if .Values.rbac.enabled }}nexus-api{{ else }}default{{ end }}
       containers:
         - name: api
           image: "{{ .Values.api.image.repository }}:{{ .Values.api.image.tag }}"

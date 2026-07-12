@@ -39,6 +39,9 @@ dashboard:
     limits:
       memory: 64Mi
 
+rbac:
+  enabled: true   # ServiceAccount nexus-api + ClusterRole lecture (metrics-server, nodes, deployments, jobs, events)
+
 persistence:
   size: 1Gi
   # vide = StorageClass par défaut du cluster

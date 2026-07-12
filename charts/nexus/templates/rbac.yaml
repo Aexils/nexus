@@ -1,0 +1,49 @@
+{{- if .Values.rbac.enabled }}
+# Identité cluster de Nexus : lecture seule pour alimenter le dashboard
+# (métriques par nœud via metrics-server, versions des apps, jobs de backup, events).
+# Portée volontairement minimale — aucun droit d'écriture.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: nexus-api
+  labels:
+    app.kubernetes.io/part-of: nexus
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: nexus-reader
+  labels:
+    app.kubernetes.io/part-of: nexus
+rules:
+  # Métriques par nœud (metrics-server)
+  - apiGroups: ["metrics.k8s.io"]
+    resources: ["nodes", "pods"]
+    verbs: ["get", "list"]
+  # État des nœuds (allocatable, rôle, Ready)
+  - apiGroups: [""]
+    resources: ["nodes", "pods", "events"]
+    verbs: ["get", "list"]
+  # Versions des apps (images des déploiements) + jobs de backup
+  - apiGroups: ["apps"]
+    resources: ["deployments", "daemonsets", "statefulsets"]
+    verbs: ["get", "list"]
+  - apiGroups: ["batch"]
+    resources: ["jobs", "cronjobs"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: nexus-reader
+  labels:
+    app.kubernetes.io/part-of: nexus
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: nexus-reader
+subjects:
+  - kind: ServiceAccount
+    name: nexus-api
+    namespace: {{ .Release.Namespace }}
+{{- end }}
