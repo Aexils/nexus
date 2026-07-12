@@ -2,7 +2,7 @@ import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { LucideAngularModule, Download, Upload } from 'lucide-angular';
 import { NexusService } from '../../core/services/nexus.service';
-import { DiskInfo, GpuInfo } from '@nexus/shared-types';
+import { DiskInfo, TempInfo } from '@nexus/shared-types';
 
 @Component({
   selector: 'nxs-metrics-panel',
@@ -22,7 +22,7 @@ export class MetricsPanelComponent {
   get ramUsed() { return (this.m?.ramUsedGB ?? 0).toFixed(1); }
   get ramTotal(){ return (this.m?.ramTotalGB ?? 0).toFixed(1); }
   get disks()   { return this.m?.disks ?? []; }
-  get gpus()    { return this.m?.gpus ?? []; }
+  get temps()   { return this.m?.temps ?? []; }
   get cpuTemp() { return this.m?.cpuTempCelsius ?? null; }
   get rx()      { return this.formatNet(this.m?.netRxBytesPerSec ?? 0); }
   get tx()      { return this.formatNet(this.m?.netTxBytesPerSec ?? 0); }
@@ -50,7 +50,5 @@ export class MetricsPanelComponent {
     return 'ok';
   }
 
-  gpuLabel(g: GpuInfo): string {
-    return this.gpus.length > 1 ? `GPU ${g.index}` : 'GPU';
-  }
+  trackTemp(_: number, t: TempInfo): string { return t.label; }
 }

@@ -1,31 +1,39 @@
-export interface GpuInfo {
-  index: number;
-  usedPercent: number;    // 3D engine usage, 0–100
-  vramUsedGB: number;
-  vramTotalGB: number;
-  tempCelsius: number | null;
-}
-
 export interface DiskInfo {
-  mount: string;      // "C:" or "/"
+  mount: string;       // "/", "/mnt/media", ...
   totalGB: number;
   usedGB: number;
   usedPercent: number; // 0–100
 }
 
-export interface SystemMetrics {
-  cpuPercent: number;       // 0–100, average across all cores
-  ramPercent: number;       // 0–100
+export interface TempInfo {
+  label: string;        // "CPU", "NVMe", "iGPU"
+  celsius: number;
+}
+
+/** Métriques globales du mini-PC (hôte Proxmox), via node_exporter. */
+export interface HostMetrics {
+  cpuPercent: number;        // 0–100, moyenne tous cœurs
+  ramPercent: number;        // 0–100
   ramUsedGB: number;
   ramTotalGB: number;
-  netRxBytesPerSec: number; // bytes/s received (all ifaces except lo)
+  netRxBytesPerSec: number;  // bytes/s reçus (hors lo)
   netTxBytesPerSec: number;
   disks: DiskInfo[];
-  gpus: GpuInfo[];
-  cpuTempCelsius: number | null;
-  windowsProductName?: string; // e.g. "Windows 11 Pro"
-  windowsBuild?: string;       // e.g. "10.0.26200"
-  pendingUpdates?: number | null;
-  dockerVersion?: string;      // e.g. "4.37.1" (Docker Desktop version)
-  timestamp: number;        // Date.now()
+  temps: TempInfo[];         // CPU / NVMe / iGPU
+  cpuTempCelsius: number | null; // raccourci : la temp CPU (Tctl)
+  timestamp: number;         // Date.now()
+}
+
+/** Alias de compatibilité (l'ancien nom, le temps de la refonte du front). */
+export type SystemMetrics = HostMetrics;
+
+/** Métriques par nœud Kubernetes (via metrics-server). */
+export interface NodeMetrics {
+  name: string;
+  role: string;              // "control-plane" | "worker"
+  cpuMillicores: number;
+  cpuPercent: number;        // vs allocatable
+  ramBytes: number;
+  ramPercent: number;        // vs allocatable
+  ready: boolean;
 }

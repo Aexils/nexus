@@ -42,33 +42,14 @@
     </div>
   </div>
 
-  <!-- GPU -->
-  <div class="mp-section" *ngIf="gpus.length > 0">
-    <div class="mp-section-label">GPU</div>
+  <!-- Températures -->
+  <div class="mp-section" *ngIf="temps.length > 0">
+    <div class="mp-section-label">Températures</div>
 
-    <div class="mp-disk-entry" *ngFor="let g of gpus">
-      <div class="mp-row">
-        <span class="mp-label mp-label--disk">{{ gpuLabel(g) }}</span>
-        <div class="mp-bar-bg">
-          <div [class]="'mp-bar-fill gpu ' + (g.usedPercent >= 90 ? 'crit' : g.usedPercent >= 75 ? 'warn' : 'ok')"
-               [style.width.%]="g.usedPercent"></div>
-        </div>
-        <span class="mp-value">{{ g.usedPercent }}%</span>
-        <span *ngIf="g.tempCelsius !== null"
-              class="mp-temp-badge"
-              [class]="'mp-temp-badge ' + tempClass(g.tempCelsius!)">
-          {{ g.tempCelsius }}°
-        </span>
-      </div>
-
-      <div class="mp-row mp-vram-row" *ngIf="g.vramTotalGB > 0">
-        <span class="mp-label mp-label--disk mp-label--sub">VRAM</span>
-        <div class="mp-bar-bg">
-          <div class="mp-bar-fill vram"
-               [style.width.%]="(g.vramUsedGB / g.vramTotalGB) * 100"></div>
-        </div>
-        <span class="mp-sub mp-vram-value">{{ g.vramUsedGB | number:'1.1-1' }} / {{ g.vramTotalGB | number:'1.0-0' }} Go</span>
-      </div>
+    <div class="mp-row" *ngFor="let t of temps; trackBy: trackTemp">
+      <span class="mp-label mp-label--disk">{{ t.label }}</span>
+      <span class="mp-value" style="margin-left:auto">{{ t.celsius }}°</span>
+      <span class="mp-temp-badge" [class]="'mp-temp-badge ' + tempClass(t.celsius)">{{ t.celsius }}°</span>
     </div>
   </div>
 
