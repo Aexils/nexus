@@ -2,7 +2,14 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Interval } from '@nestjs/schedule';
 import { KubeConfig, CoreV1Api, Metrics } from '@kubernetes/client-node';
 import { NexusGateway } from '../gateway/nexus.gateway';
-import { NodeMetrics } from '@nexus/shared-types';
+import { NodeMetrics, WorkloadMetric, PodMetric } from '@nexus/shared-types';
+
+// Namespaces d'infra (le reste = workload). Nexus est exclu de rien ici : on le montre.
+const INFRA_NS = new Set([
+  'kube-system', 'kube-node-lease', 'kube-public', 'argocd', 'calico-system',
+  'calico-apiserver', 'tigera-operator', 'metallb-system', 'envoy-gateway-system',
+  'sealed-secrets', 'local-path-storage',
+]);
 
 // Quantités Kubernetes → nombres. CPU : "123m" ou "1" ; mémoire : "123456Ki"/"1Gi"...
 function cpuToMillicores(q: string): number {
@@ -89,6 +96,67 @@ export class ClusterService implements OnModuleInit {
       this.gateway.emitNodeMetrics(result);
     } catch (e) {
       this.logger.warn(`Échec collecte métriques nœuds : ${(e as Error).message}`);
+    }
+  }
+
+  @Interval(10_000)
+  async collectPods() {
+    if (!this.available) return;
+    try {
+      const [podsRes, metricsRes] = await Promise.all([
+        this.core.listPodForAllNamespaces(),
+        this.metrics.getPodMetrics(),
+      ]);
+
+      // Conso par pod (somme des conteneurs), clé "namespace/pod"
+      const usage = new Map<string, { cpu: number; mem: number }>();
+      for (const item of metricsRes.items ?? []) {
+        const key = `${item.metadata.namespace}/${item.metadata.name}`;
+        let cpu = 0, mem = 0;
+        for (const c of item.containers ?? []) {
+          cpu += cpuToMillicores(c.usage.cpu);
+          mem += memToBytes(c.usage.memory);
+        }
+        usage.set(key, { cpu, mem });
+      }
+
+      // Regroupe les pods par namespace
+      const byNs = new Map<string, WorkloadMetric>();
+      for (const pod of podsRes.items) {
+        const ns = pod.metadata?.namespace ?? '';
+        const name = pod.metadata?.name ?? '';
+        const u = usage.get(`${ns}/${name}`) ?? { cpu: 0, mem: 0 };
+        const restarts = (pod.status?.containerStatuses ?? []).reduce((s, c) => s + (c.restartCount ?? 0), 0);
+        const ready = (pod.status?.conditions ?? []).some(c => c.type === 'Ready' && c.status === 'True');
+        const podMetric: PodMetric = {
+          name,
+          cpuMillicores: Math.round(u.cpu),
+          ramBytes: u.mem,
+          node: pod.spec?.nodeName ?? '',
+          restarts,
+          ready,
+          phase: pod.status?.phase ?? 'Unknown',
+        };
+        if (!byNs.has(ns)) {
+          byNs.set(ns, {
+            namespace: ns,
+            kind: INFRA_NS.has(ns) ? 'infra' : 'workload',
+            cpuMillicores: 0, ramBytes: 0, podCount: 0, readyCount: 0, pods: [],
+          });
+        }
+        const w = byNs.get(ns)!;
+        w.pods.push(podMetric);
+        w.cpuMillicores += podMetric.cpuMillicores;
+        w.ramBytes += podMetric.ramBytes;
+        w.podCount += 1;
+        if (ready) w.readyCount += 1;
+      }
+
+      const result = [...byNs.values()].sort((a, b) => b.ramBytes - a.ramBytes);
+      result.forEach(w => w.pods.sort((a, b) => b.ramBytes - a.ramBytes));
+      this.gateway.emitWorkloadMetrics(result);
+    } catch (e) {
+      this.logger.warn(`Échec collecte métriques pods : ${(e as Error).message}`);
     }
   }
 }

@@ -1,19 +1,52 @@
-<!-- ── Header ── -->
 <div class="page-header">
   <div>
     <div class="page-title">Dashboard <span>Nexus</span></div>
-    <div class="page-subtitle">Homelab Kubernetes</div>
+    <div class="page-subtitle">Homelab Kubernetes · conso réelle (metrics-server)</div>
   </div>
 </div>
 
 <div class="dashboard">
 
-  <!-- Emplacement des futures cartes cluster (nœuds / pods / apps) — refonte en cours -->
-  <section class="cluster-grid-placeholder">
-    <p class="placeholder-hint">Vue cluster à venir (nœuds, pods, apps du homelab).</p>
+  <!-- ── Nœuds ── -->
+  <section class="nodes-grid">
+    <div class="node-card" *ngFor="let n of nodes()">
+      <div class="node-head">
+        <span class="node-dot" [class.ready]="n.ready"></span>
+        <span class="node-name">{{ n.name }}</span>
+        <span class="node-role">{{ n.role }}</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">CPU</span>
+        <div class="bar"><div class="bar-fill" [class]="nodeBarClass(n.cpuPercent)" [style.width.%]="n.cpuPercent"></div></div>
+        <span class="metric-val">{{ n.cpuPercent }}%</span>
+        <span class="metric-sub">{{ fmtCpu(n.cpuMillicores) }}</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">RAM</span>
+        <div class="bar"><div class="bar-fill" [class]="nodeBarClass(n.ramPercent)" [style.width.%]="n.ramPercent"></div></div>
+        <span class="metric-val">{{ n.ramPercent }}%</span>
+        <span class="metric-sub">{{ fmtRam(n.ramBytes) }}</span>
+      </div>
+    </div>
+    <div class="node-card empty" *ngIf="nodes().length === 0">En attente des métriques nœuds…</div>
   </section>
 
-  <!-- ── Journal temps réel (WebSocket) ── -->
+  <!-- ── Workloads (apps) ── -->
+  <section class="wl-section">
+    <div class="wl-section-head">
+      <span class="wl-title">Applications</span>
+      <span class="wl-total">{{ fmtCpu(totalCpu()) }} · {{ fmtRam(totalRam()) }}</span>
+    </div>
+
+    <ng-container *ngTemplateOutlet="wlList; context: { $implicit: apps() }"></ng-container>
+
+    <div class="wl-section-head infra">
+      <span class="wl-title">Infrastructure</span>
+    </div>
+    <ng-container *ngTemplateOutlet="wlList; context: { $implicit: infra() }"></ng-container>
+  </section>
+
+  <!-- ── Journal ── -->
   <section class="log-panel">
     <header class="log-header">
       <span class="log-title">Journal</span>
@@ -22,25 +55,45 @@
         <button type="button" (click)="clearLogs()">Effacer</button>
       </div>
     </header>
-
     <div class="log-filters">
-      @for (lvl of ['all','info','ok','warn','error']; track lvl) {
-        <button type="button" [class.active]="filterLevel() === lvl" (click)="setFilterLevel($any(lvl))">{{ lvl }}</button>
-      }
+      <button *ngFor="let lvl of ['all','info','ok','warn','error']"
+              type="button" [class.active]="filterLevel() === lvl" (click)="setFilterLevel($any(lvl))">{{ lvl }}</button>
     </div>
-
     <ul class="log-list">
-      @for (entry of filteredLogs(); track entry) {
-        <li class="log-entry" [class]="logLevelClass(entry.level)">
-          <span class="log-time">{{ formatTime(entry.timestamp) }}</span>
-          <span class="log-level">{{ logLevelLabel(entry.level) }}</span>
-          <span class="log-source">{{ entry.source }}</span>
-          <span class="log-message">{{ entry.message }}</span>
-        </li>
-      } @empty {
-        <li class="log-empty">Aucun log pour ce filtre.</li>
-      }
+      <li class="log-entry" *ngFor="let entry of filteredLogs()" [class]="logLevelClass(entry.level)">
+        <span class="log-time">{{ formatTime(entry.timestamp) }}</span>
+        <span class="log-level">{{ logLevelLabel(entry.level) }}</span>
+        <span class="log-source">{{ entry.source }}</span>
+        <span class="log-message">{{ entry.message }}</span>
+      </li>
+      <li class="log-empty" *ngIf="filteredLogs().length === 0">Aucun log.</li>
     </ul>
   </section>
-
 </div>
+
+<!-- Template réutilisable : liste de workloads dépliable -->
+<ng-template #wlList let-list>
+  <div class="wl-list">
+    <div class="wl-row-wrap" *ngFor="let w of list">
+      <button type="button" class="wl-row" (click)="toggle(w.namespace)">
+        <span class="wl-caret" [class.open]="isExpanded(w.namespace)">▸</span>
+        <span class="wl-health" [class]="wlHealthClass(w)"></span>
+        <span class="wl-name">{{ w.namespace }}</span>
+        <span class="wl-pods">{{ w.readyCount }}/{{ w.podCount }} pods</span>
+        <span class="wl-cpu">{{ fmtCpu(w.cpuMillicores) }}</span>
+        <span class="wl-ram">{{ fmtRam(w.ramBytes) }}</span>
+      </button>
+      <div class="wl-pods-detail" *ngIf="isExpanded(w.namespace)">
+        <div class="pod-row" *ngFor="let p of w.pods">
+          <span class="pod-health" [class.ready]="p.ready"></span>
+          <span class="pod-name">{{ p.name }}</span>
+          <span class="pod-node">{{ p.node }}</span>
+          <span class="pod-restarts" *ngIf="p.restarts > 0" title="redémarrages">↻ {{ p.restarts }}</span>
+          <span class="pod-cpu">{{ fmtCpu(p.cpuMillicores) }}</span>
+          <span class="pod-ram">{{ fmtRam(p.ramBytes) }}</span>
+        </div>
+      </div>
+    </div>
+    <div class="wl-empty" *ngIf="list.length === 0">Aucune app.</div>
+  </div>
+</ng-template>

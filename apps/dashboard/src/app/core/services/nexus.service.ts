@@ -1,7 +1,7 @@
 import { Injectable, signal, inject } from '@angular/core';
 import { Socket } from 'ngx-socket-io';
 import {
-  HostMetrics, NodeMetrics, WS_EVENTS, LogEntry, AppLatestVersions,
+  HostMetrics, NodeMetrics, WorkloadMetric, WS_EVENTS, LogEntry, AppLatestVersions,
 } from '@nexus/shared-types';
 
 const MAX_LOGS = 500;
@@ -14,6 +14,7 @@ export class NexusService {
 
   readonly metrics           = signal<HostMetrics | null>(null);
   readonly nodeMetrics       = signal<NodeMetrics[]>([]);
+  readonly workloads         = signal<WorkloadMetric[]>([]);
   readonly logs              = signal<LogEntry[]>([]);
   readonly appLatestVersions = signal<AppLatestVersions>({});
 
@@ -21,7 +22,8 @@ export class NexusService {
 
   constructor() {
     this.socket.on(WS_EVENTS.SYSTEM_METRICS, (data: HostMetrics)       => this.metrics.set(data));
-    this.socket.on(WS_EVENTS.NODE_METRICS,   (data: NodeMetrics[])     => this.nodeMetrics.set(data));
+    this.socket.on(WS_EVENTS.NODE_METRICS,     (data: NodeMetrics[])     => this.nodeMetrics.set(data));
+    this.socket.on(WS_EVENTS.WORKLOAD_METRICS, (data: WorkloadMetric[])  => this.workloads.set(data));
     this.socket.on(WS_EVENTS.APP_VERSIONS,   (data: AppLatestVersions) => this.appLatestVersions.set(data));
 
     this.socket.on(WS_EVENTS.LOG_ENTRY, (entry: LogEntry) => {

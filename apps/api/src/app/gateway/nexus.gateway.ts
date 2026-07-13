@@ -8,7 +8,7 @@ import {
 import { Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import {
-  HostMetrics, NodeMetrics, WS_EVENTS, LogEntry, LogLevel, LogSource, AppLatestVersions,
+  HostMetrics, NodeMetrics, WorkloadMetric, WS_EVENTS, LogEntry, LogLevel, LogSource, AppLatestVersions,
 } from '@nexus/shared-types';
 
 const LOG_BUFFER_MAX = 500;
@@ -24,6 +24,7 @@ export class NexusGateway
 
   private cachedMetrics:     HostMetrics       | null = null;
   private cachedNodeMetrics: NodeMetrics[]     | null = null;
+  private cachedWorkloads:   WorkloadMetric[]  | null = null;
   private cachedVersions:    AppLatestVersions | null = null;
 
   @WebSocketServer()
@@ -39,6 +40,7 @@ export class NexusGateway
     if (this.logBuffer.length > 0)   client.emit('log:history', this.logBuffer);
     if (this.cachedMetrics)          client.emit(WS_EVENTS.SYSTEM_METRICS, this.cachedMetrics);
     if (this.cachedNodeMetrics)      client.emit(WS_EVENTS.NODE_METRICS, this.cachedNodeMetrics);
+    if (this.cachedWorkloads)        client.emit(WS_EVENTS.WORKLOAD_METRICS, this.cachedWorkloads);
     if (this.cachedVersions)         client.emit(WS_EVENTS.APP_VERSIONS, this.cachedVersions);
   }
 
@@ -56,6 +58,11 @@ export class NexusGateway
   emitNodeMetrics(payload: NodeMetrics[]): void {
     this.cachedNodeMetrics = payload;
     this.server?.emit(WS_EVENTS.NODE_METRICS, payload);
+  }
+
+  emitWorkloadMetrics(payload: WorkloadMetric[]): void {
+    this.cachedWorkloads = payload;
+    this.server?.emit(WS_EVENTS.WORKLOAD_METRICS, payload);
   }
 
   emitVersions(payload: AppLatestVersions): void {

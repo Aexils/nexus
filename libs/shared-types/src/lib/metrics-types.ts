@@ -37,3 +37,25 @@ export interface NodeMetrics {
   ramPercent: number;        // vs allocatable
   ready: boolean;
 }
+
+/** Un pod (pour le détail d'un workload, vue k9s). */
+export interface PodMetric {
+  name: string;
+  cpuMillicores: number;
+  ramBytes: number;
+  node: string;
+  restarts: number;
+  ready: boolean;
+  phase: string;             // Running, Pending, Succeeded…
+}
+
+/** Une "application" = un namespace, agrégeant ses pods (vraie conso via metrics-server). */
+export interface WorkloadMetric {
+  namespace: string;
+  kind: 'infra' | 'workload';
+  cpuMillicores: number;
+  ramBytes: number;
+  podCount: number;
+  readyCount: number;
+  pods: PodMetric[];
+}
