@@ -2,7 +2,8 @@ import { Component, ChangeDetectionStrategy, inject, computed } from '@angular/c
 import { CommonModule } from '@angular/common';
 import { NexusService } from '../../core/services/nexus.service';
 import {
-  SideloopAppStatus, SideloopDeviceStatus, SideloopAppState, PROFILE_TTL_SEC,
+  SideloopAppStatus, SideloopDeviceStatus, SideloopAppState, SideloopRunRecord,
+  PROFILE_TTL_SEC,
 } from '@nexus/shared-types';
 
 @Component({
@@ -95,4 +96,20 @@ export class SideloopPage {
 
   runOk(ok: boolean): string { return ok ? 'ok' : 'crit'; }
   appById(app: SideloopAppStatus): string { return app.bundle_id; }
+
+  /** Horodatage type journal "HH:MM:SS". */
+  fmtClock(iso: string | null): string {
+    if (!iso) return '--:--:--';
+    return new Date(iso).toLocaleTimeString('fr-CA', { hour12: false });
+  }
+
+  /** Niveau d'un run pour la coloration (comme le Journal). */
+  runLevel(r: SideloopRunRecord): 'ok' | 'warn' | 'error' {
+    if (!r.login_ok) return 'error';
+    return r.results.some(res => !res.ok) ? 'warn' : 'ok';
+  }
+  runLevelLabel(r: SideloopRunRecord): string {
+    const lvl = this.runLevel(r);
+    return lvl === 'error' ? 'ERR' : lvl === 'warn' ? 'WARN' : 'OK';
+  }
 }

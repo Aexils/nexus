@@ -80,11 +80,31 @@
 .block { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1rem; margin-bottom: 1rem; }
 .block-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: .95rem; color: var(--text); margin-bottom: .75rem; }
 
-.run.empty { color: var(--text3); }
-
-.runs { display: flex; flex-direction: column; gap: .45rem; }
-.run { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; font-size: .8rem; }
-.run-time { font-family: 'JetBrains Mono', monospace; color: var(--text3); min-width: 90px; }
-.run-empty { color: var(--text3); font-size: .74rem; }
+/* Historique des refresh — liste type Journal (heure · niveau · source · message · ancienneté) */
+.run-log { list-style: none; margin: 0; padding: 0; max-height: 320px; overflow-y: auto; }
+.run-row {
+  display: grid;
+  grid-template-columns: 72px 46px 60px 1fr auto;
+  gap: .6rem; align-items: center;
+  padding: .32rem .1rem;
+  font-family: 'JetBrains Mono', monospace; font-size: .76rem;
+  border-bottom: 1px solid var(--border2, var(--border));
+}
+.run-row:last-child { border-bottom: 0; }
+.run-time { color: var(--text3); }
+.run-level { font-weight: 700; letter-spacing: .04em; }
+.run-row.ok    .run-level { color: var(--green); }
+.run-row.warn  .run-level { color: var(--yellow); }
+.run-row.error .run-level { color: var(--red); }
+.run-source { color: var(--text3); }
+.run-msg { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem; color: var(--text2, var(--text)); min-width: 0; }
+.run-note { color: var(--text3); }
+.run-app {
+  padding: .04rem .42rem; border-radius: 5px; font-size: .72rem; white-space: nowrap;
+  background: color-mix(in srgb, var(--green) 18%, transparent); color: var(--green);
+}
+.run-app.crit { background: color-mix(in srgb, var(--red) 18%, transparent); color: var(--red); }
+.run-ago { color: var(--text3); font-size: .72rem; white-space: nowrap; text-align: right; }
+.run-row.empty { display: block; color: var(--text3); padding: .6rem .1rem; font-size: .8rem; }
 
 .loading { color: var(--text3); text-align: center; padding: 3rem; }

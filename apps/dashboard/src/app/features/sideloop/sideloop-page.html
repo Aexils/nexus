@@ -84,27 +84,35 @@
     }
   </section>
 
-  <!-- ── Historique des refresh ── -->
+  <!-- ── Historique des refresh (style Journal) ── -->
   <section class="block">
     <div class="block-title">Historique des refresh</div>
-    <div class="runs">
+    <ul class="run-log">
       @for (r of runs(); track r.at) {
-        <div class="run">
-          <span class="run-time">{{ fmtTime(r.at) }}</span>
-          @if (!r.login_ok) {
-            <span class="pill crit">LOGIN ÉCHEC</span>
-          } @else {
-            @for (res of r.results; track res.bundle_id) {
-              <span class="pill" [class]="runOk(res.ok)" [title]="res.error">{{ res.name }}</span>
+        <li class="run-row" [class]="runLevel(r)">
+          <span class="run-time">{{ fmtClock(r.at) }}</span>
+          <span class="run-level">{{ runLevelLabel(r) }}</span>
+          <span class="run-source">signer</span>
+          <span class="run-msg">
+            @if (!r.login_ok) {
+              <span class="run-note">login Apple échoué — vérifier le 2FA / anisette</span>
+            } @else if (r.results.length === 0) {
+              <span class="run-note">rien à signer</span>
+            } @else {
+              @for (res of r.results; track res.bundle_id) {
+                <span class="run-app" [class]="runOk(res.ok)" [title]="res.error">
+                  {{ res.name }}@if (!res.ok) { ✗ }
+                </span>
+              }
             }
-            @if (r.results.length === 0) { <span class="run-empty">rien à signer</span> }
-          }
-        </div>
+          </span>
+          <span class="run-ago">{{ fmtTime(r.at) }}</span>
+        </li>
       }
-      @if (runs().length === 0) {
-        <div class="run empty">Aucun refresh enregistré pour l’instant.</div>
+      @empty {
+        <li class="run-row empty">Aucun refresh enregistré pour l’instant.</li>
       }
-    </div>
+    </ul>
   </section>
 
 } @else {
