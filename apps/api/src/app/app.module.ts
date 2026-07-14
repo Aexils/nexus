@@ -6,6 +6,7 @@ import { ClusterModule } from './cluster/cluster.module';
 import { VersionModule } from './version/version.module';
 import { ExpenseModule } from './expense/expense.module';
 import { AdminModule } from './admin/admin.module';
+import { SideloopModule } from './sideloop/sideloop.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { AdminModule } from './admin/admin.module';
     VersionModule,
     ExpenseModule,
     AdminModule,
+    SideloopModule,
   ],
 })
 export class AppModule {}

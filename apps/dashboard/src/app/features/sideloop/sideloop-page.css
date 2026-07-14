@@ -1,0 +1,91 @@
+:host { display: block; }
+
+/* ── En-tête ── */
+.page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1.25rem; }
+.page-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.5rem; color: var(--text); }
+.page-title span { color: var(--accent); }
+.page-subtitle { color: var(--text3); font-size: .8rem; margin-top: .2rem; }
+
+.conn { display: flex; align-items: center; gap: .4rem; font-size: .75rem; color: var(--green); }
+.conn.off { color: var(--red); }
+.conn .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; box-shadow: 0 0 6px currentColor; }
+
+/* ── Alertes ── */
+.alerts { display: flex; flex-direction: column; gap: .4rem; margin-bottom: 1rem; }
+.alert {
+  background: color-mix(in srgb, var(--red) 12%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--red) 40%, transparent);
+  color: var(--text); padding: .5rem .75rem; border-radius: 8px; font-size: .82rem;
+}
+
+/* ── Compte ── */
+.account {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1px;
+  background: var(--border); border: 1px solid var(--border); border-radius: 10px;
+  overflow: hidden; margin-bottom: 1.25rem;
+}
+.acc-item { background: var(--surface); padding: .7rem .9rem; display: flex; flex-direction: column; gap: .25rem; }
+.acc-label { font-size: .68rem; text-transform: uppercase; letter-spacing: .05em; color: var(--text3); }
+.acc-val { font-size: .9rem; color: var(--text); font-family: 'JetBrains Mono', monospace; }
+
+/* ── Grille d'apps ── */
+.apps-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: .9rem; margin-bottom: 1.5rem; }
+.app-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1rem; }
+.app-card.empty { color: var(--text3); grid-column: 1 / -1; text-align: center; padding: 2rem; }
+.app-head { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+.app-name { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.05rem; color: var(--text); }
+.app-bundle { font-family: 'JetBrains Mono', monospace; font-size: .72rem; color: var(--text3); margin-top: .1rem; }
+
+.expiry { display: flex; align-items: center; gap: .6rem; margin-top: .9rem; }
+.expiry-val { font-family: 'JetBrains Mono', monospace; font-size: .82rem; color: var(--text2); white-space: nowrap; }
+.app-sub { font-size: .72rem; color: var(--text3); margin-top: .35rem; }
+.app-err {
+  margin-top: .5rem; font-size: .74rem; color: var(--red);
+  font-family: 'JetBrains Mono', monospace; word-break: break-word;
+}
+
+/* barres */
+.bar { flex: 1; height: 7px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 4px; transition: width .4s ease; }
+.bar-fill.ok   { background: var(--green); }
+.bar-fill.warn { background: var(--yellow); }
+.bar-fill.crit { background: var(--red); }
+
+/* installs par device */
+.installs { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .8rem; }
+.install-dot {
+  display: inline-flex; align-items: center; gap: .35rem; padding: .2rem .5rem;
+  border-radius: 6px; font-size: .68rem; font-family: 'JetBrains Mono', monospace;
+  background: var(--surface2); color: var(--text2); border: 1px solid var(--border);
+}
+.install-dot::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--text3); }
+.install-dot.ok::before   { background: var(--green); box-shadow: 0 0 5px var(--green); }
+.install-dot.crit::before { background: var(--red);   box-shadow: 0 0 5px var(--red); }
+.install-dot.idle { color: var(--text3); }
+
+/* ── Pills ── */
+.pill {
+  display: inline-block; padding: .12rem .45rem; border-radius: 5px; font-size: .64rem;
+  font-weight: 700; letter-spacing: .03em; text-transform: uppercase;
+}
+.pill.ok   { background: color-mix(in srgb, var(--green) 20%, transparent); color: var(--green); }
+.pill.warn { background: color-mix(in srgb, var(--yellow) 20%, transparent); color: var(--yellow); }
+.pill.crit { background: color-mix(in srgb, var(--red) 20%, transparent); color: var(--red); }
+
+/* ── Blocs (devices / runs) ── */
+.block { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1rem; margin-bottom: 1rem; }
+.block-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: .95rem; color: var(--text); margin-bottom: .75rem; }
+
+.devices { display: flex; flex-direction: column; gap: .5rem; }
+.device { display: flex; align-items: center; gap: .6rem; font-size: .82rem; }
+.device .install-dot { padding: 0; border: 0; background: transparent; }
+.dev-udid { font-family: 'JetBrains Mono', monospace; color: var(--text); }
+.dev-info { color: var(--text3); font-size: .74rem; }
+.device.empty, .run.empty { color: var(--text3); }
+
+.runs { display: flex; flex-direction: column; gap: .45rem; }
+.run { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; font-size: .8rem; }
+.run-time { font-family: 'JetBrains Mono', monospace; color: var(--text3); min-width: 90px; }
+.run-empty { color: var(--text3); font-size: .74rem; }
+
+.loading { color: var(--text3); text-align: center; padding: 3rem; }

@@ -18,6 +18,11 @@ export const appRoutes: Route[] = [
           import('./features/maison/maison-page').then(m => m.MaisonPage),
       },
       {
+        path: 'sideloop',
+        loadComponent: () =>
+          import('./features/sideloop/sideloop-page').then(m => m.SideloopPage),
+      },
+      {
         path: 'alexis',
         loadComponent: () => import('./features/me/me-page').then(m => m.MePage),
         data: { user: 'alexis' },

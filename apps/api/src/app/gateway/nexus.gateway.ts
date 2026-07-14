@@ -9,6 +9,7 @@ import { Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import {
   HostMetrics, NodeMetrics, WorkloadMetric, WS_EVENTS, LogEntry, LogLevel, LogSource, AppLatestVersions,
+  SideloopStatus,
 } from '@nexus/shared-types';
 
 const LOG_BUFFER_MAX = 500;
@@ -26,6 +27,7 @@ export class NexusGateway
   private cachedNodeMetrics: NodeMetrics[]     | null = null;
   private cachedWorkloads:   WorkloadMetric[]  | null = null;
   private cachedVersions:    AppLatestVersions | null = null;
+  private cachedSideloop:    SideloopStatus    | null = null;
 
   @WebSocketServer()
   server: Server;
@@ -42,6 +44,7 @@ export class NexusGateway
     if (this.cachedNodeMetrics)      client.emit(WS_EVENTS.NODE_METRICS, this.cachedNodeMetrics);
     if (this.cachedWorkloads)        client.emit(WS_EVENTS.WORKLOAD_METRICS, this.cachedWorkloads);
     if (this.cachedVersions)         client.emit(WS_EVENTS.APP_VERSIONS, this.cachedVersions);
+    if (this.cachedSideloop)         client.emit(WS_EVENTS.SIDELOOP_STATUS, this.cachedSideloop);
   }
 
   handleDisconnect(client: Socket) {
@@ -68,6 +71,11 @@ export class NexusGateway
   emitVersions(payload: AppLatestVersions): void {
     this.cachedVersions = payload;
     this.server?.emit(WS_EVENTS.APP_VERSIONS, payload);
+  }
+
+  emitSideloopStatus(payload: SideloopStatus): void {
+    this.cachedSideloop = payload;
+    this.server?.emit(WS_EVENTS.SIDELOOP_STATUS, payload);
   }
 
   // ── Logging ───────────────────────────────────────────────────────────────
