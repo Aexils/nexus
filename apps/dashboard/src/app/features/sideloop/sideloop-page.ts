@@ -62,6 +62,10 @@ export class SideloopPage {
   shortUdid(udid: string): string {
     return udid.length > 14 ? udid.slice(0, 8) + '…' + udid.slice(-4) : udid;
   }
+  /** Nom lisible de l'appareil (DeviceName iOS), sinon UDID court. */
+  deviceLabel(d: SideloopDeviceStatus): string {
+    return d.name || this.shortUdid(d.udid);
+  }
 
   fmtTime(iso: string | null): string {
     if (!iso) return '—';

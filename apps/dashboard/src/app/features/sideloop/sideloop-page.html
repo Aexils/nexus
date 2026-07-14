@@ -68,7 +68,7 @@
         <div class="installs">
           @for (d of app.installs; track d.udid) {
             <span class="install-dot" [class]="installClass(d)" [title]="shortUdid(d.udid) + ' — ' + fmtTime(d.last_install_at)">
-              {{ shortUdid(d.udid) }}
+              {{ deviceLabel(d) }}
             </span>
           }
           @if (app.installs.length === 0) {
@@ -89,6 +89,7 @@
       @for (d of devices(); track d.udid) {
         <div class="device">
           <span class="install-dot" [class]="installClass(d)"></span>
+          <span class="dev-name">{{ deviceLabel(d) }}</span>
           <span class="dev-udid">{{ shortUdid(d.udid) }}</span>
           <span class="dev-info">{{ fmtTime(d.last_install_at) }}</span>
           @if (d.failures > 0) { <span class="pill crit">{{ d.failures }} échec(s)</span> }

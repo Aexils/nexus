@@ -79,8 +79,9 @@
 .devices { display: flex; flex-direction: column; gap: .5rem; }
 .device { display: flex; align-items: center; gap: .6rem; font-size: .82rem; }
 .device .install-dot { padding: 0; border: 0; background: transparent; }
-.dev-udid { font-family: 'JetBrains Mono', monospace; color: var(--text); }
-.dev-info { color: var(--text3); font-size: .74rem; }
+.dev-name { color: var(--text); font-weight: 600; }
+.dev-udid { font-family: 'JetBrains Mono', monospace; color: var(--text3); font-size: .74rem; }
+.dev-info { color: var(--text3); font-size: .74rem; margin-left: auto; }
 .device.empty, .run.empty { color: var(--text3); }
 
 .runs { display: flex; flex-direction: column; gap: .45rem; }

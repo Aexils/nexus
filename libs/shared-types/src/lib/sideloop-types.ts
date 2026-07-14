@@ -10,6 +10,7 @@ export type SideloopAppState = 'ok' | 'expiring' | 'expired' | 'never';
 
 export interface SideloopDeviceStatus {
   udid: string;
+  name: string;                     // DeviceName iOS (ex. "iPhone") ; "" si inconnu
   last_install_at: string | null;   // ISO
   last_ok: boolean | null;          // null = jamais tenté
   failures: number;
