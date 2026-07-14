@@ -51,17 +51,21 @@
 .bar-fill.warn { background: var(--yellow); }
 .bar-fill.crit { background: var(--red); }
 
-/* installs par device */
-.installs { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .8rem; }
-.install-dot {
-  display: inline-flex; align-items: center; gap: .35rem; padding: .2rem .5rem;
-  border-radius: 6px; font-size: .68rem; font-family: 'JetBrains Mono', monospace;
-  background: var(--surface2); color: var(--text2); border: 1px solid var(--border);
-}
-.install-dot::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--text3); }
+/* Devices listés DANS chaque app */
+.app-devices { margin-top: .9rem; border-top: 1px solid var(--border); padding-top: .7rem;
+  display: flex; flex-direction: column; gap: .5rem; }
+.app-device { display: flex; align-items: center; gap: .5rem; font-size: .8rem; }
+.app-device.empty { color: var(--text3); }
+.ad-name { color: var(--text); font-weight: 600; }
+.ad-state { margin-left: auto; font-size: .72rem; color: var(--text3); }
+.ad-state.ok   { color: var(--green); }
+.ad-state.crit { color: var(--red); }
+
+.install-dot { flex-shrink: 0; }
+.install-dot::before { content: ''; display: block; width: 8px; height: 8px; border-radius: 50%; background: var(--text3); }
 .install-dot.ok::before   { background: var(--green); box-shadow: 0 0 5px var(--green); }
 .install-dot.crit::before { background: var(--red);   box-shadow: 0 0 5px var(--red); }
-.install-dot.idle { color: var(--text3); }
+.install-dot.idle::before { background: var(--text3); }
 
 /* ── Pills ── */
 .pill {
@@ -76,13 +80,7 @@
 .block { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1rem; margin-bottom: 1rem; }
 .block-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: .95rem; color: var(--text); margin-bottom: .75rem; }
 
-.devices { display: flex; flex-direction: column; gap: .5rem; }
-.device { display: flex; align-items: center; gap: .6rem; font-size: .82rem; }
-.device .install-dot { padding: 0; border: 0; background: transparent; }
-.dev-name { color: var(--text); font-weight: 600; }
-.dev-udid { font-family: 'JetBrains Mono', monospace; color: var(--text3); font-size: .74rem; }
-.dev-info { color: var(--text3); font-size: .74rem; margin-left: auto; }
-.device.empty, .run.empty { color: var(--text3); }
+.run.empty { color: var(--text3); }
 
 .runs { display: flex; flex-direction: column; gap: .45rem; }
 .run { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; font-size: .8rem; }

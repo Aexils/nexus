@@ -67,6 +67,21 @@ export class SideloopPage {
     return d.name || this.shortUdid(d.udid);
   }
 
+  /** État d'install d'un device DONNÉ pour une app (null si jamais tenté). */
+  installOf(app: SideloopAppStatus, udid: string): SideloopDeviceStatus | null {
+    return app.installs.find(i => i.udid === udid) ?? null;
+  }
+  /** Pastille : installée (ok) / échec (crit) / pas installée (idle). */
+  appDeviceClass(inst: SideloopDeviceStatus | null): string {
+    return inst?.last_ok === true ? 'ok' : inst?.last_ok === false ? 'crit' : 'idle';
+  }
+  /** Libellé d'état par device dans une app. */
+  appDeviceState(inst: SideloopDeviceStatus | null): string {
+    if (!inst || inst.last_ok === null) return 'pas installée';
+    if (inst.last_ok === false) return 'échec install';
+    return `installée ${this.fmtTime(inst.last_install_at)}`;
+  }
+
   fmtTime(iso: string | null): string {
     if (!iso) return '—';
     const d = new Date(iso);

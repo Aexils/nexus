@@ -65,14 +65,16 @@
           <div class="app-err">✗ {{ app.last_error }}</div>
         }
 
-        <div class="installs">
-          @for (d of app.installs; track d.udid) {
-            <span class="install-dot" [class]="installClass(d)" [title]="shortUdid(d.udid) + ' — ' + fmtTime(d.last_install_at)">
-              {{ deviceLabel(d) }}
-            </span>
+        <div class="app-devices">
+          @for (dev of devices(); track dev.udid) {
+            <div class="app-device">
+              <span class="install-dot" [class]="appDeviceClass(installOf(app, dev.udid))"></span>
+              <span class="ad-name">{{ deviceLabel(dev) }}</span>
+              <span class="ad-state" [class]="appDeviceClass(installOf(app, dev.udid))">{{ appDeviceState(installOf(app, dev.udid)) }}</span>
+            </div>
           }
-          @if (app.installs.length === 0) {
-            <span class="install-dot idle">pas encore installée</span>
+          @if (devices().length === 0) {
+            <div class="app-device empty">Aucun appareil configuré.</div>
           }
         </div>
       </div>
@@ -80,25 +82,6 @@
     @if (apps().length === 0) {
       <div class="app-card empty">Aucune app gérée — ajoute une IPA depuis le frontend sideloop.</div>
     }
-  </section>
-
-  <!-- ── Appareils ── -->
-  <section class="block">
-    <div class="block-title">Appareils ({{ devices().length }})</div>
-    <div class="devices">
-      @for (d of devices(); track d.udid) {
-        <div class="device">
-          <span class="install-dot" [class]="installClass(d)"></span>
-          <span class="dev-name">{{ deviceLabel(d) }}</span>
-          <span class="dev-udid">{{ shortUdid(d.udid) }}</span>
-          <span class="dev-info">{{ fmtTime(d.last_install_at) }}</span>
-          @if (d.failures > 0) { <span class="pill crit">{{ d.failures }} échec(s)</span> }
-        </div>
-      }
-      @if (devices().length === 0) {
-        <div class="device empty">Aucun appareil configuré.</div>
-      }
-    </div>
   </section>
 
   <!-- ── Historique des refresh ── -->
