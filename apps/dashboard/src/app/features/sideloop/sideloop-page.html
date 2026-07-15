@@ -90,18 +90,17 @@
         <li class="run-row" [class]="runLevel(r)">
           <span class="run-time">{{ fmtClock(r.at) }}</span>
           <span class="run-level">{{ runLevelLabel(r) }}</span>
-          <span class="run-source">signer</span>
           <span class="run-msg">
             @if (!r.login_ok) {
-              <span class="run-note">login Apple échoué — vérifier le 2FA / anisette</span>
+              <span class="run-note">login Apple échoué — 2FA / anisette à vérifier</span>
             } @else if (r.results.length === 0) {
               <span class="run-note">rien à signer</span>
             } @else {
               @for (res of r.results; track res.bundle_id) {
-                <span class="run-app" [class]="runOk(res.ok)" [title]="res.error">
-                  {{ res.name }}@if (!res.ok) { ✗ }
-                </span>
+                <span class="run-app" [class]="runOk(res.ok)" [title]="res.error">{{ res.name }}@if (!res.ok) {&nbsp;✗}</span>
               }
+              <span class="run-verb">re-signées</span>
+              @if (deviceNames()) { <span class="run-devices">· {{ deviceNames() }}</span> }
             }
           </span>
           <span class="run-ago">{{ fmtTime(r.at) }}</span>

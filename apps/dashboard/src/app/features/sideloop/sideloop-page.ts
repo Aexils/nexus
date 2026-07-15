@@ -98,11 +98,17 @@ export class SideloopPage {
   runOk(ok: boolean): string { return ok ? 'ok' : 'crit'; }
   appById(app: SideloopAppStatus): string { return app.bundle_id; }
 
-  /** Horodatage type journal "HH:MM:SS". */
+  /** Horodatage type journal "HH:MM:SS" (format strict, pas la version verbeuse fr-CA). */
   fmtClock(iso: string | null): string {
     if (!iso) return '--:--:--';
-    return new Date(iso).toLocaleTimeString('fr-CA', { hour12: false });
+    const d = new Date(iso);
+    const p = (n: number) => n.toString().padStart(2, '0');
+    return `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
   }
+
+  /** Noms des appareils couverts par une signature (la signature vaut pour tous). */
+  readonly deviceNames = computed(() =>
+    this.devices().map(d => this.deviceLabel(d)).join(', '));
 
   /** Niveau d'un run pour la coloration (comme le Journal). */
   runLevel(r: SideloopRunRecord): 'ok' | 'warn' | 'error' {

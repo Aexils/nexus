@@ -2,7 +2,7 @@
 
 /* ── En-tête ── */
 .page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1.25rem; }
-.page-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.5rem; color: var(--text); }
+.page-title { font-family: var(--font-display); font-weight: 700; font-size: 1.5rem; color: var(--text); }
 .page-title span { color: var(--accent); }
 .page-subtitle { color: var(--text3); font-size: .8rem; margin-top: .2rem; }
 
@@ -41,7 +41,7 @@
 .app-card:not(.empty):hover { border-color: var(--border2); transform: translateY(-2px); box-shadow: var(--shadow); }
 .app-card.empty { color: var(--text3); grid-column: 1 / -1; text-align: center; padding: 2rem; }
 .app-head { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
-.app-name { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.05rem; color: var(--text); }
+.app-name { font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; color: var(--text); }
 .app-bundle { font-family: 'JetBrains Mono', monospace; font-size: .72rem; color: var(--text3); margin-top: .1rem; }
 
 .expiry { display: flex; align-items: center; gap: .6rem; margin-top: .9rem; }
@@ -86,32 +86,37 @@
 
 /* ── Blocs (devices / runs) ── */
 .block { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1rem; margin-bottom: 1rem; }
-.block-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: .95rem; color: var(--text); margin-bottom: .75rem; }
+.block-title { font-family: var(--font-display); font-weight: 700; font-size: .95rem; color: var(--text); margin-bottom: .75rem; }
 
-/* Historique des refresh — liste type Journal (heure · niveau · source · message · ancienneté) */
+/* Historique des refresh — liste type Journal (heure · niveau · message · ancienneté) */
 .run-log { list-style: none; margin: 0; padding: 0; max-height: 320px; overflow-y: auto; }
 .run-row {
   display: grid;
-  grid-template-columns: 72px 46px 60px 1fr auto;
-  gap: .6rem; align-items: center;
-  padding: .32rem .1rem;
-  font-family: 'JetBrains Mono', monospace; font-size: .76rem;
+  grid-template-columns: 68px 40px 1fr auto;
+  gap: .7rem; align-items: center;
+  padding: .42rem .1rem;
+  font-family: var(--font-mono); font-size: .78rem;
   border-bottom: 1px solid var(--border2, var(--border));
 }
 .run-row:last-child { border-bottom: 0; }
-.run-time { color: var(--text3); }
+.run-time { color: var(--text3); white-space: nowrap; }
 .run-level { font-weight: 700; letter-spacing: .04em; }
 .run-row.ok    .run-level { color: var(--green); }
 .run-row.warn  .run-level { color: var(--yellow); }
 .run-row.error .run-level { color: var(--red); }
-.run-source { color: var(--text3); }
-.run-msg { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem; color: var(--text2, var(--text)); min-width: 0; }
+.run-msg {
+  display: flex; align-items: center; gap: .35rem;
+  min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  color: var(--text2, var(--text));
+}
 .run-note { color: var(--text3); }
 .run-app {
-  padding: .04rem .42rem; border-radius: 5px; font-size: .72rem; white-space: nowrap;
+  padding: .05rem .42rem; border-radius: 5px; font-size: .72rem; white-space: nowrap; flex-shrink: 0;
   background: color-mix(in srgb, var(--green) 18%, transparent); color: var(--green);
 }
 .run-app.crit { background: color-mix(in srgb, var(--red) 18%, transparent); color: var(--red); }
+.run-verb { color: var(--text3); }
+.run-devices { color: var(--text3); overflow: hidden; text-overflow: ellipsis; }
 .run-ago { color: var(--text3); font-size: .72rem; white-space: nowrap; text-align: right; }
 .run-row.empty { display: block; color: var(--text3); padding: .6rem .1rem; font-size: .8rem; }
 

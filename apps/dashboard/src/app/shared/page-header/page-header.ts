@@ -89,10 +89,10 @@ import { LucideAngularModule, ChevronLeft, LucideIconData } from 'lucide-angular
     .ph__titles { min-width: 0; }
     .ph__title {
       font-family: var(--font-display);
-      font-weight: 800;
-      font-size: 1.6rem;
-      line-height: 1.1;
-      letter-spacing: -0.02em;
+      font-weight: 700;
+      font-size: 1.55rem;
+      line-height: 1.15;
+      letter-spacing: -0.025em;
       color: var(--text);
     }
     .ph__title span { color: var(--accent); }

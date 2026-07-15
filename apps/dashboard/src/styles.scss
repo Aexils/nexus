@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;700&family=Roboto+Mono:wght@400;500&family=Syne:wght@600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;700&family=Roboto+Mono:wght@400;500&family=JetBrains+Mono:wght@400;500;700&display=swap');
 
 /* ════════════════════════════════════════════════════════════════════════════
    THEME: ZINC  (default — true black + pure white)
@@ -208,7 +208,7 @@
    ════════════════════════════════════════════════════════════════════════════ */
 :root {
   --font-sans:    'Geist', 'Roboto', system-ui, sans-serif;
-  --font-display: 'Syne', 'Geist', sans-serif;
+  --font-display: 'Geist', 'Roboto', system-ui, sans-serif;
   --font-mono:    'JetBrains Mono', 'Roboto Mono', ui-monospace, monospace;
 
   --radius-sm: 8px;
