@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, effect, signal, WritableSignal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { LucideAngularModule, Download, Upload, HardDrive, ChevronRight } from 'lucide-angular';
@@ -26,6 +26,40 @@ const MOUNT_LABELS: Record<string, string> = {
 export class MetricsPanelComponent {
   readonly nexus = inject(NexusService);
   readonly icons = { Download, Upload, HardDrive, ChevronRight };
+
+  // ── Sparklines : historique glissant accumulé depuis le flux live ──
+  private readonly HISTORY = 40;                 // ~2 min à 3 s/point
+  readonly cpuHistory = signal<number[]>([]);
+  readonly ramHistory = signal<number[]>([]);
+
+  constructor() {
+    effect(() => {
+      const m = this.nexus.metrics();
+      if (!m) return;
+      this.pushHist(this.cpuHistory, m.cpuPercent);
+      this.pushHist(this.ramHistory, m.ramPercent);
+    }, { allowSignalWrites: true });
+  }
+
+  private pushHist(sig: WritableSignal<number[]>, v: number): void {
+    const arr = [...sig(), v];
+    while (arr.length > this.HISTORY) arr.shift();
+    sig.set(arr);
+  }
+
+  /** Points d'une polyline SVG (viewBox 100×24) à partir d'un historique 0–100. */
+  spark(values: number[]): string {
+    if (values.length < 2) return '';
+    const w = 100, h = 24, step = w / (this.HISTORY - 1);
+    const offset = this.HISTORY - values.length;
+    return values
+      .map((v, i) => {
+        const x = (i + offset) * step;
+        const y = h - (Math.min(100, Math.max(0, v)) / 100) * h;
+        return `${x.toFixed(1)},${y.toFixed(1)}`;
+      })
+      .join(' ');
+  }
 
   get m()          { return this.nexus.metrics(); }
   get cpu()        { return this.m?.cpuPercent ?? 0; }

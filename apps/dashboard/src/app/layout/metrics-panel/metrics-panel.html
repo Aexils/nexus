@@ -12,6 +12,12 @@
       <span class="mp-value">{{ cpu }}%</span>
     </div>
 
+    @if (spark(cpuHistory())) {
+      <svg class="mp-spark" viewBox="0 0 100 24" preserveAspectRatio="none">
+        <polyline class="cpu" [attr.points]="spark(cpuHistory())"></polyline>
+      </svg>
+    }
+
     <div class="mp-row">
       <span class="mp-label">RAM</span>
       <div class="mp-bar-bg">
@@ -19,6 +25,12 @@
       </div>
       <span class="mp-value">{{ ramPct }}%</span>
     </div>
+
+    @if (spark(ramHistory())) {
+      <svg class="mp-spark" viewBox="0 0 100 24" preserveAspectRatio="none">
+        <polyline class="ram" [attr.points]="spark(ramHistory())"></polyline>
+      </svg>
+    }
 
     <div class="mp-sub">{{ ramUsed }} / {{ ramTotal }} Go</div>
 

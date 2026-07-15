@@ -364,3 +364,20 @@
   background: var(--green); box-shadow: 0 0 5px color-mix(in srgb, var(--green) 60%, transparent);
 }
 .mp-ver-badge .dot.idle { background: var(--text3); box-shadow: none; }
+
+/* ── Sparklines ── */
+.mp-spark {
+  width: 100%;
+  height: 22px;
+  margin: -2px 0 2px;
+  overflow: visible;
+}
+.mp-spark polyline {
+  fill: none;
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.mp-spark polyline.cpu { stroke: var(--accent); opacity: 0.8; }
+.mp-spark polyline.ram { stroke: var(--accent2); opacity: 0.8; }
