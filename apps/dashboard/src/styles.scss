@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Roboto+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;700&family=Roboto+Mono:wght@400;500&family=Syne:wght@600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
 
 /* ════════════════════════════════════════════════════════════════════════════
    THEME: ZINC  (default — true black + pure white)
@@ -204,20 +204,73 @@
 }
 
 /* ════════════════════════════════════════════════════════════════════════════
+   DESIGN TOKENS (indépendants du thème — typo, espacement, rayons, ombres)
+   ════════════════════════════════════════════════════════════════════════════ */
+:root {
+  --font-sans:    'Geist', 'Roboto', system-ui, sans-serif;
+  --font-display: 'Syne', 'Geist', sans-serif;
+  --font-mono:    'JetBrains Mono', 'Roboto Mono', ui-monospace, monospace;
+
+  --radius-sm: 8px;
+  --radius:    12px;
+  --radius-lg: 16px;
+  --radius-full: 999px;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.30);
+  --shadow:    0 8px 28px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 18px 50px rgba(0, 0, 0, 0.50);
+
+  --ease:   cubic-bezier(0.4, 0, 0.2, 1);
+  --t-fast: 0.16s var(--ease);
+  --t:      0.24s var(--ease);
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
    RESET & BASE
    ════════════════════════════════════════════════════════════════════════════ */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; overflow: hidden; }
 
 body {
-  font-family: 'Roboto', sans-serif;
+  font-family: var(--font-sans);
   font-size: 14px;
   font-weight: 400;
   line-height: 1.5;
+  letter-spacing: -0.006em;
   background: var(--bg);
   color: var(--text);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* ── Polish de base ── */
+::selection { background: rgba(var(--accent-rgb), 0.28); color: var(--text); }
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Carte réutilisable — même surface / rayon / hover partout */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  transition: border-color var(--t-fast), transform var(--t-fast), box-shadow var(--t-fast);
+}
+.card--hover { cursor: pointer; }
+.card--hover:hover {
+  border-color: var(--border2);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+
+/* Entrée de page douce */
+@keyframes nxsFadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 /* ════════════════════════════════════════════════════════════════════════════
@@ -248,7 +301,7 @@ body::after {
 .btn {
   display: inline-flex; align-items: center; gap: 8px;
   padding: 9px 16px; border-radius: 8px;
-  font-family: 'Roboto', sans-serif; font-size: 13px; font-weight: 500;
+  font-family: var(--font-sans); font-size: 13px; font-weight: 500;
   cursor: pointer; letter-spacing: 0.02em; transition: all 0.18s;
   border: 1px solid transparent; text-decoration: none;
   white-space: nowrap; user-select: none;

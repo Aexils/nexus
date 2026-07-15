@@ -48,8 +48,7 @@
 
     <div class="mp-row" *ngFor="let t of temps; trackBy: trackTemp">
       <span class="mp-label mp-label--disk">{{ t.label }}</span>
-      <span class="mp-value" style="margin-left:auto">{{ t.celsius }}°</span>
-      <span class="mp-temp-badge" [class]="'mp-temp-badge ' + tempClass(t.celsius)">{{ t.celsius }}°</span>
+      <span class="mp-temp-badge" [class]="'mp-temp-badge ' + tempClass(t.celsius)" style="margin-left:auto">{{ t.celsius }}°</span>
     </div>
   </div>
 

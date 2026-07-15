@@ -1,6 +1,7 @@
 import { Component, ChangeDetectionStrategy, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NexusService } from '../../core/services/nexus.service';
+import { PageHeaderComponent } from '../../shared/page-header/page-header';
 import {
   SideloopAppStatus, SideloopDeviceStatus, SideloopAppState, SideloopRunRecord,
   PROFILE_TTL_SEC,
@@ -9,7 +10,7 @@ import {
 @Component({
   selector: 'app-sideloop-page',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, PageHeaderComponent],
   templateUrl: './sideloop-page.html',
   styleUrl: './sideloop-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -4,7 +4,8 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
+import { PageHeaderComponent } from '../../shared/page-header/page-header';
 import {
   LucideAngularModule,
   ChevronLeft, ChevronRight, PlusCircle, Trash2, CheckCircle,
@@ -29,7 +30,7 @@ interface Insight {
 @Component({
   selector: 'app-budget-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule, RouterLink],
+  imports: [CommonModule, FormsModule, LucideAngularModule, PageHeaderComponent],
   templateUrl: './budget-page.html',
   styleUrl: './budget-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

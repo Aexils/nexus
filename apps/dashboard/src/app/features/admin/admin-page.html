@@ -1,19 +1,10 @@
 <!-- ── Header ── -->
-<div class="page-header">
-  <div class="brand">
-    <div class="brand-logo">
-      <lucide-icon [img]="icons.Database" [size]="22"></lucide-icon>
-    </div>
-    <div>
-      <div class="brand-name">Admin DB</div>
-      <div class="brand-meta">Gestion directe de la base de données</div>
-    </div>
-  </div>
+<nxs-page-header [icon]="icons.Database" title="Admin DB" subtitle="Gestion directe de la base de données">
   <button class="refresh-btn" (click)="loadAll()" title="Rafraîchir">
     <lucide-icon [img]="icons.RefreshCw" [size]="14"></lucide-icon>
     Rafraîchir
   </button>
-</div>
+</nxs-page-header>
 
 <!-- ── Tabs ── -->
 <div class="tabs">

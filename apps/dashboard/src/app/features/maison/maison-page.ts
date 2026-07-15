@@ -15,6 +15,7 @@ import {
   type LucideIconData,
 } from 'lucide-angular';
 import { Expense, ExpenseMonthSummary, MonthlyBreakdown, MonthlyCategory } from '@nexus/shared-types';
+import { PageHeaderComponent } from '../../shared/page-header/page-header';
 
 // ── Interfaces ────────────────────────────────────────────────────────────────
 
@@ -206,7 +207,7 @@ type SortDir = 'asc' | 'desc';
 @Component({
   selector: 'app-maison-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule],
+  imports: [CommonModule, FormsModule, LucideAngularModule, PageHeaderComponent],
   templateUrl: './maison-page.html',
   styleUrl: './maison-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

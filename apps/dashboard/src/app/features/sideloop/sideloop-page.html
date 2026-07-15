@@ -1,12 +1,10 @@
-<div class="page-header">
-  <div>
-    <div class="page-title">Sideloop <span>iOS re-signing</span></div>
-    <div class="page-subtitle">Re-signature auto des IPA · compte Apple gratuit (profil 7 j)</div>
-  </div>
+<nxs-page-header
+  title="Sideloop" accent="iOS re-signing"
+  subtitle="Re-signature auto des IPA · compte Apple gratuit (profil 7 j)">
   <div class="conn" [class.off]="!reachable()">
     <span class="dot"></span>{{ reachable() ? 'connecté' : 'injoignable' }}
   </div>
-</div>
+</nxs-page-header>
 
 @if (status(); as st) {
 

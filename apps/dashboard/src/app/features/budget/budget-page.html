@@ -1,15 +1,9 @@
 <!-- ── Hero Header ── -->
-<div class="budget-header">
-  <div class="hero-left">
-    <button class="back-btn" [routerLink]="backUrl()">
-      <lucide-icon [img]="icons.ChevronLeft" [size]="15"></lucide-icon>
-    </button>
-    <div class="hero-avatar" [class]="'avatar-' + userId">{{ displayName[0] }}</div>
-    <div>
-      <div class="hero-title">Budget <span>{{ displayName }}</span></div>
-      <div class="hero-sub">Finances personnelles</div>
-    </div>
-  </div>
+<nxs-page-header
+  [back]="backUrl()"
+  [avatar]="displayName[0]" [avatarClass]="'avatar-' + userId"
+  title="Budget" [accent]="displayName"
+  subtitle="Finances personnelles">
   <div class="month-nav">
     <button class="month-btn" (click)="prevMonth()">
       <lucide-icon [img]="icons.ChevronLeft" [size]="16"></lucide-icon>
@@ -19,7 +13,7 @@
       <lucide-icon [img]="icons.ChevronRight" [size]="16"></lucide-icon>
     </button>
   </div>
-</div>
+</nxs-page-header>
 
 <!-- ── Income Card ── -->
 <div class="income-card">

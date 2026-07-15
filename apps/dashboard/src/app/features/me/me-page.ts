@@ -11,11 +11,12 @@ import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
 import { NexusUser, USER_PROFILES, UserProfile, BudgetSummary } from '@nexus/shared-types';
+import { PageHeaderComponent } from '../../shared/page-header/page-header';
 
 @Component({
   selector: 'app-me-page',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, PageHeaderComponent],
   templateUrl: './me-page.html',
   styleUrl: './me-page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

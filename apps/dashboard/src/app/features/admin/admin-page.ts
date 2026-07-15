@@ -10,6 +10,7 @@ import {
   Tag, Layers, Store, ReceiptText, RefreshCw,
 } from 'lucide-angular';
 import { Expense } from '@nexus/shared-types';
+import { PageHeaderComponent } from '../../shared/page-header/page-header';
 
 interface CatRow    { name: string; count: number; }
 interface SubcatRow { name: string; category: string; count: number; }
@@ -26,7 +27,7 @@ const MONTH_LABELS: Record<string, string> = {
 @Component({
   selector: 'app-admin-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule],
+  imports: [CommonModule, FormsModule, LucideAngularModule, PageHeaderComponent],
   templateUrl: './admin-page.html',
   styleUrl: './admin-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

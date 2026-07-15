@@ -7,6 +7,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NexusService } from '../../core/services/nexus.service';
+import { PageHeaderComponent } from '../../shared/page-header/page-header';
 import { LogLevel, LogSource, WorkloadMetric } from '@nexus/shared-types';
 
 type FilterLevel  = LogLevel | 'all';
@@ -15,7 +16,7 @@ type FilterSource = LogSource | 'all';
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, PageHeaderComponent],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

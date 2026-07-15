@@ -1,9 +1,8 @@
 <!-- ── Header ── -->
-<div class="page-header">
-  <div class="header-left">
-    <div class="page-title">Espace <span>{{ profile.displayName }}</span></div>
-  </div>
-</div>
+<nxs-page-header
+  [avatar]="profile.displayName[0]" [avatarClass]="'avatar-' + userId"
+  title="Espace" [accent]="profile.displayName">
+</nxs-page-header>
 
 <!-- ── Carte Budget ── -->
 <section class="me-grid">
