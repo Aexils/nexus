@@ -3,6 +3,16 @@ export interface DiskInfo {
   totalGB: number;
   usedGB: number;
   usedPercent: number; // 0–100
+  fstype?: string;     // ext4, ntfs, vfat, lvm-thin…
+}
+
+/** Un disque physique + les filesystems qui vivent dessus (regroupés). */
+export interface DiskGroup {
+  disk: string;        // "nvme0n1", "sda", "sdb"
+  model: string;       // "CT500P3PSSD8", "SD8", "ST1000LM025…"
+  totalGB: number;     // taille physique du disque
+  label: string;       // libellé lisible : "NVMe interne", "USB · Media"…
+  mounts: DiskInfo[];  // partitions/mounts sur ce disque
 }
 
 export interface TempInfo {
@@ -18,7 +28,8 @@ export interface HostMetrics {
   ramTotalGB: number;
   netRxBytesPerSec: number;  // bytes/s reçus (hors lo)
   netTxBytesPerSec: number;
-  disks: DiskInfo[];
+  disks: DiskInfo[];         // à plat (compat)
+  diskGroups: DiskGroup[];   // regroupés par disque physique
   temps: TempInfo[];         // CPU / NVMe / iGPU
   cpuTempCelsius: number | null; // raccourci : la temp CPU (Tctl)
   timestamp: number;         // Date.now()

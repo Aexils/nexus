@@ -1,8 +1,18 @@
 import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { LucideAngularModule, Download, Upload } from 'lucide-angular';
+import { LucideAngularModule, Download, Upload, HardDrive } from 'lucide-angular';
 import { NexusService } from '../../core/services/nexus.service';
 import { DiskInfo, TempInfo } from '@nexus/shared-types';
+
+const MOUNT_LABELS: Record<string, string> = {
+  '/': 'système',
+  'VMs (pool)': 'VMs',
+  '/var/backups/nextcloud-mirror': 'miroir Nextcloud',
+  '/boot/efi': 'boot',
+  '/mnt/backup': 'sauvegardes',
+  '/mnt/perso': 'perso',
+  '/mnt/media': 'média',
+};
 
 @Component({
   selector: 'nxs-metrics-panel',
@@ -14,15 +24,18 @@ import { DiskInfo, TempInfo } from '@nexus/shared-types';
 })
 export class MetricsPanelComponent {
   readonly nexus = inject(NexusService);
-  readonly icons = { Download, Upload };
+  readonly icons = { Download, Upload, HardDrive };
 
-  get m()       { return this.nexus.metrics(); }
-  get cpu()     { return this.m?.cpuPercent ?? 0; }
-  get ramPct()  { return this.m?.ramPercent ?? 0; }
-  get ramUsed() { return (this.m?.ramUsedGB ?? 0).toFixed(1); }
-  get ramTotal(){ return (this.m?.ramTotalGB ?? 0).toFixed(1); }
-  get disks()   { return this.m?.disks ?? []; }
-  get temps()   { return this.m?.temps ?? []; }
+  get m()          { return this.nexus.metrics(); }
+  get cpu()        { return this.m?.cpuPercent ?? 0; }
+  get ramPct()     { return this.m?.ramPercent ?? 0; }
+  get ramUsed()    { return (this.m?.ramUsedGB ?? 0).toFixed(1); }
+  get ramTotal()   { return (this.m?.ramTotalGB ?? 0).toFixed(1); }
+  get disks()      { return this.m?.disks ?? []; }
+  get diskGroups() { return this.m?.diskGroups ?? []; }
+  get temps()      { return this.m?.temps ?? []; }
+
+  mountLabel(mount: string): string { return MOUNT_LABELS[mount] ?? mount; }
   get cpuTemp() { return this.m?.cpuTempCelsius ?? null; }
   get rx()      { return this.formatNet(this.m?.netRxBytesPerSec ?? 0); }
   get tx()      { return this.formatNet(this.m?.netTxBytesPerSec ?? 0); }

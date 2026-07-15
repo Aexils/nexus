@@ -167,13 +167,56 @@
   margin-left: 4px;
 }
 
-/* ── Disk ── */
-.mp-disk-entry {
+/* ── Disk (regroupé par disque physique) ── */
+.mp-disk-card {
+  & + & { margin-top: 12px; }
+}
+
+.mp-disk-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 7px;
+}
+.mp-disk-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text2);
+  letter-spacing: 0.01em;
+}
+.mp-disk-size {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text3);
+}
+
+.mp-disk-mount {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
 
-  & + & { margin-top: 4px; }
+  & + & { margin-top: 6px; }
+}
+.mp-mount-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.mp-mount-name {
+  font-size: 11px;
+  color: var(--text2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mp-mount-usage {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: var(--text3);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 /* ── Apps ── */

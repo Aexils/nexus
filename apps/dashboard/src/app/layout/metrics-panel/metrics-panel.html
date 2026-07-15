@@ -10,11 +10,6 @@
         <div class="mp-bar-fill cpu" [style.width.%]="cpu"></div>
       </div>
       <span class="mp-value">{{ cpu }}%</span>
-      <span *ngIf="cpuTemp !== null"
-            class="mp-temp-badge"
-            [class]="'mp-temp-badge ' + tempClass(cpuTemp!)">
-        {{ cpuTemp }}°
-      </span>
     </div>
 
     <div class="mp-row">
@@ -52,20 +47,26 @@
     </div>
   </div>
 
-  <!-- Storage -->
-  <div class="mp-section" *ngIf="disks.length > 0">
+  <!-- Storage — regroupé par disque physique -->
+  <div class="mp-section" *ngIf="diskGroups.length > 0">
     <div class="mp-section-label">Stockage</div>
 
-    <div class="mp-disk-entry" *ngFor="let d of disks">
-      <div class="mp-row">
-        <span class="mp-label mp-label--disk">{{ d.mount }}</span>
-        <div class="mp-bar-bg">
-          <div [class]="'mp-bar-fill disk ' + diskClass(d)"
-               [style.width.%]="d.usedPercent"></div>
-        </div>
-        <span class="mp-value">{{ d.usedPercent }}%</span>
+    <div class="mp-disk-card" *ngFor="let g of diskGroups">
+      <div class="mp-disk-head">
+        <lucide-icon [img]="icons.HardDrive" [size]="12" strokeWidth="2" color="var(--text2)"></lucide-icon>
+        <span class="mp-disk-name">{{ g.label }}</span>
+        <span class="mp-disk-size">{{ formatDisk(g.totalGB) }}</span>
       </div>
-      <div class="mp-sub">{{ formatDisk(d.usedGB) }} / {{ formatDisk(d.totalGB) }}</div>
+
+      <div class="mp-disk-mount" *ngFor="let d of g.mounts">
+        <div class="mp-mount-top">
+          <span class="mp-mount-name">{{ mountLabel(d.mount) }}</span>
+          <span class="mp-mount-usage">{{ formatDisk(d.usedGB) }} / {{ formatDisk(d.totalGB) }}</span>
+        </div>
+        <div class="mp-bar-bg">
+          <div [class]="'mp-bar-fill disk ' + diskClass(d)" [style.width.%]="d.usedPercent"></div>
+        </div>
+      </div>
     </div>
   </div>
 

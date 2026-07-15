@@ -1,16 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Interval } from '@nestjs/schedule';
 import { NexusGateway } from '../gateway/nexus.gateway';
-import { DiskInfo, HostMetrics, TempInfo } from '@nexus/shared-types';
+import { DiskGroup, HostMetrics, TempInfo } from '@nexus/shared-types';
 
 interface CpuSnapshot { idle: number; total: number; }
 interface NetSnapshot { rx: number; tx: number; }
 
 // node_exporter sur l'hôte Proxmox (pve) — métriques globales du mini-PC.
 const NODE_EXPORTER_URL = process.env['NODE_EXPORTER_URL'] ?? 'http://10.10.10.1:9100/metrics';
-
-// Mountpoints réels à afficher (on ignore /boot/efi, /etc/pve, tmpfs, lxcfs…).
-const REAL_MOUNTS = ['/', '/mnt/backup', '/mnt/perso', '/mnt/media', '/var/backups/nextcloud-mirror'];
 
 @Injectable()
 export class MetricsService {
@@ -45,7 +42,8 @@ export class MetricsService {
     const cpuPercent = this.getCpu(lines);
     const ram = this.getRam(lines);
     const net = this.getNet(lines);
-    const disks = this.getDisks(lines);
+    const diskGroups = this.getDiskGroups(lines);
+    const disks = diskGroups.flatMap(g => g.mounts);
     const temps = this.getTemps(lines);
 
     // Premier tick : on amorce les deltas CPU/net, on n'émet pas encore.
@@ -59,6 +57,7 @@ export class MetricsService {
       netRxBytesPerSec: net.rx,
       netTxBytesPerSec: net.tx,
       disks,
+      diskGroups,
       temps,
       cpuTempCelsius: cpuTemp,
       timestamp: Date.now(),
@@ -127,33 +126,75 @@ export class MetricsService {
     return { rx: rxPerSec, tx: txPerSec };
   }
 
-  private getDisks(lines: string[]): DiskInfo[] {
-    const sizes: Record<string, number> = {};
-    const avails: Record<string, number> = {};
-    for (const line of lines) {
-      const isSize = line.startsWith('node_filesystem_size_bytes{');
-      const isAvail = line.startsWith('node_filesystem_avail_bytes{');
-      if (!isSize && !isAvail) continue;
-      const mount = line.match(/mountpoint="([^"]+)"/)?.[1] ?? '';
-      if (!REAL_MOUNTS.includes(mount)) continue;
-      const value = parseFloat(line.split(' ').at(-1) ?? '0') || 0;
-      if (isSize) sizes[mount] = value;
-      if (isAvail) avails[mount] = value;
-    }
+  // ── Stockage : topologie complète via le textfile collector pve (nexus_*) ──
+  // Le script /usr/local/bin/nexus-disk-metrics.py émet, par disque physique,
+  // nexus_disk_size_bytes{disk,model} + nexus_mount_{size,used}_bytes{disk,mount,fstype}.
+
+  private parseLabeled(line: string): { labels: Record<string, string>; value: number } | null {
+    const m = line.match(/^\w+\{([^}]*)\}\s+([\d.eE+-]+)/);
+    if (!m) return null;
+    const labels: Record<string, string> = {};
+    for (const kv of m[1].matchAll(/(\w+)="([^"]*)"/g)) labels[kv[1]] = kv[2];
+    return { labels, value: parseFloat(m[2]) };
+  }
+
+  private getDiskGroups(lines: string[]): DiskGroup[] {
     const GiB = 1024 ** 3;
-    return REAL_MOUNTS
-      .filter(m => sizes[m] > 0)
-      .map(mount => {
-        const total = sizes[mount];
-        const avail = avails[mount] ?? 0;
-        const used = total - avail;
-        return {
-          mount,
-          totalGB: parseFloat((total / GiB).toFixed(1)),
-          usedGB: parseFloat((used / GiB).toFixed(1)),
-          usedPercent: Math.round((used / total) * 100),
-        };
+    const diskMeta: Record<string, { model: string; size: number }> = {};
+    const mSize: Record<string, number> = {};
+    const mUsed: Record<string, number> = {};
+    const mMeta: Record<string, { disk: string; mount: string; fstype: string }> = {};
+
+    for (const line of lines) {
+      if (line.startsWith('nexus_disk_size_bytes{')) {
+        const p = this.parseLabeled(line);
+        if (p) diskMeta[p.labels['disk']] = { model: p.labels['model'] ?? '', size: p.value };
+      } else if (line.startsWith('nexus_mount_size_bytes{')) {
+        const p = this.parseLabeled(line);
+        if (!p) continue;
+        const k = `${p.labels['disk']}|${p.labels['mount']}`;
+        mSize[k] = p.value;
+        mMeta[k] = { disk: p.labels['disk'], mount: p.labels['mount'], fstype: p.labels['fstype'] ?? '' };
+      } else if (line.startsWith('nexus_mount_used_bytes{')) {
+        const p = this.parseLabeled(line);
+        if (p) mUsed[`${p.labels['disk']}|${p.labels['mount']}`] = p.value;
+      }
+    }
+
+    const groups: Record<string, DiskGroup> = {};
+    for (const [disk, meta] of Object.entries(diskMeta)) {
+      groups[disk] = {
+        disk, model: meta.model, label: disk,
+        totalGB: parseFloat((meta.size / GiB).toFixed(1)),
+        mounts: [],
+      };
+    }
+    for (const [k, meta] of Object.entries(mMeta)) {
+      const g = groups[meta.disk];
+      const total = mSize[k] ?? 0;
+      if (!g || total <= 0) continue;
+      const used = mUsed[k] ?? 0;
+      g.mounts.push({
+        mount: meta.mount, fstype: meta.fstype,
+        totalGB: parseFloat((total / GiB).toFixed(1)),
+        usedGB: parseFloat((used / GiB).toFixed(1)),
+        usedPercent: Math.round((used / total) * 100),
       });
+    }
+
+    const MOUNT_ORDER = ['/', 'VMs (pool)', '/var/backups/nextcloud-mirror', '/boot/efi',
+                         '/mnt/backup', '/mnt/perso', '/mnt/media'];
+    const rank = (m: string) => { const i = MOUNT_ORDER.indexOf(m); return i < 0 ? 99 : i; };
+    for (const g of Object.values(groups)) {
+      g.mounts.sort((a, b) => rank(a.mount) - rank(b.mount));
+      g.label = g.disk.startsWith('nvme') ? 'NVMe interne'
+        : g.mounts.some(m => m.mount === '/mnt/media') ? 'USB · Média'
+        : 'USB · Sauvegarde';
+    }
+    // NVMe d'abord, puis les USB
+    return Object.values(groups).sort(
+      (a, b) => (a.disk.startsWith('nvme') ? 0 : 1) - (b.disk.startsWith('nvme') ? 0 : 1)
+      || a.disk.localeCompare(b.disk));
   }
 
   // ── Températures : mappe chip → nom via node_hwmon_chip_names ───────────────
