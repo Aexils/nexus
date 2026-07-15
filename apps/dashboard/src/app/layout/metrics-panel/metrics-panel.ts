@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, inject, effect, signal, WritableSignal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, effect, signal, untracked, WritableSignal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { LucideAngularModule, Download, Upload, HardDrive, ChevronRight } from 'lucide-angular';
@@ -42,7 +42,9 @@ export class MetricsPanelComponent {
   }
 
   private pushHist(sig: WritableSignal<number[]>, v: number): void {
-    const arr = [...sig(), v];
+    // ⚠ untracked : sans ça, l'effect LIT le signal qu'il ÉCRIT → boucle infinie
+    // (re-déclenchement à chaque tick → CPU/mémoire qui explosent → crash onglet).
+    const arr = [...untracked(sig), v];
     while (arr.length > this.HISTORY) arr.shift();
     sig.set(arr);
   }
