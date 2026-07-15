@@ -4,7 +4,7 @@ import { NexusService } from '../../core/services/nexus.service';
 import { PageHeaderComponent } from '../../shared/page-header/page-header';
 import {
   SideloopAppStatus, SideloopDeviceStatus, SideloopAppState, SideloopRunRecord,
-  PROFILE_TTL_SEC,
+  SideloopAgentStatus, PROFILE_TTL_SEC,
 } from '@nexus/shared-types';
 
 @Component({
@@ -97,6 +97,16 @@ export class SideloopPage {
 
   runOk(ok: boolean): string { return ok ? 'ok' : 'crit'; }
   appById(app: SideloopAppStatus): string { return app.bundle_id; }
+
+  /** Pastille de santé de l'agent pve : ok / warn (tunneld off) / crit (muet). */
+  agentClass(a: SideloopAgentStatus): string {
+    if (a.stale || !a.last_seen) return 'crit';
+    return a.tunneld_active ? 'ok' : 'warn';
+  }
+  agentLabel(a: SideloopAgentStatus): string {
+    if (a.stale || !a.last_seen) return 'MUET';
+    return a.tunneld_active ? 'ACTIF' : 'TUNNELD OFF';
+  }
 
   /** Horodatage type journal "HH:MM:SS" (format strict, pas la version verbeuse fr-CA). */
   fmtClock(iso: string | null): string {

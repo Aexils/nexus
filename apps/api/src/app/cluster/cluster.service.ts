@@ -123,6 +123,10 @@ export class ClusterService implements OnModuleInit {
       // Regroupe les pods par namespace
       const byNs = new Map<string, WorkloadMetric>();
       for (const pod of podsRes.items) {
+        // Les pods de Job terminés (Succeeded/Completed) ne font pas partie de la
+        // santé du workload : sinon ils comptent dans podCount sans être "ready"
+        // → faux "2/3" rouge sur le dashboard. (Failed reste compté = vraie alerte.)
+        if (pod.status?.phase === 'Succeeded') continue;
         const ns = pod.metadata?.namespace ?? '';
         const name = pod.metadata?.name ?? '';
         const u = usage.get(`${ns}/${name}`) ?? { cpu: 0, mem: 0 };

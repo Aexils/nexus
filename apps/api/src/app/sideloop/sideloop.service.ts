@@ -77,6 +77,7 @@ export class SideloopService implements OnModuleInit {
     return {
       generated_at: new Date().toISOString(),
       account: { apple_id: '', team_id: '', app_slots_used: 0, app_slots_limit: 3 },
+      agent: { last_seen: null, tunneld_active: false, reachable_udids: [], stale: true },
       devices: [],
       apps: [],
       last_refresh_at: null,

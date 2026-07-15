@@ -226,7 +226,14 @@ export class VersionService implements OnModuleInit {
   }
 
   private async fetchGitHubLatest(repo: string): Promise<string> {
-    const headers = { 'User-Agent': 'nexus-dashboard/1.0', 'Accept': 'application/vnd.github.v3+json' };
+    const headers: Record<string, string> = {
+      'User-Agent': 'nexus-dashboard/1.0',
+      'Accept': 'application/vnd.github.v3+json',
+    };
+    // Token optionnel (env GITHUB_TOKEN) : passe la limite 60→5000 req/h. Non requis
+    // en pratique (~15 repos / 6 h), mais utile si l'API redémarre souvent.
+    const token = process.env['GITHUB_TOKEN'];
+    if (token) headers['Authorization'] = `Bearer ${token}`;
     const res = await fetch(`https://api.github.com/repos/${repo}/releases/latest`, {
       headers, signal: AbortSignal.timeout(10_000),
     });

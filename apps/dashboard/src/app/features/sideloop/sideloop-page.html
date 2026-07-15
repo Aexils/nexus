@@ -40,6 +40,13 @@
         }
       </span>
     </div>
+    <div class="acc-item">
+      <span class="acc-label">Agent pve</span>
+      <span class="acc-val">
+        {{ fmtTime(st.agent.last_seen) }}
+        <span class="pill" [class]="agentClass(st.agent)">{{ agentLabel(st.agent) }}</span>
+      </span>
+    </div>
   </section>
 
   <!-- ── Apps re-signées ── -->

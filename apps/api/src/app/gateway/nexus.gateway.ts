@@ -7,6 +7,7 @@ import {
 } from '@nestjs/websockets';
 import { Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
+import { NotifierService } from '../notifier/notifier.service';
 import {
   HostMetrics, NodeMetrics, WorkloadMetric, WS_EVENTS, LogEntry, LogLevel, LogSource, VersionsReport,
   SideloopStatus,
@@ -31,6 +32,8 @@ export class NexusGateway
 
   @WebSocketServer()
   server: Server;
+
+  constructor(private readonly notifier: NotifierService) {}
 
   afterInit() {
     this.logger.log('WebSocket gateway initialized');
@@ -91,5 +94,6 @@ export class NexusGateway
     this.logBuffer.push(entry);
     if (this.logBuffer.length > LOG_BUFFER_MAX) this.logBuffer.shift();
     this.server?.emit(WS_EVENTS.LOG_ENTRY, entry);
+    this.notifier.notify(level, source, message);   // push ntfy (dédupliqué, best-effort)
   }
 }

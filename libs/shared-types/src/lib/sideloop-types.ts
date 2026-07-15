@@ -48,9 +48,17 @@ export interface SideloopRunRecord {
   results: SideloopRunAppResult[];
 }
 
+export interface SideloopAgentStatus {
+  last_seen: string | null;         // ISO — dernier heartbeat de l'agent pve
+  tunneld_active: boolean;
+  reachable_udids: string[];
+  stale: boolean;                   // heartbeat périmé = agent/pve mort
+}
+
 export interface SideloopStatus {
   generated_at: string;             // ISO
   account: SideloopAccountStatus;
+  agent: SideloopAgentStatus;
   devices: SideloopDeviceStatus[];
   apps: SideloopAppStatus[];
   last_refresh_at: string | null;
