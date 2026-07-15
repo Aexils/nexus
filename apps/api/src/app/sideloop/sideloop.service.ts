@@ -10,6 +10,9 @@ const SIDELOOP_URL =
   'http://sideloop.sideloop.svc.cluster.local/api/status';
 
 const POLL_MS = 30_000;
+// N'alarme qu'après ce nombre d'échecs consécutifs (évite les faux positifs lors
+// des redéploiements du pod sideloop : ~1 poll raté = normal).
+const FAIL_THRESHOLD = 2;
 
 @Injectable()
 export class SideloopService implements OnModuleInit {
@@ -17,6 +20,7 @@ export class SideloopService implements OnModuleInit {
   // Alertes déjà notifiées (dédup : on ne re-log que les NOUVELLES transitions).
   private knownAlerts = new Set<string>();
   private wasReachable = true;
+  private failCount = 0;
 
   constructor(private readonly gateway: NexusGateway) {}
 
@@ -34,8 +38,9 @@ export class SideloopService implements OnModuleInit {
       status = (await res.json()) as SideloopStatus;
       status.reachable = true;
     } catch (e) {
-      // sideloop injoignable : on le signale UNE fois, puis on émet un état dégradé.
-      if (this.wasReachable) {
+      // On n'alarme qu'après FAIL_THRESHOLD échecs consécutifs (anti-blip de déploiement).
+      this.failCount++;
+      if (this.wasReachable && this.failCount >= FAIL_THRESHOLD) {
         this.gateway.addLog('error', 'sideloop',
           `sideloop injoignable (${(e as Error).message}) — dashboard sans données fraîches`);
         this.wasReachable = false;
@@ -44,6 +49,7 @@ export class SideloopService implements OnModuleInit {
       return;
     }
 
+    this.failCount = 0;
     if (!this.wasReachable) {
       this.gateway.addLog('ok', 'sideloop', 'sideloop de nouveau joignable');
       this.wasReachable = true;

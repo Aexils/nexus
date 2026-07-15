@@ -16,6 +16,7 @@ export class MetricsService {
   private prevCpu: CpuSnapshot | null = null;
   private prevNet: NetSnapshot | null = null;
   private warnEmitted = false;
+  private failCount = 0;   // échecs consécutifs (anti-blip sur scrape lent)
 
   constructor(private readonly gateway: NexusGateway) {
     this.logger.log(`Métriques hôte via node_exporter: ${NODE_EXPORTER_URL}`);
@@ -26,11 +27,15 @@ export class MetricsService {
   async collect() {
     let raw: string;
     try {
-      const res = await fetch(NODE_EXPORTER_URL, { signal: AbortSignal.timeout(2500) });
+      // 5 s : node_exporter agrège smartmon + collecteurs textfile, parfois lent.
+      const res = await fetch(NODE_EXPORTER_URL, { signal: AbortSignal.timeout(5000) });
       raw = await res.text();
       this.warnEmitted = false;
+      this.failCount = 0;
     } catch {
-      if (!this.warnEmitted) {
+      // N'alarme qu'après 3 échecs consécutifs (~15 s) — un scrape lent isolé = normal.
+      this.failCount++;
+      if (!this.warnEmitted && this.failCount >= 3) {
         this.warnEmitted = true;
         this.logger.warn(`node_exporter injoignable: ${NODE_EXPORTER_URL}`);
         this.gateway.addLog('warn', 'system', `node_exporter injoignable — ${NODE_EXPORTER_URL}`);
