@@ -103,6 +103,15 @@ export class MetricsService {
     };
   }
 
+  // On ne compte QUE le lien physique de sortie du mini-PC (l'uplink réel).
+  // Tout le reste est interne/overlay et fausserait le total : vmbr0 (bridge
+  // des VMs = trafic pods/Calico, ~185 Go), tailscale0/tun* (VPN, déjà porté par
+  // le wifi), veth/cali/vxlan/tap (réseau conteneurs). Le trafic Tailscale passe
+  // physiquement par le wifi, donc wlp4s0 seul capte bien tout l'externe.
+  private static readonly NET_SKIP = [
+    'veth', 'cali', 'vxlan', 'tap', 'vmbr', 'tailscale', 'tun', 'docker', 'br-',
+  ];
+
   private getNet(lines: string[]): { rx: number; tx: number } | null {
     let rx = 0;
     let tx = 0;
@@ -111,7 +120,7 @@ export class MetricsService {
       const isTx = line.startsWith('node_network_transmit_bytes_total{');
       if (!isRx && !isTx) continue;
       const dev = line.match(/device="([^"]+)"/)?.[1] ?? '';
-      if (dev === 'lo' || dev.startsWith('veth') || dev.startsWith('cali') || dev.startsWith('vxlan') || dev.startsWith('tap')) continue;
+      if (dev === 'lo' || MetricsService.NET_SKIP.some(p => dev.startsWith(p))) continue;
       const value = parseFloat(line.split(' ').at(-1) ?? '0') || 0;
       if (isRx) rx += value;
       if (isTx) tx += value;
