@@ -8,7 +8,7 @@ import {
 import { Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import {
-  HostMetrics, NodeMetrics, WorkloadMetric, WS_EVENTS, LogEntry, LogLevel, LogSource, AppLatestVersions,
+  HostMetrics, NodeMetrics, WorkloadMetric, WS_EVENTS, LogEntry, LogLevel, LogSource, VersionsReport,
   SideloopStatus,
 } from '@nexus/shared-types';
 
@@ -26,7 +26,7 @@ export class NexusGateway
   private cachedMetrics:     HostMetrics       | null = null;
   private cachedNodeMetrics: NodeMetrics[]     | null = null;
   private cachedWorkloads:   WorkloadMetric[]  | null = null;
-  private cachedVersions:    AppLatestVersions | null = null;
+  private cachedVersions:    VersionsReport | null = null;
   private cachedSideloop:    SideloopStatus    | null = null;
 
   @WebSocketServer()
@@ -68,7 +68,7 @@ export class NexusGateway
     this.server?.emit(WS_EVENTS.WORKLOAD_METRICS, payload);
   }
 
-  emitVersions(payload: AppLatestVersions): void {
+  emitVersions(payload: VersionsReport): void {
     this.cachedVersions = payload;
     this.server?.emit(WS_EVENTS.APP_VERSIONS, payload);
   }

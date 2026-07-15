@@ -332,3 +332,35 @@
     animation: dot-pulse 2s ease infinite;
   }
 }
+
+/* ── Versions (widget compact) ── */
+.mp-ver-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+}
+.mp-ver-more {
+  display: inline-flex; align-items: center; gap: 1px;
+  font-size: 9.5px; font-weight: 500; letter-spacing: 0; text-transform: none;
+  color: var(--text3); transition: color var(--t-fast);
+}
+.mp-ver-more:hover { color: var(--accent); }
+
+.mp-ver-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center; gap: 8px;
+  padding: 3px 0; text-decoration: none;
+
+  & + & { border-top: 1px solid var(--border2); }
+}
+.mp-ver-name { font-size: 11px; color: var(--text2); }
+.mp-ver-cur  { font-family: var(--font-mono); font-size: 9.5px; color: var(--text3); }
+.mp-ver-badge {
+  font-family: var(--font-mono); font-size: 9.5px; min-width: 10px;
+  display: inline-flex; align-items: center; justify-content: flex-end;
+}
+.mp-ver-row.update .mp-ver-badge { color: var(--yellow); }
+.mp-ver-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--green); box-shadow: 0 0 5px color-mix(in srgb, var(--green) 60%, transparent);
+}
+.mp-ver-badge .dot.idle { background: var(--text3); box-shadow: none; }

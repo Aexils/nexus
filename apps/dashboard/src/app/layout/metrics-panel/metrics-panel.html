@@ -70,4 +70,22 @@
     </div>
   </div>
 
+  <!-- Versions (applications seulement — détail complet sur /versions) -->
+  <div class="mp-section" *ngIf="appVersions.length > 0">
+    <div class="mp-section-label mp-ver-head">
+      Versions
+      <a class="mp-ver-more" routerLink="/versions">voir tout <lucide-icon [img]="icons.ChevronRight" [size]="11" strokeWidth="2.5"></lucide-icon></a>
+    </div>
+
+    <a class="mp-ver-row" routerLink="/versions" *ngFor="let v of appVersions" [class]="versionState(v)">
+      <span class="mp-ver-name">{{ v.name }}</span>
+      <span class="mp-ver-cur">{{ v.current }}</span>
+      <span class="mp-ver-badge" [ngSwitch]="versionState(v)">
+        <span *ngSwitchCase="'ok'" class="dot"></span>
+        <span *ngSwitchCase="'update'">{{ v.latest }}</span>
+        <span *ngSwitchDefault class="dot idle"></span>
+      </span>
+    </a>
+  </div>
+
 </aside>

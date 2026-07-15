@@ -1,10 +1,23 @@
-/** Latest versions fetched from public release APIs (GitHub, sideloadly.io, etc.) */
+/** Suivi des versions : apps k8s, composants, cluster, système. */
+
+export type VersionCategory = 'application' | 'component' | 'cluster' | 'system';
+
+export interface VersionItem {
+  name: string;                    // "Jellyfin", "Argo CD", "Kubernetes"…
+  category: VersionCategory;
+  current: string | null;          // version installée ("10.11.8", "v1.35.6"…)
+  latest: string | null;           // dernière connue en amont (null = inconnu / app maison)
+  upToDate: boolean | null;        // true/false ; null = indéterminé (app maison, source manquante)
+  detail?: string;                 // note libre : "app maison", "1 mineure derrière (drill CKA)", "32 paquets"…
+  repo?: string;                   // "jellyfin/jellyfin" (pour lien GitHub)
+}
+
+export interface VersionsReport {
+  items: VersionItem[];
+  generatedAt: number;             // Date.now()
+}
+
+/** @deprecated ancien format plat — remplacé par VersionsReport. */
 export interface AppLatestVersions {
-  kodi?:          string; // e.g. "21.1"
-  abs?:           string; // e.g. "2.17.4"
-  urbackup?:      string; // e.g. "2.5.25"
-  jellyfin?:      string; // e.g. "10.10.6"
-  sideloadly?:    string; // e.g. "0.60.0"
-  dockerDesktop?: string; // e.g. "4.38.0"
-  booklore?:      string; // e.g. "1.17.0"
+  [key: string]: string | undefined;
 }

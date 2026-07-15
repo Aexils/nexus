@@ -23,6 +23,11 @@ export const appRoutes: Route[] = [
           import('./features/sideloop/sideloop-page').then(m => m.SideloopPage),
       },
       {
+        path: 'versions',
+        loadComponent: () =>
+          import('./features/versions/versions-page').then(m => m.VersionsPage),
+      },
+      {
         path: 'alexis',
         loadComponent: () => import('./features/me/me-page').then(m => m.MePage),
         data: { user: 'alexis' },

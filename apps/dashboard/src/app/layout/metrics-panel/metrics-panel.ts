@@ -1,8 +1,9 @@
 import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { LucideAngularModule, Download, Upload, HardDrive } from 'lucide-angular';
+import { RouterLink } from '@angular/router';
+import { LucideAngularModule, Download, Upload, HardDrive, ChevronRight } from 'lucide-angular';
 import { NexusService } from '../../core/services/nexus.service';
-import { DiskInfo, TempInfo } from '@nexus/shared-types';
+import { DiskInfo, TempInfo, VersionItem } from '@nexus/shared-types';
 
 const MOUNT_LABELS: Record<string, string> = {
   '/': 'système',
@@ -17,14 +18,14 @@ const MOUNT_LABELS: Record<string, string> = {
 @Component({
   selector: 'nxs-metrics-panel',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule],
+  imports: [CommonModule, LucideAngularModule, RouterLink],
   templateUrl: './metrics-panel.html',
   styleUrl: './metrics-panel.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MetricsPanelComponent {
   readonly nexus = inject(NexusService);
-  readonly icons = { Download, Upload, HardDrive };
+  readonly icons = { Download, Upload, HardDrive, ChevronRight };
 
   get m()          { return this.nexus.metrics(); }
   get cpu()        { return this.m?.cpuPercent ?? 0; }
@@ -36,6 +37,14 @@ export class MetricsPanelComponent {
   get temps()      { return this.m?.temps ?? []; }
 
   mountLabel(mount: string): string { return MOUNT_LABELS[mount] ?? mount; }
+
+  // ── Versions (widget compact : applications seulement) ──
+  get appVersions(): VersionItem[] {
+    return (this.nexus.versions()?.items ?? []).filter(i => i.category === 'application');
+  }
+  versionState(i: VersionItem): 'ok' | 'update' | 'unknown' {
+    return i.upToDate === true ? 'ok' : i.upToDate === false ? 'update' : 'unknown';
+  }
   get cpuTemp() { return this.m?.cpuTempCelsius ?? null; }
   get rx()      { return this.formatNet(this.m?.netRxBytesPerSec ?? 0); }
   get tx()      { return this.formatNet(this.m?.netTxBytesPerSec ?? 0); }

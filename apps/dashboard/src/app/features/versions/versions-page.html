@@ -1,0 +1,53 @@
+<nxs-page-header
+  title="Versions" accent="& mises à jour"
+  subtitle="Applications, composants, cluster et système — état de fraîcheur">
+  @if (outdatedCount() > 0) {
+    <span class="pill-update">{{ outdatedCount() }} mise{{ outdatedCount() > 1 ? 's' : '' }} à jour dispo</span>
+  } @else if (report()) {
+    <span class="pill-ok">tout à jour</span>
+  }
+</nxs-page-header>
+
+@if (report()) {
+  @for (s of sections(); track s.key) {
+    <section class="vsec">
+      <header class="vsec-head">
+        <lucide-icon [img]="s.icon" [size]="16" strokeWidth="2" class="vsec-icon"></lucide-icon>
+        <span class="vsec-title">{{ s.label }}</span>
+        <span class="vsec-sub">{{ s.sub }}</span>
+      </header>
+
+      <div class="vlist">
+        @for (i of s.items; track i.name) {
+          <div class="vrow" [class]="state(i)">
+            <span class="vname">{{ i.name }}</span>
+
+            <span class="vcurrent">
+              @if (i.current) { {{ i.current }} } @else { <span class="vmuted">—</span> }
+            </span>
+
+            <span class="vstate">
+              @switch (state(i)) {
+                @case ('ok') {
+                  <lucide-icon [img]="icons.CheckCircle2" [size]="14"></lucide-icon>
+                  <span class="vstate-label">à jour</span>
+                }
+                @case ('update') {
+                  <lucide-icon [img]="icons.ArrowUpCircle" [size]="14"></lucide-icon>
+                  <span class="vstate-label">{{ i.latest }}</span>
+                }
+                @default {
+                  <lucide-icon [img]="icons.Minus" [size]="14"></lucide-icon>
+                }
+              }
+            </span>
+
+            <span class="vdetail">{{ i.detail }}</span>
+          </div>
+        }
+      </div>
+    </section>
+  }
+} @else {
+  <div class="vloading">Collecte des versions…</div>
+}

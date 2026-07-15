@@ -1,0 +1,63 @@
+:host { display: block; }
+
+/* En-tête : pastilles d'état global */
+.pill-update, .pill-ok {
+  display: inline-flex; align-items: center;
+  padding: .35rem .7rem; border-radius: var(--radius-full);
+  font-size: .74rem; font-weight: 500;
+}
+.pill-update { color: var(--yellow); background: color-mix(in srgb, var(--yellow) 12%, transparent); border: 1px solid color-mix(in srgb, var(--yellow) 30%, transparent); }
+.pill-ok     { color: var(--green);  background: color-mix(in srgb, var(--green) 12%, transparent);  border: 1px solid color-mix(in srgb, var(--green) 30%, transparent); }
+
+/* Sections */
+.vsec { margin-bottom: 1.5rem; animation: nxsFadeUp .4s var(--ease) both; }
+
+.vsec-head {
+  display: flex; align-items: baseline; gap: .6rem;
+  padding-bottom: .5rem; margin-bottom: .25rem;
+  border-bottom: 1px solid var(--border);
+}
+.vsec-icon { color: var(--accent); align-self: center; }
+.vsec-title { font-family: var(--font-display); font-weight: 700; font-size: 1rem; color: var(--text); }
+.vsec-sub { font-size: .78rem; color: var(--text3); }
+
+/* Liste */
+.vlist { display: flex; flex-direction: column; }
+
+.vrow {
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) auto 130px minmax(0, 1.4fr);
+  align-items: center; gap: 1rem;
+  padding: .6rem .25rem;
+  border-bottom: 1px solid var(--border2);
+}
+.vrow:last-child { border-bottom: 0; }
+
+.vname { font-weight: 500; color: var(--text); }
+
+.vcurrent {
+  font-family: var(--font-mono); font-size: .82rem; color: var(--text2);
+  text-align: right; white-space: nowrap;
+}
+.vmuted { color: var(--text3); }
+
+.vstate {
+  display: inline-flex; align-items: center; gap: .35rem;
+  font-family: var(--font-mono); font-size: .8rem; white-space: nowrap;
+}
+.vrow.ok      .vstate { color: var(--green); }
+.vrow.update  .vstate { color: var(--yellow); }
+.vrow.unknown .vstate { color: var(--text3); }
+.vstate-label { font-weight: 500; }
+
+.vdetail {
+  font-size: .76rem; color: var(--text3);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.vloading { color: var(--text3); text-align: center; padding: 3rem; }
+
+@media (max-width: 720px) {
+  .vrow { grid-template-columns: 1fr auto auto; }
+  .vdetail { display: none; }
+}

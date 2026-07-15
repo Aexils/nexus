@@ -1,7 +1,7 @@
 import { Injectable, signal, inject } from '@angular/core';
 import { Socket } from 'ngx-socket-io';
 import {
-  HostMetrics, NodeMetrics, WorkloadMetric, WS_EVENTS, LogEntry, AppLatestVersions,
+  HostMetrics, NodeMetrics, WorkloadMetric, WS_EVENTS, LogEntry, VersionsReport,
   SideloopStatus,
 } from '@nexus/shared-types';
 
@@ -17,7 +17,7 @@ export class NexusService {
   readonly nodeMetrics       = signal<NodeMetrics[]>([]);
   readonly workloads         = signal<WorkloadMetric[]>([]);
   readonly logs              = signal<LogEntry[]>([]);
-  readonly appLatestVersions = signal<AppLatestVersions>({});
+  readonly versions          = signal<VersionsReport | null>(null);
   readonly sideloop          = signal<SideloopStatus | null>(null);
 
   // ── Constructor ───────────────────────────────────────────────────────────
@@ -26,7 +26,7 @@ export class NexusService {
     this.socket.on(WS_EVENTS.SYSTEM_METRICS, (data: HostMetrics)       => this.metrics.set(data));
     this.socket.on(WS_EVENTS.NODE_METRICS,     (data: NodeMetrics[])     => this.nodeMetrics.set(data));
     this.socket.on(WS_EVENTS.WORKLOAD_METRICS, (data: WorkloadMetric[])  => this.workloads.set(data));
-    this.socket.on(WS_EVENTS.APP_VERSIONS,   (data: AppLatestVersions) => this.appLatestVersions.set(data));
+    this.socket.on(WS_EVENTS.APP_VERSIONS,   (data: VersionsReport)    => this.versions.set(data));
     this.socket.on(WS_EVENTS.SIDELOOP_STATUS,  (data: SideloopStatus)    => this.sideloop.set(data));
 
     this.socket.on(WS_EVENTS.LOG_ENTRY, (entry: LogEntry) => {
