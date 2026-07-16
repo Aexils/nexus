@@ -83,7 +83,8 @@
   border-radius: 6px; padding: 3px 10px; font-size: 12px; cursor: pointer; margin-left: 6px;
 }
 .log-actions button.active, .log-filters button.active { color: var(--accent); border-color: var(--accent); }
-.log-filters { display: flex; gap: 0; padding: 10px 16px; }
+.log-filters { display: flex; flex-wrap: wrap; row-gap: 6px; padding: 10px 16px; }
+.log-filter-sep { width: 1px; align-self: stretch; background: var(--border); margin-left: 12px; margin-right: 6px; }
 .log-list { list-style: none; margin: 0; padding: 0; max-height: 300px; overflow-y: auto; }
 .log-entry { display: grid; grid-template-columns: 64px 40px 80px 1fr; gap: 10px; padding: 5px 16px; font-size: 12px; font-family: "SF Mono", Menlo, monospace; border-bottom: 1px solid var(--border2); }
 .log-time { color: var(--text3); }
@@ -94,5 +95,6 @@
 .log-entry.info .log-level { color: var(--accent); }
 .log-entry.debug .log-level { color: var(--text3); }
 .log-source { color: var(--text3); }
+.log-source.kodi { color: var(--kodi); }
 .log-message { color: var(--text2); }
 .log-empty { padding: 16px; color: var(--text3); font-size: 13px; }

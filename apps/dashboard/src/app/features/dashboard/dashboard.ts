@@ -61,21 +61,34 @@ export class Dashboard {
   }
 
   // ── Journal ─────────────────────────────────────────────────────────────
-  filterLevel = signal<FilterLevel>('all');
-  showDebug   = signal(false);
+  filterLevel  = signal<FilterLevel>('all');
+  filterSource = signal<FilterSource>('all');
+  showDebug    = signal(false);
+
+  // Chips construites depuis les sources réellement présentes dans le journal
+  readonly logSources = computed<FilterSource[]>(() => {
+    const present = new Set(this.nexus.logs().map(e => e.source));
+    return ['all', ...[...present].sort()];
+  });
 
   readonly filteredLogs = computed(() => {
-    const level = this.filterLevel();
-    const debug = this.showDebug();
+    const level  = this.filterLevel();
+    const source = this.filterSource();
+    const debug  = this.showDebug();
     return this.nexus.logs().filter(e =>
       (debug || e.level !== 'debug') &&
-      (level === 'all' || e.level === level),
+      (level === 'all' || e.level === level) &&
+      (source === 'all' || e.source === source),
     );
   });
 
   setFilterLevel(level: FilterLevel): void { this.filterLevel.set(level); }
+  setFilterSource(source: FilterSource): void { this.filterSource.set(source); }
   toggleDebug(): void { this.showDebug.update(v => !v); }
-  clearLogs(): void { this.nexus.logs.set([]); }
+  clearLogs(): void {
+    this.nexus.logs.set([]);
+    this.filterSource.set('all');
+  }
 
   logLevelClass(level: LogLevel): string {
     return level === 'ok' ? 'ok' : level === 'warn' ? 'warn' : level === 'error' ? 'error' : level === 'debug' ? 'debug' : 'info';

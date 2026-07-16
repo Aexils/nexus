@@ -7,6 +7,7 @@ import { VersionModule } from './version/version.module';
 import { ExpenseModule } from './expense/expense.module';
 import { AdminModule } from './admin/admin.module';
 import { SideloopModule } from './sideloop/sideloop.module';
+import { KodiLogModule } from './kodilog/kodilog.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { SideloopModule } from './sideloop/sideloop.module';
     ExpenseModule,
     AdminModule,
     SideloopModule,
+    KodiLogModule,
   ],
 })
 export class AppModule {}

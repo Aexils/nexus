@@ -83,10 +83,11 @@ export class NexusGateway
 
   // ── Logging ───────────────────────────────────────────────────────────────
 
-  addLog(level: LogLevel, source: LogSource, message: string): void {
+  // timestamp optionnel : les logs relayés (kodi.log…) gardent leur heure d'origine
+  addLog(level: LogLevel, source: LogSource, message: string, timestamp = Date.now()): void {
     const entry: LogEntry = {
       id:        `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-      timestamp: Date.now(),
+      timestamp,
       level,
       source,
       message,

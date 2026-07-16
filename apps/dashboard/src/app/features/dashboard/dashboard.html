@@ -56,12 +56,17 @@
     <div class="log-filters">
       <button *ngFor="let lvl of ['all','info','ok','warn','error']"
               type="button" [class.active]="filterLevel() === lvl" (click)="setFilterLevel($any(lvl))">{{ lvl }}</button>
+      <ng-container *ngIf="logSources().length > 2">
+        <span class="log-filter-sep"></span>
+        <button *ngFor="let src of logSources()"
+                type="button" [class.active]="filterSource() === src" (click)="setFilterSource(src)">{{ src }}</button>
+      </ng-container>
     </div>
     <ul class="log-list">
       <li class="log-entry" *ngFor="let entry of filteredLogs()" [class]="logLevelClass(entry.level)">
         <span class="log-time">{{ formatTime(entry.timestamp) }}</span>
         <span class="log-level">{{ logLevelLabel(entry.level) }}</span>
-        <span class="log-source">{{ entry.source }}</span>
+        <span class="log-source" [class.kodi]="entry.source === 'kodi'">{{ entry.source }}</span>
         <span class="log-message">{{ entry.message }}</span>
       </li>
       <li class="log-empty" *ngIf="filteredLogs().length === 0">Aucun log.</li>

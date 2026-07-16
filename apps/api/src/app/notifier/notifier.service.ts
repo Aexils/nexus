@@ -23,7 +23,8 @@ export class NotifierService {
   notify(level: LogLevel, source: LogSource, message: string): void {
     if (!this.url) return;
     // error = toujours ; warn = seulement les sources actionnables.
-    const worthy = level === 'error'
+    // kodi = journal d'observation relayé du RPi (bruyant, non actionnable) → jamais de push.
+    const worthy = (level === 'error' && source !== 'kodi')
       || (level === 'warn' && (source === 'sideloop' || source === 'system'));
     if (!worthy) return;
 
