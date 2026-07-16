@@ -8,7 +8,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { NexusService } from '../../core/services/nexus.service';
 import { PageHeaderComponent } from '../../shared/page-header/page-header';
-import { LogLevel, LogSource, WorkloadMetric } from '@nexus/shared-types';
+import { LogLevel, LogSource, NextcloudStatus, WorkloadMetric } from '@nexus/shared-types';
 
 type FilterLevel  = LogLevel | 'all';
 type FilterSource = LogSource | 'all';
@@ -58,6 +58,20 @@ export class Dashboard {
   }
   nodeBarClass(pct: number): string {
     return pct >= 90 ? 'crit' : pct >= 75 ? 'warn' : 'ok';
+  }
+
+  // ── Nextcloud ───────────────────────────────────────────────────────────
+  readonly nextcloud = this.nexus.nextcloud;
+
+  // Aligné sur NEXTCLOUD_FREE_WARN_GB côté API (disjoncteur miroir 180 Go)
+  lowSpace(nc: NextcloudStatus): boolean {
+    return nc.freeBytes !== undefined && nc.freeBytes < 130e9;
+  }
+  fmtGB(bytes?: number): string {
+    return bytes === undefined ? '—' : (bytes / 1e9).toFixed(0) + ' Go';
+  }
+  fmtMB(bytes?: number): string {
+    return bytes === undefined ? '—' : (bytes / 1e6).toFixed(0) + ' Mo';
   }
 
   // ── Journal ─────────────────────────────────────────────────────────────

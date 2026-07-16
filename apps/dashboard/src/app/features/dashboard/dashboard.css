@@ -74,6 +74,22 @@
 .pod-cpu, .pod-ram { text-align: right; }
 .wl-empty { padding: 14px 16px; color: var(--text3); font-size: 13px; }
 
+/* ── Nextcloud ── */
+.nc-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.nc-header { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+.nc-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--red); }
+.nc-dot.ok { background: var(--green); }
+.nc-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--text2); }
+.nc-version { font-size: 11px; color: var(--text3); font-family: "SF Mono", Menlo, monospace; }
+.nc-sync { margin-left: auto; font-size: 11px; color: var(--green); border: 1px solid var(--green); border-radius: 6px; padding: 2px 8px; animation: nc-pulse 2s ease-in-out infinite; }
+@keyframes nc-pulse { 50% { opacity: .45; } }
+.nc-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; padding: 14px 16px; }
+.nc-stat { display: flex; flex-direction: column; gap: 2px; }
+.nc-val { font-size: 18px; font-weight: 700; color: var(--text); font-family: "SF Mono", Menlo, monospace; }
+.nc-val.warn { color: var(--yellow); }
+.nc-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: .04em; }
+.nc-downmsg { padding: 14px 16px; color: var(--red); font-size: 13px; }
+
 /* ── Journal ── */
 .log-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
 .log-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--border); }

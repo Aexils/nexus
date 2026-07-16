@@ -44,6 +44,37 @@
     <ng-container *ngTemplateOutlet="wlList; context: { $implicit: infra() }"></ng-container>
   </section>
 
+  <!-- ── Nextcloud ── -->
+  <section class="nc-panel" *ngIf="nextcloud() as nc">
+    <header class="nc-header">
+      <span class="nc-dot" [class.ok]="nc.reachable"></span>
+      <span class="nc-title">Nextcloud</span>
+      <span class="nc-version" *ngIf="nc.version">v{{ nc.version }}</span>
+      <span class="nc-sync" *ngIf="nc.reachable && (nc.active5m ?? 0) > 0">sync actif</span>
+    </header>
+    <div class="nc-stats" *ngIf="nc.reachable; else ncDown">
+      <div class="nc-stat">
+        <span class="nc-val" [class.warn]="lowSpace(nc)">{{ fmtGB(nc.freeBytes) }}</span>
+        <span class="nc-label">libres</span>
+      </div>
+      <div class="nc-stat">
+        <span class="nc-val">{{ nc.numFiles }}</span>
+        <span class="nc-label">fichiers</span>
+      </div>
+      <div class="nc-stat">
+        <span class="nc-val">{{ nc.active24h ?? 0 }}/{{ nc.numUsers ?? 0 }}</span>
+        <span class="nc-label">actifs 24 h</span>
+      </div>
+      <div class="nc-stat">
+        <span class="nc-val">{{ fmtMB(nc.dbSizeBytes) }}</span>
+        <span class="nc-label">base SQL</span>
+      </div>
+    </div>
+    <ng-template #ncDown>
+      <div class="nc-downmsg">Injoignable — dernière vérification {{ formatTime(nc.checkedAt) }}</div>
+    </ng-template>
+  </section>
+
   <!-- ── Journal ── -->
   <section class="log-panel">
     <header class="log-header">

@@ -13,7 +13,7 @@ export interface AppInfo {
 }
 
 export type LogLevel  = 'info' | 'warn' | 'error' | 'ok' | 'debug';
-export type LogSource = 'kodi' | 'abs' | 'psn' | 'sideloadly' | 'sideloop' | 'urbackup' | 'jellyfin' | 'booklore' | 'system' | 'nexus';
+export type LogSource = 'kodi' | 'abs' | 'psn' | 'sideloadly' | 'sideloop' | 'urbackup' | 'jellyfin' | 'booklore' | 'nextcloud' | 'system' | 'nexus';
 
 export interface LogEntry {
   id:        string;
@@ -21,4 +21,17 @@ export interface LogEntry {
   level:     LogLevel;
   source:    LogSource;
   message:   string;
+}
+
+// État Nextcloud (API serverinfo) — sync photos iPhone, espace, activité
+export interface NextcloudStatus {
+  reachable:    boolean;
+  checkedAt:    number;    // Unix ms
+  version?:     string;    // ex. "34.0.1.2"
+  freeBytes?:   number;    // espace libre du volume data
+  numFiles?:    number;
+  numUsers?:    number;
+  active5m?:    number;    // utilisateurs actifs < 5 min (sync en cours ?)
+  active24h?:   number;
+  dbSizeBytes?: number;
 }

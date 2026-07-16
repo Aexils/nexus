@@ -20,6 +20,9 @@ api:
     LOG_DB_PATH: /nexus-state/logs.db
     KODI_STATE_PATH: /nexus-state/kodi-state.json
     ABS_STATE_PATH: /nexus-state/abs-state.json
+  # Noms de Secrets du namespace injectés en env (tokens d'intégration — voir
+  # le repo d'infra pour les SealedSecrets). Vide par défaut.
+  envFromSecrets: []
   resources:
     requests:
       cpu: 50m

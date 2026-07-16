@@ -32,6 +32,15 @@ spec:
             - name: {{ $k }}
               value: {{ $v | quote }}
             {{- end }}
+          {{- if .Values.api.envFromSecrets }}
+          # Tokens d'intégration : jamais dans les values — des Secrets du
+          # namespace (SealedSecrets côté infra), injectés tels quels.
+          envFrom:
+            {{- range .Values.api.envFromSecrets }}
+            - secretRef:
+                name: {{ . }}
+            {{- end }}
+          {{- end }}
           volumeMounts:
             - name: state
               mountPath: /nexus-state
