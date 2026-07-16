@@ -8,6 +8,7 @@ import {
 import { Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { NotifierService } from '../notifier/notifier.service';
+import { LogStoreService } from './log-store.service';
 import {
   HostMetrics, NodeMetrics, WorkloadMetric, WS_EVENTS, LogEntry, LogLevel, LogSource, VersionsReport,
   SideloopStatus,
@@ -33,10 +34,15 @@ export class NexusGateway
   @WebSocketServer()
   server: Server;
 
-  constructor(private readonly notifier: NotifierService) {}
+  constructor(
+    private readonly notifier: NotifierService,
+    private readonly store: LogStoreService,
+  ) {}
 
   afterInit() {
     this.logger.log('WebSocket gateway initialized');
+    // Re-remplit le buffer depuis SQLite : le Journal survit aux restarts du pod
+    this.logBuffer.push(...this.store.loadRecent(LOG_BUFFER_MAX));
     this.addLog('info', 'nexus', 'NEXUS démarré — WebSocket gateway prêt');
   }
 
@@ -92,6 +98,7 @@ export class NexusGateway
       source,
       message,
     };
+    if (!this.store.insert(entry)) return;   // déjà connu (rejeu de backfill après restart)
     this.logBuffer.push(entry);
     if (this.logBuffer.length > LOG_BUFFER_MAX) this.logBuffer.shift();
     this.server?.emit(WS_EVENTS.LOG_ENTRY, entry);
