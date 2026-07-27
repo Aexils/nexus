@@ -57,9 +57,9 @@
 .wl-health.ok { background: var(--green); }
 .wl-health.warn { background: var(--yellow); }
 .wl-health.crit { background: var(--red); }
-.wl-name { font-weight: 600; font-size: 13px; }
-.wl-pods { font-size: 12px; color: var(--text3); }
-.wl-cpu, .wl-ram { font-size: 12px; color: var(--text2); text-align: right; }
+.wl-name { font-weight: 600; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.wl-pods { font-size: 12px; color: var(--text3); white-space: nowrap; }
+.wl-cpu, .wl-ram { font-size: 12px; color: var(--text2); text-align: right; white-space: nowrap; }
 
 .wl-pods-detail { background: var(--bg); padding: 4px 0; }
 .pod-row {
@@ -112,5 +112,59 @@
 .log-entry.debug .log-level { color: var(--text3); }
 .log-source { color: var(--text3); }
 .log-source.kodi { color: var(--kodi); }
-.log-message { color: var(--text2); }
+.log-message { color: var(--text2); overflow-wrap: anywhere; }
 .log-empty { padding: 16px; color: var(--text3); font-size: 13px; }
+
+/* ════════════════════════════════════════════════════════════════════════════
+   RESPONSIVE — conteneur étroit (téléphone) : les rangées denses passent sur
+   2 lignes au lieu de tronquer. Container query sur `main` (tient compte du
+   rail/sidebar, pas seulement du viewport).
+   ════════════════════════════════════════════════════════════════════════════ */
+@container main (max-width: 560px) {
+  /* Workloads : nom + cpu en haut, pods + ram en dessous */
+  .wl-row {
+    grid-template-columns: 16px 10px 1fr auto;
+    grid-template-areas:
+      "caret health name cpu"
+      "caret health pods ram";
+    row-gap: 3px;
+    padding: 9px 14px;
+    align-items: center;
+  }
+  .wl-caret  { grid-area: caret; align-self: center; }
+  .wl-health { grid-area: health; align-self: center; }
+  .wl-name   { grid-area: name; }
+  .wl-pods   { grid-area: pods; }
+  .wl-cpu    { grid-area: cpu; }
+  .wl-ram    { grid-area: ram; }
+
+  /* Pods dépliés : même logique, 2 lignes */
+  .pod-row {
+    grid-template-columns: 10px 1fr auto auto;
+    grid-template-areas:
+      "health name name cpu"
+      "health node restarts ram";
+    row-gap: 2px;
+    padding: 7px 14px 7px 28px;
+  }
+  .pod-health   { grid-area: health; align-self: center; }
+  .pod-name     { grid-area: name; }
+  .pod-node     { grid-area: node; }
+  .pod-restarts { grid-area: restarts; }
+  .pod-cpu      { grid-area: cpu; }
+  .pod-ram      { grid-area: ram; }
+
+  /* Journal : horodatage/niveau/source sur une ligne, message en dessous */
+  .log-entry {
+    grid-template-columns: auto auto 1fr;
+    grid-template-areas:
+      "time level source"
+      "msg  msg   msg";
+    row-gap: 2px;
+    gap: 8px;
+  }
+  .log-time    { grid-area: time; }
+  .log-level   { grid-area: level; }
+  .log-source  { grid-area: source; }
+  .log-message { grid-area: msg; }
+}

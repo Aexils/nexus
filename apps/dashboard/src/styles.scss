@@ -223,6 +223,26 @@
   --ease:   cubic-bezier(0.4, 0, 0.2, 1);
   --t-fast: 0.16s var(--ease);
   --t:      0.24s var(--ease);
+
+  /* ── Échelle d'espacement (base 4px) ── */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  /* ── Padding de page fluide (téléphone → grand écran) ── */
+  --page-x: clamp(16px, 4vw, 32px);
+  --page-y: clamp(18px, 3vw, 28px);
+
+  /* ── Typo fluide (clamp : lisible du 360px au grand écran) ── */
+  --fs-hero:  clamp(1.35rem, 1.15rem + 1vw, 1.55rem);
+  --fs-h2:    clamp(1.05rem, 0.98rem + 0.4vw, 1.25rem);
+  --fs-body:  0.875rem;   /* 14px */
+  --fs-sm:    0.8125rem;  /* 13px */
+  --fs-xs:    0.75rem;    /* 12px */
 }
 
 /* ════════════════════════════════════════════════════════════════════════════
@@ -320,6 +340,18 @@ body::after {
 
 .btn-success { background: transparent; border-color: rgba(74,222,128,.3); color: var(--green); }
 .btn-success:hover { background: rgba(74,222,128,.1); border-color: var(--green); }
+
+/* ════════════════════════════════════════════════════════════════════════════
+   TOUCH TARGETS — sur écran tactile uniquement (pointer: coarse), on garantit
+   une cible ≥ 40px sans alourdir les UIs souris (densité conservée au desktop).
+   ════════════════════════════════════════════════════════════════════════════ */
+@media (pointer: coarse) {
+  .btn, .icon-btn, .nav-item,
+  button:not(.calc-btn) {
+    min-height: 40px;
+  }
+  .icon-btn { min-width: 40px; }
+}
 
 /* ════════════════════════════════════════════════════════════════════════════
    LUCIDE ICONS — prevent inline baseline gap inside flex containers

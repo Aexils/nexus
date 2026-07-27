@@ -4,10 +4,16 @@
        [class.sidebar-collapsed]="layout.sidebarCollapsed()"
        [class.metrics-collapsed]="layout.metricsCollapsed()">
 
-    <!-- Mobile overlay backdrop -->
+    <!-- Mobile overlay backdrop (sidebar) -->
     <div class="sidebar-overlay"
          [class.visible]="layout.sidebarOpen()"
          (click)="layout.closeSidebar()">
+    </div>
+
+    <!-- Mobile/tablet overlay backdrop (metrics drawer) -->
+    <div class="metrics-overlay"
+         [class.visible]="layout.metricsOpen()"
+         (click)="layout.closeMetrics()">
     </div>
 
     <nxs-sidebar [class.mobile-open]="layout.sidebarOpen()" />
@@ -16,7 +22,7 @@
       <router-outlet />
     </main>
 
-    <nxs-metrics-panel />
+    <nxs-metrics-panel [class.mobile-open]="layout.metricsOpen()" />
 
     <!-- Sidebar collapse toggle -->
     <button class="panel-toggle sidebar-toggle"

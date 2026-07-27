@@ -3,7 +3,7 @@ import {
   ChangeDetectionStrategy, ChangeDetectorRef,
 } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
-import { LucideAngularModule, Palette, Bell, Menu } from 'lucide-angular';
+import { LucideAngularModule, Palette, Bell, Menu, Activity } from 'lucide-angular';
 import { ThemeService, THEMES } from '../../core/services/theme';
 import { LayoutService } from '../layout.service';
 
@@ -23,7 +23,7 @@ export class TopbarComponent implements OnInit {
   protected currentTime = new Date();
   private cdr = inject(ChangeDetectorRef);
 
-  readonly icons = { Palette, Bell, Menu };
+  readonly icons = { Palette, Bell, Menu, Activity };
 
   ngOnInit() {
     setInterval(() => {
