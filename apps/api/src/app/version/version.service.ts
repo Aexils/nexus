@@ -21,6 +21,8 @@ const REGISTRY: K8sEntry[] = [
   // ── Applications (ce qu'on utilise) ──
   { name: 'Nextcloud', category: 'application', ns: 'nextcloud', workload: 'nextcloud', github: 'nextcloud/server' },
   { name: 'Jellyfin',  category: 'application', ns: 'jellyfin',  workload: 'jellyfin',  github: 'jellyfin/jellyfin' },
+  { name: 'Audiobookshelf', category: 'application', ns: 'audiobookshelf', workload: 'audiobookshelf', github: 'advplyr/audiobookshelf' },
+  { name: 'Calibre-Web',    category: 'application', ns: 'calibre-web',    workload: 'calibre-web',    github: 'crocodilestick/Calibre-Web-Automated' },
   { name: 'Sideloop',  category: 'application', ns: 'sideloop',  workload: 'sideloop',  own: true, detail: 'app maison' },
   { name: 'Nexus',     category: 'application', ns: 'nexus',     workload: 'api',       own: true, detail: 'app maison' },
   // ── Composants (la plomberie du cluster) ──
@@ -33,6 +35,7 @@ const REGISTRY: K8sEntry[] = [
   { name: 'Sealed Secrets', category: 'component', ns: 'sealed-secrets',       workload: 'sealed-secrets-controller',                     github: 'bitnami-labs/sealed-secrets' },
   { name: 'metrics-server', category: 'component', ns: 'kube-system',          workload: 'metrics-server',                                github: 'kubernetes-sigs/metrics-server' },
   { name: 'local-path',     category: 'component', ns: 'local-path-storage',   workload: 'local-path-provisioner',                        github: 'rancher/local-path-provisioner' },
+  { name: 'ntfy',           category: 'component', ns: 'ntfy',                 workload: 'ntfy',                                          github: 'binwiederhier/ntfy' },
 ];
 
 // Cluster : github pour la dernière version amont.
