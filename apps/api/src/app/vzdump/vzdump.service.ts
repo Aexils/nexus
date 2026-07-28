@@ -35,7 +35,10 @@ export class VzdumpService implements OnModuleInit {
   onModuleInit(): void {
     if (!this.enabled) {
       this.logger.warn('PVE_API_URL/PVE_API_TOKEN absents — suivi vzdump désactivé');
+      return;
     }
+    // Poll initial (retour immédiat au boot) — l'@Interval prend ensuite le relais.
+    setTimeout(() => this.poll(), 8000);
   }
 
   @Interval(5 * 60 * 1000)   // vzdump est quotidien : un poll /5 min suffit largement
