@@ -7,8 +7,9 @@ import { VersionModule } from './version/version.module';
 import { ExpenseModule } from './expense/expense.module';
 import { AdminModule } from './admin/admin.module';
 import { SideloopModule } from './sideloop/sideloop.module';
-import { KodiLogModule } from './kodilog/kodilog.module';
 import { NextcloudModule } from './nextcloud/nextcloud.module';
+import { EventsModule } from './events/events.module';
+import { JobsModule } from './jobs/jobs.module';
 
 @Module({
   imports: [
@@ -20,8 +21,9 @@ import { NextcloudModule } from './nextcloud/nextcloud.module';
     ExpenseModule,
     AdminModule,
     SideloopModule,
-    KodiLogModule,
     NextcloudModule,
+    EventsModule,
+    JobsModule,
   ],
 })
 export class AppModule {}
