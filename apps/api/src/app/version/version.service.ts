@@ -23,6 +23,7 @@ const REGISTRY: K8sEntry[] = [
   { name: 'Jellyfin',  category: 'application', ns: 'jellyfin',  workload: 'jellyfin',  github: 'jellyfin/jellyfin' },
   { name: 'Audiobookshelf', category: 'application', ns: 'audiobookshelf', workload: 'audiobookshelf', github: 'advplyr/audiobookshelf' },
   { name: 'Calibre-Web',    category: 'application', ns: 'calibre-web',    workload: 'calibre-web',    github: 'crocodilestick/Calibre-Web-Automated' },
+  { name: 'qBittorrent',    category: 'application', ns: 'qbittorrent',    workload: 'qbittorrent',    github: 'qbittorrent/qBittorrent' },
   { name: 'Sideloop',  category: 'application', ns: 'sideloop',  workload: 'sideloop',  own: true, detail: 'app maison' },
   { name: 'Nexus',     category: 'application', ns: 'nexus',     workload: 'api',       own: true, detail: 'app maison' },
   // ── Composants (la plomberie du cluster) ──
@@ -242,7 +243,7 @@ export class VersionService implements OnModuleInit {
     });
     if (res.ok) {
       const data = await res.json() as { tag_name: string };
-      return data.tag_name;
+      return this.cleanTag(data.tag_name);
     }
     if (res.status === 404) {
       const tagsRes = await fetch(`https://api.github.com/repos/${repo}/tags?per_page=1`, {
@@ -251,9 +252,14 @@ export class VersionService implements OnModuleInit {
       if (!tagsRes.ok) throw new Error(`tags ${tagsRes.status}`);
       const tags = await tagsRes.json() as { name: string }[];
       if (!tags.length) throw new Error('aucun tag');
-      return tags[0].name;
+      return this.cleanTag(tags[0].name);
     }
     throw new Error(`GitHub ${res.status}`);
+  }
+
+  /** Retire un préfixe amont non-sémantique pour l'affichage ("release-5.2.3" → "5.2.3"). */
+  private cleanTag(tag: string): string {
+    return tag.replace(/^release[-/]/i, '');
   }
 
   // ── Comparaison ─────────────────────────────────────────────────────────────
@@ -274,8 +280,10 @@ export class VersionService implements OnModuleInit {
   }
 
   private norm(v: string): number[] {
-    const clean = v.replace(/^v/i, '').split(/[-+_ ]/)[0];
-    return clean.split('.').map(n => parseInt(n, 10) || 0);
+    // Premier groupe numérique pointé, où qu'il soit dans le tag : gère "v3.4.5",
+    // "5.2.3", "5.2.3-rc1" et les préfixes amont comme "release-5.2.3" (qBittorrent).
+    const m = v.match(/\d+(?:\.\d+)*/);
+    return (m ? m[0] : '').split('.').map(n => parseInt(n, 10) || 0);
   }
 
   /** -1 si a<b, 0 si égal, 1 si a>b (sémantique semver). */
