@@ -10,6 +10,7 @@ import { SideloopModule } from './sideloop/sideloop.module';
 import { NextcloudModule } from './nextcloud/nextcloud.module';
 import { EventsModule } from './events/events.module';
 import { JobsModule } from './jobs/jobs.module';
+import { VzdumpModule } from './vzdump/vzdump.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { JobsModule } from './jobs/jobs.module';
     NextcloudModule,
     EventsModule,
     JobsModule,
+    VzdumpModule,
   ],
 })
 export class AppModule {}
