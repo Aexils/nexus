@@ -112,6 +112,8 @@
 .log-entry.debug .log-level { color: var(--text3); }
 .log-source { color: var(--text3); }
 .log-source.kodi { color: var(--kodi); }
+.log-source.events { color: var(--yellow); }
+.log-source.jobs { color: var(--green); }
 .log-message { color: var(--text2); overflow-wrap: anywhere; }
 .log-empty { padding: 16px; color: var(--text3); font-size: 13px; }
 

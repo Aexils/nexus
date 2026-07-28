@@ -97,7 +97,7 @@
       <li class="log-entry" *ngFor="let entry of filteredLogs()" [class]="logLevelClass(entry.level)">
         <span class="log-time">{{ formatTime(entry.timestamp) }}</span>
         <span class="log-level">{{ logLevelLabel(entry.level) }}</span>
-        <span class="log-source" [class.kodi]="entry.source === 'kodi'">{{ entry.source }}</span>
+        <span class="log-source" [class.kodi]="entry.source === 'kodi'" [class.events]="entry.source === 'events'" [class.jobs]="entry.source === 'jobs'">{{ entry.source }}</span>
         <span class="log-message">{{ entry.message }}</span>
       </li>
       <li class="log-empty" *ngIf="filteredLogs().length === 0">Aucun log.</li>
