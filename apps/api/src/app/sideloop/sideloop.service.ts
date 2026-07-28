@@ -50,10 +50,8 @@ export class SideloopService implements OnModuleInit {
     }
 
     this.failCount = 0;
-    if (!this.wasReachable) {
-      this.gateway.addLog('ok', 'sideloop', 'sideloop de nouveau joignable');
-      this.wasReachable = true;
-    }
+    // rétabli : on ne logue plus le retour (source sideloop = warn/error uniquement)
+    if (!this.wasReachable) this.wasReachable = true;
 
     this.notifyNewAlerts(status);
     this.gateway.emitSideloopStatus(status);
@@ -69,12 +67,7 @@ export class SideloopService implements OnModuleInit {
         this.gateway.addLog(level, 'sideloop', alert);
       }
     }
-    // alertes disparues = résolues → petit log ok (utile dans le journal)
-    for (const prev of this.knownAlerts) {
-      if (!current.has(prev)) {
-        this.gateway.addLog('ok', 'sideloop', `résolu : ${prev}`);
-      }
-    }
+    // alertes résolues : plus de log `ok` (source sideloop = warn/error uniquement)
     this.knownAlerts = current;
   }
 
