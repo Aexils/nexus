@@ -28,6 +28,9 @@ node_modules
 .env
 .env.local
 
+# local seed DB (données perso — la vraie vit sur le PVC du cluster)
+nexus-expenses.db
+
 # misc
 /.sass-cache
 /connect.lock
