@@ -52,6 +52,11 @@ export const appRoutes: Route[] = [
         loadComponent: () =>
           import('./features/admin/admin-page').then(m => m.AdminPage),
       },
+      {
+        path: 'kestrel',
+        loadComponent: () =>
+          import('./features/kestrel/kestrel-page').then(m => m.KestrelPage),
+      },
     ],
   },
 ];
