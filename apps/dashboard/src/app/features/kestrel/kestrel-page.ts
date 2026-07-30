@@ -1,13 +1,14 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { forkJoin } from 'rxjs';
 import {
-  LucideAngularModule, RefreshCw, Trash2, ExternalLink, Bell, Info,
+  LucideAngularModule, RefreshCw, Trash2, ExternalLink, Bell, Info, Plus,
 } from 'lucide-angular';
 import {
   KestrelAlert, KestrelObservation, KestrelSource, KestrelTarget,
 } from '@nexus/shared-types';
 import { KestrelService } from './kestrel.service';
 import { KestrelLogo } from './kestrel-logo';
+import { KestrelNewTarget } from './kestrel-new-target';
 
 // ── View-models ──────────────────────────────────────────────────────────────
 interface Chart {
@@ -34,7 +35,7 @@ const BEST_EFFORT = new Set(['skyscanner']);
 @Component({
   selector: 'app-kestrel-page',
   standalone: true,
-  imports: [LucideAngularModule, KestrelLogo],
+  imports: [LucideAngularModule, KestrelLogo, KestrelNewTarget],
   templateUrl: './kestrel-page.html',
   styleUrl: './kestrel-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -47,12 +48,14 @@ export class KestrelPage implements OnInit {
   readonly ExternalLink = ExternalLink;
   readonly Bell = Bell;
   readonly Info = Info;
+  readonly Plus = Plus;
 
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
   readonly collecting = signal<number | null>(null);
+  readonly showNew = signal(false);
 
-  private readonly sources = signal<KestrelSource[]>([]);
+  readonly sources = signal<KestrelSource[]>([]);
   private readonly targets = signal<KestrelTarget[]>([]);
   private readonly obs = signal<Record<number, KestrelObservation[]>>({});
   readonly alerts = signal<KestrelAlert[]>([]);
@@ -120,6 +123,11 @@ export class KestrelPage implements OnInit {
     this.api.deleteTarget(targetId).subscribe(() => {
       this.targets.update(list => list.filter(t => t.id !== targetId));
     });
+  }
+
+  onCreated(): void {
+    this.showNew.set(false);
+    this.reload();
   }
 
   targetLabel(id: number): string {

@@ -1,0 +1,89 @@
+<div class="k-modal-back" (click)="closed.emit()">
+  <div class="k-modal card" (click)="$event.stopPropagation()">
+    <header class="k-modal-head">
+      <h2>Nouvelle cible</h2>
+      <button class="k-x" (click)="closed.emit()" aria-label="Fermer"><lucide-icon [img]="X" [size]="18" /></button>
+    </header>
+
+    <div class="k-form">
+      <div class="fld">
+        <label>Type de veille</label>
+        <select [(ngModel)]="sourceId" [ngModelOptions]="{ standalone: true }" (ngModelChange)="selectSource(sourceId)">
+          @for (s of sources; track s.id) { <option [value]="s.id">{{ s.id }}</option> }
+        </select>
+      </div>
+
+      <div class="fld">
+        <label>Nom</label>
+        <input type="text" [(ngModel)]="label" [ngModelOptions]="{ standalone: true }" placeholder="MTL → CDG (fév 2027)" />
+      </div>
+
+      <!-- Champs générés depuis le params_schema de la source -->
+      @for (f of fields; track f.key) {
+        <div class="fld">
+          <label>{{ f.title }} @if (f.required) { <span class="req">*</span> }</label>
+          @switch (f.kind) {
+            @case ('enum') {
+              <select [(ngModel)]="values[f.key]" [ngModelOptions]="{ standalone: true }">
+                @for (o of f.enum; track o) { <option [value]="o">{{ o }}</option> }
+              </select>
+            }
+            @case ('date') {
+              <input type="date" [(ngModel)]="values[f.key]" [ngModelOptions]="{ standalone: true }" />
+            }
+            @case ('integer') {
+              <input type="number" step="1" [(ngModel)]="values[f.key]" [ngModelOptions]="{ standalone: true }" />
+            }
+            @case ('number') {
+              <input type="number" [(ngModel)]="values[f.key]" [ngModelOptions]="{ standalone: true }" />
+            }
+            @case ('dateArray') {
+              <div class="dates">
+                @for (d of dates; track $index) {
+                  <div class="daterow">
+                    <input type="date" [(ngModel)]="dates[$index]" [ngModelOptions]="{ standalone: true }" />
+                    <button type="button" class="k-x sm" (click)="removeDate($index)" aria-label="Retirer"><lucide-icon [img]="Trash2" [size]="14" /></button>
+                  </div>
+                }
+                <button type="button" class="btn btn-ghost btn-sm" (click)="addDate()"><lucide-icon [img]="Plus" [size]="14" /> Ajouter une date</button>
+              </div>
+            }
+            @default {
+              <input type="text" [(ngModel)]="values[f.key]" [ngModelOptions]="{ standalone: true }" />
+            }
+          }
+          @if (f.description) { <div class="hint">{{ f.description }}</div> }
+        </div>
+      }
+
+      <div class="row2">
+        <div class="fld"><label>Devise</label><input type="text" [(ngModel)]="currency" [ngModelOptions]="{ standalone: true }" /></div>
+        <div class="fld"><label>Intervalle (heures)</label><input type="number" min="1" [(ngModel)]="intervalH" [ngModelOptions]="{ standalone: true }" /></div>
+      </div>
+
+      <!-- Règle d'alerte -->
+      <div class="fld rule">
+        <label>Alerte</label>
+        <div class="seg">
+          <button type="button" [class.on]="ruleKind === 'threshold'" (click)="ruleKind = 'threshold'">Seuil</button>
+          <button type="button" [class.on]="ruleKind === 'relative_drop'" (click)="ruleKind = 'relative_drop'">Baisse %</button>
+        </div>
+        @if (ruleKind === 'threshold') {
+          <div class="inline"><input type="number" placeholder="ex. 650" [(ngModel)]="threshold" [ngModelOptions]="{ standalone: true }" /><span class="unit">{{ currency }}</span></div>
+        } @else {
+          <div class="row2">
+            <div class="fld"><label>Baisse ≥ (%)</label><input type="number" [(ngModel)]="percent" [ngModelOptions]="{ standalone: true }" /></div>
+            <div class="fld"><label>Fenêtre (jours)</label><input type="number" [(ngModel)]="windowDays" [ngModelOptions]="{ standalone: true }" /></div>
+          </div>
+        }
+      </div>
+
+      @if (err) { <div class="k-err">{{ err }}</div> }
+    </div>
+
+    <footer class="k-modal-foot">
+      <button class="btn btn-ghost" (click)="closed.emit()">Annuler</button>
+      <button class="btn btn-primary" [disabled]="!valid || saving" (click)="submit()">{{ saving ? 'Création…' : 'Créer la cible' }}</button>
+    </footer>
+  </div>
+</div>

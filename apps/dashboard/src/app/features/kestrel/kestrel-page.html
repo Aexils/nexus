@@ -9,9 +9,14 @@
         <p class="k-tag">Veille de prix multi-source · le faucon guette, puis fond</p>
       </div>
     </div>
-    <button class="btn btn-ghost" (click)="reload()">
-      <lucide-icon [img]="RefreshCw" [size]="15" /> Rafraîchir
-    </button>
+    <div class="k-head-actions">
+      <button class="btn btn-ghost" (click)="reload()">
+        <lucide-icon [img]="RefreshCw" [size]="15" /> Rafraîchir
+      </button>
+      <button class="btn btn-primary" (click)="showNew.set(true)">
+        <lucide-icon [img]="Plus" [size]="15" /> Nouvelle cible
+      </button>
+    </div>
   </header>
 
   @if (error()) {
@@ -151,5 +156,9 @@
         </div>
       }
     </section>
+  }
+
+  @if (showNew()) {
+    <app-kestrel-new-target [sources]="sources()" (created)="onCreated()" (closed)="showNew.set(false)" />
   }
 </div>
