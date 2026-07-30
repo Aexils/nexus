@@ -1,19 +1,30 @@
-import {
-  ChangeDetectionStrategy, Component, EventEmitter, Input, OnInit, Output,
-} from '@angular/core';
-import { inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { LucideAngularModule, X, Plus, Trash2 } from 'lucide-angular';
+import { LucideAngularModule, X, Plus } from 'lucide-angular';
 import { KestrelSource } from '@nexus/shared-types';
 import { KestrelService } from './kestrel.service';
 
-type FieldKind = 'text' | 'date' | 'number' | 'integer' | 'enum' | 'dateArray';
+type Ctrl = 'text' | 'date' | 'number' | 'stepper' | 'enum' | 'dateArray';
 interface Field {
-  key: string; title: string; kind: FieldKind;
-  enum?: string[]; required: boolean; default?: unknown; description?: string;
+  key: string; title: string; ctrl: Ctrl; group: string;
+  enum?: string[]; min?: number; max?: number; required: boolean;
+  default?: unknown; description?: string;
 }
+interface Section { title: string; fields: Field[]; }
+interface Domain { id: string; icon: string; label: string; active: boolean; }
 
-/** Formulaire de création de cible, GÉNÉRÉ depuis le `params_schema` de la source (§8). */
+// Catalogue des domaines connus (icône + libellé). Ceux non encore enregistrés
+// côté API apparaissent en « bientôt ».
+const CATALOG: { id: string; icon: string; label: string }[] = [
+  { id: 'flights', icon: '✈️', label: 'Vol' },
+  { id: 'products', icon: '📦', label: 'Produit' },
+  { id: 'events', icon: '🎫', label: 'Événement' },
+];
+const CABIN: Record<string, string> = {
+  economy: 'Économie', premium_economy: 'Premium', business: 'Affaires', first: '1ère',
+};
+
+/** Modale « Nouvelle cible » — sélecteur de domaine + formulaire groupé, généré depuis le params_schema. */
 @Component({
   selector: 'app-kestrel-new-target',
   standalone: true,
@@ -30,7 +41,6 @@ export class KestrelNewTarget implements OnInit {
   private readonly api = inject(KestrelService);
   readonly X = X;
   readonly Plus = Plus;
-  readonly Trash2 = Trash2;
 
   sourceId = '';
   label = '';
@@ -39,6 +49,7 @@ export class KestrelNewTarget implements OnInit {
   fields: Field[] = [];
   values: Record<string, unknown> = {};
   dates: string[] = [];
+  newDate = '';
   ruleKind: 'threshold' | 'relative_drop' = 'threshold';
   threshold: number | null = null;
   percent = 15;
@@ -47,21 +58,42 @@ export class KestrelNewTarget implements OnInit {
   err: string | null = null;
 
   ngOnInit(): void {
-    if (this.sources.length) this.selectSource(this.sources[0].id);
+    const first = this.domains.find(d => d.active);
+    if (first) this.selectSource(first.id);
+  }
+
+  get domains(): Domain[] {
+    const registered = new Set(this.sources.map(s => s.id));
+    const known = CATALOG.map(c => ({ ...c, active: registered.has(c.id) }));
+    // sources enregistrées inconnues du catalogue → cartes génériques
+    const extra = this.sources
+      .filter(s => !CATALOG.some(c => c.id === s.id))
+      .map(s => ({ id: s.id, icon: '🔔', label: s.id, active: true }));
+    return [...known, ...extra];
   }
 
   get source(): KestrelSource | undefined {
     return this.sources.find(s => s.id === this.sourceId);
   }
 
+  get sections(): Section[] {
+    const order: string[] = [];
+    const map = new Map<string, Field[]>();
+    for (const f of this.fields) {
+      if (!map.has(f.group)) { map.set(f.group, []); order.push(f.group); }
+      map.get(f.group)!.push(f);
+    }
+    return order.map(title => ({ title, fields: map.get(title)! }));
+  }
+
   get arrField(): Field | undefined {
-    return this.fields.find(f => f.kind === 'dateArray');
+    return this.fields.find(f => f.ctrl === 'dateArray');
   }
 
   get valid(): boolean {
     if (!this.sourceId) return false;
     for (const f of this.fields) {
-      if (f.required && f.kind !== 'dateArray') {
+      if (f.required && f.ctrl !== 'dateArray') {
         const v = this.values[f.key];
         if (v === undefined || v === null || v === '') return false;
       }
@@ -71,37 +103,70 @@ export class KestrelNewTarget implements OnInit {
   }
 
   selectSource(id: string): void {
+    if (!this.domains.find(d => d.id === id)?.active) return;
     this.sourceId = id;
     this.fields = this.buildFields(this.source);
     this.values = {};
     this.dates = [];
     for (const f of this.fields) {
-      if (f.kind !== 'dateArray' && f.default !== undefined) this.values[f.key] = f.default;
+      if (f.ctrl === 'stepper') this.values[f.key] = f.default ?? f.min ?? 0;
+      else if (f.ctrl === 'enum') this.values[f.key] = f.default ?? f.enum?.[0];
+      else if (f.default !== undefined) this.values[f.key] = f.default;
     }
   }
 
-  addDate(): void { this.dates = [...this.dates, '']; }
-  removeDate(i: number): void { this.dates = this.dates.filter((_, x) => x !== i); }
+  enumLabel(v: string): string {
+    return CABIN[v] ?? v.replace(/_/g, ' ').replace(/^\w/, c => c.toUpperCase());
+  }
+
+  step(f: Field, delta: number): void {
+    const cur = Number(this.values[f.key] ?? f.min ?? 0);
+    let n = cur + delta;
+    if (f.min != null) n = Math.max(n, f.min);
+    if (f.max != null) n = Math.min(n, f.max);
+    this.values[f.key] = n;
+  }
+
+  addDate(): void {
+    if (this.newDate && !this.dates.includes(this.newDate)) {
+      this.dates = [...this.dates, this.newDate];
+      this.newDate = '';
+    }
+  }
+  removeDate(i: number): void {
+    this.dates = this.dates.filter((_, x) => x !== i);
+  }
+
+  /** Champs qui occupent toute la largeur (les autres se rangent en grille 2 colonnes). */
+  isWide(f: Field): boolean {
+    return f.ctrl === 'date' || f.ctrl === 'enum' || f.ctrl === 'dateArray'
+      || (f.ctrl === 'number' && !!f.description);
+  }
 
   private buildFields(s?: KestrelSource): Field[] {
     if (!s) return [];
-    const schema = s.params_schema as { properties?: Record<string, Record<string, unknown>>; required?: string[] };
+    const schema = s.params_schema as {
+      properties?: Record<string, Record<string, unknown>>; required?: string[];
+    };
     const props = schema.properties ?? {};
     const required = schema.required ?? [];
     return Object.entries(props).map(([key, def]) => {
       const rawType = def['type'];
       const t = Array.isArray(rawType) ? (rawType as string[]).find(x => x !== 'null') : rawType;
-      let kind: FieldKind = 'text';
-      if (def['enum']) kind = 'enum';
-      else if (t === 'array') kind = 'dateArray';
-      else if (def['format'] === 'date') kind = 'date';
-      else if (t === 'integer') kind = 'integer';
-      else if (t === 'number') kind = 'number';
+      let ctrl: Ctrl = 'text';
+      if (def['enum']) ctrl = 'enum';
+      else if (t === 'array') ctrl = 'dateArray';
+      else if (def['format'] === 'date') ctrl = 'date';
+      else if (t === 'integer') ctrl = 'stepper';
+      else if (t === 'number') ctrl = 'number';
       return {
         key,
         title: (def['title'] as string) ?? key,
-        kind,
+        ctrl,
+        group: (def['x-group'] as string) ?? 'Détails',
         enum: def['enum'] as string[] | undefined,
+        min: def['minimum'] as number | undefined,
+        max: def['maximum'] as number | undefined,
         required: required.includes(key),
         default: def['default'],
         description: def['description'] as string | undefined,
@@ -116,10 +181,7 @@ export class KestrelNewTarget implements OnInit {
     this.err = null;
 
     const params: Record<string, unknown> = { ...this.values };
-    if (this.arrField) {
-      const ds = this.dates.filter(d => d);
-      if (ds.length) params[this.arrField.key] = ds;
-    }
+    if (this.arrField && this.dates.length) params[this.arrField.key] = this.dates;
 
     this.api.createTarget({
       source: s.id,
