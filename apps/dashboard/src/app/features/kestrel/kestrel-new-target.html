@@ -1,81 +1,100 @@
 <div class="k-modal-back" (click)="closed.emit()">
-  <div class="k-modal card" (click)="$event.stopPropagation()">
+  <div class="k-modal" (click)="$event.stopPropagation()">
     <header class="k-modal-head">
-      <h2>Nouvelle cible</h2>
+      <div>
+        <h2>Nouvelle cible</h2>
+        <div class="sub">Choisis quoi surveiller, puis règle tes critères</div>
+      </div>
       <button class="k-x" (click)="closed.emit()" aria-label="Fermer"><lucide-icon [img]="X" [size]="18" /></button>
     </header>
 
     <div class="k-form">
-      <div class="fld">
-        <label>Type de veille</label>
-        <select [(ngModel)]="sourceId" [ngModelOptions]="{ standalone: true }" (ngModelChange)="selectSource(sourceId)">
-          @for (s of sources; track s.id) { <option [value]="s.id">{{ s.id }}</option> }
-        </select>
+      <!-- Sélecteur de domaine -->
+      <div class="domains">
+        @for (d of domains; track d.id) {
+          <button type="button" class="dom" [class.active]="d.id === sourceId" [class.soon]="!d.active"
+                  [disabled]="!d.active" (click)="selectSource(d.id)">
+            <span class="emo">{{ d.icon }}</span>
+            <span class="nm">{{ d.label }}</span>
+            <span class="st">{{ d.active ? (d.id === sourceId ? '● Actif' : 'Dispo') : 'Bientôt' }}</span>
+          </button>
+        }
       </div>
 
-      <div class="fld">
-        <label>Nom</label>
-        <input type="text" [(ngModel)]="label" [ngModelOptions]="{ standalone: true }" placeholder="MTL → CDG (fév 2027)" />
-      </div>
-
-      <!-- Champs générés depuis le params_schema de la source -->
-      @for (f of fields; track f.key) {
-        <div class="fld">
-          <label>{{ f.title }} @if (f.required) { <span class="req">*</span> }</label>
-          @switch (f.kind) {
-            @case ('enum') {
-              <select [(ngModel)]="values[f.key]" [ngModelOptions]="{ standalone: true }">
-                @for (o of f.enum; track o) { <option [value]="o">{{ o }}</option> }
-              </select>
-            }
-            @case ('date') {
-              <input type="date" [(ngModel)]="values[f.key]" [ngModelOptions]="{ standalone: true }" />
-            }
-            @case ('integer') {
-              <input type="number" step="1" [(ngModel)]="values[f.key]" [ngModelOptions]="{ standalone: true }" />
-            }
-            @case ('number') {
-              <input type="number" [(ngModel)]="values[f.key]" [ngModelOptions]="{ standalone: true }" />
-            }
-            @case ('dateArray') {
-              <div class="dates">
-                @for (d of dates; track $index) {
-                  <div class="daterow">
-                    <input type="date" [(ngModel)]="dates[$index]" [ngModelOptions]="{ standalone: true }" />
-                    <button type="button" class="k-x sm" (click)="removeDate($index)" aria-label="Retirer"><lucide-icon [img]="Trash2" [size]="14" /></button>
-                  </div>
+      <!-- Sections générées depuis le params_schema (regroupées par x-group) -->
+      @for (sec of sections; track sec.title) {
+        <div class="section">
+          <div class="sec-title">{{ sec.title }}</div>
+          <div class="fields">
+            @for (f of sec.fields; track f.key) {
+              <div class="field" [class.span2]="isWide(f)">
+                <label>{{ f.title }} @if (f.required) { <span class="req">*</span> }</label>
+                @switch (f.ctrl) {
+                  @case ('stepper') {
+                    <div class="step">
+                      <button type="button" (click)="step(f, -1)" aria-label="moins">−</button>
+                      <span class="val">{{ values[f.key] }}</span>
+                      <button type="button" (click)="step(f, 1)" aria-label="plus">+</button>
+                    </div>
+                  }
+                  @case ('enum') {
+                    <div class="seg">
+                      @for (o of f.enum; track o) {
+                        <button type="button" [class.on]="values[f.key] === o" (click)="values[f.key] = o">{{ enumLabel(o) }}</button>
+                      }
+                    </div>
+                  }
+                  @case ('date') {
+                    <input type="date" class="mono" [(ngModel)]="values[f.key]" [ngModelOptions]="{ standalone: true }" />
+                  }
+                  @case ('number') {
+                    <input type="number" [(ngModel)]="values[f.key]" [ngModelOptions]="{ standalone: true }" />
+                  }
+                  @case ('dateArray') {
+                    <div class="chips">
+                      @for (d of dates; track $index) {
+                        <span class="chip">{{ d }} <b (click)="removeDate($index)" aria-label="retirer">✕</b></span>
+                      }
+                      <input type="date" class="chip-date mono" [(ngModel)]="newDate" [ngModelOptions]="{ standalone: true }" />
+                      <button type="button" class="chip-add" (click)="addDate()"><lucide-icon [img]="Plus" [size]="13" /> ajouter</button>
+                    </div>
+                  }
+                  @default {
+                    <input type="text" class="mono" [(ngModel)]="values[f.key]" [ngModelOptions]="{ standalone: true }" [placeholder]="f.title" />
+                  }
                 }
-                <button type="button" class="btn btn-ghost btn-sm" (click)="addDate()"><lucide-icon [img]="Plus" [size]="14" /> Ajouter une date</button>
+                @if (f.description) { <div class="fieldhint">{{ f.description }}</div> }
               </div>
             }
-            @default {
-              <input type="text" [(ngModel)]="values[f.key]" [ngModelOptions]="{ standalone: true }" />
-            }
-          }
-          @if (f.description) { <div class="hint">{{ f.description }}</div> }
+          </div>
         </div>
       }
 
-      <div class="row2">
-        <div class="fld"><label>Devise</label><input type="text" [(ngModel)]="currency" [ngModelOptions]="{ standalone: true }" /></div>
-        <div class="fld"><label>Intervalle (heures)</label><input type="number" min="1" [(ngModel)]="intervalH" [ngModelOptions]="{ standalone: true }" /></div>
-      </div>
-
-      <!-- Règle d'alerte -->
-      <div class="fld rule">
-        <label>Alerte</label>
+      <!-- Alerte -->
+      <div class="section">
+        <div class="sec-title">Alerte</div>
         <div class="seg">
-          <button type="button" [class.on]="ruleKind === 'threshold'" (click)="ruleKind = 'threshold'">Seuil</button>
-          <button type="button" [class.on]="ruleKind === 'relative_drop'" (click)="ruleKind = 'relative_drop'">Baisse %</button>
+          <button type="button" [class.on]="ruleKind === 'threshold'" (click)="ruleKind = 'threshold'">Seuil de prix</button>
+          <button type="button" [class.on]="ruleKind === 'relative_drop'" (click)="ruleKind = 'relative_drop'">Baisse en %</button>
         </div>
         @if (ruleKind === 'threshold') {
-          <div class="inline"><input type="number" placeholder="ex. 650" [(ngModel)]="threshold" [ngModelOptions]="{ standalone: true }" /><span class="unit">{{ currency }}</span></div>
+          <div class="inline"><span class="unit muted">Préviens-moi sous</span><input type="number" placeholder="ex. 650" [(ngModel)]="threshold" [ngModelOptions]="{ standalone: true }" /><span class="unit">{{ currency }}</span></div>
         } @else {
-          <div class="row2">
-            <div class="fld"><label>Baisse ≥ (%)</label><input type="number" [(ngModel)]="percent" [ngModelOptions]="{ standalone: true }" /></div>
-            <div class="fld"><label>Fenêtre (jours)</label><input type="number" [(ngModel)]="windowDays" [ngModelOptions]="{ standalone: true }" /></div>
+          <div class="fields">
+            <div class="field"><label>Baisse ≥ (%)</label><input type="number" [(ngModel)]="percent" [ngModelOptions]="{ standalone: true }" /></div>
+            <div class="field"><label>Fenêtre (jours)</label><input type="number" [(ngModel)]="windowDays" [ngModelOptions]="{ standalone: true }" /></div>
           </div>
         }
+      </div>
+
+      <!-- Réglages -->
+      <div class="section">
+        <div class="sec-title">Réglages</div>
+        <div class="fields">
+          <div class="field span2"><label>Nom (optionnel)</label><input type="text" [(ngModel)]="label" [ngModelOptions]="{ standalone: true }" placeholder="Ex. MTL → CDG (fév 2027)" /></div>
+          <div class="field"><label>Devise</label><input type="text" class="mono" [(ngModel)]="currency" [ngModelOptions]="{ standalone: true }" /></div>
+          <div class="field"><label>Vérifier toutes les (h)</label><input type="number" min="1" [(ngModel)]="intervalH" [ngModelOptions]="{ standalone: true }" /></div>
+        </div>
       </div>
 
       @if (err) { <div class="k-err">{{ err }}</div> }
