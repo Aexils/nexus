@@ -1,0 +1,155 @@
+<div class="kestrel">
+
+  <!-- Header -->
+  <header class="k-top">
+    <div class="k-lockup">
+      <span class="k-mark"><app-kestrel-logo [size]="40" /></span>
+      <div>
+        <h1 class="k-word">kestre<b>l</b></h1>
+        <p class="k-tag">Veille de prix multi-source · le faucon guette, puis fond</p>
+      </div>
+    </div>
+    <button class="btn btn-ghost" (click)="reload()">
+      <lucide-icon [img]="RefreshCw" [size]="15" /> Rafraîchir
+    </button>
+  </header>
+
+  @if (error()) {
+    <div class="k-error"><lucide-icon [img]="Info" [size]="16" /> {{ error() }}</div>
+  }
+
+  <!-- KPI -->
+  <section class="k-stats">
+    <div class="card k-stat" style="--tc:var(--accent)">
+      <div class="k-label">Cibles</div>
+      <div class="k-v">{{ kpi().active }}<span class="k-sub"> / {{ kpi().targets }}</span></div>
+      <div class="k-s">actives</div>
+    </div>
+    <div class="card k-stat" style="--tc:var(--green)">
+      <div class="k-label">Alertes · 7 j</div>
+      <div class="k-v good">{{ kpi().alerts7d }}</div>
+      <div class="k-s">notifications ntfy</div>
+    </div>
+    <div class="card k-stat" style="--tc:var(--accent2)">
+      <div class="k-label">Meilleur prix suivi</div>
+      <div class="k-v">@if (kpi().best !== null) { {{ money(kpi().best!) }}<span class="k-sub"> CAD</span> } @else { — }</div>
+      <div class="k-s">toutes cibles</div>
+    </div>
+    <div class="card k-stat" style="--tc:var(--yellow)">
+      <div class="k-label">Alertes récentes</div>
+      <div class="k-v">{{ alerts().length }}</div>
+      <div class="k-s">historique</div>
+    </div>
+  </section>
+
+  @if (loading()) {
+    <div class="k-empty">Chargement…</div>
+  } @else if (!cards().length && !error()) {
+    <div class="k-empty">
+      Aucune cible pour l'instant.<br>
+      <span class="k-muted">Crée-en via l'API, ou lance <code>uv run python scripts/seed_mtl_cdg.py</code> côté Kestrel.</span>
+    </div>
+  }
+
+  <!-- Cibles -->
+  <div class="k-grid">
+    @for (card of cards(); track card.target.id) {
+      <section class="card k-watch">
+        <div class="k-watch-head">
+          <div>
+            <div class="k-route"><span class="k-icon">{{ card.icon }}</span> {{ card.target.label || card.target.source }}</div>
+            <div class="k-chips">
+              @for (chip of card.chips; track $index) { <span class="k-chip">{{ chip }}</span> }
+            </div>
+          </div>
+          <div class="k-price">
+            @if (card.best) {
+              <div><span class="k-big">{{ money(card.best.price) }}</span> <span class="k-cur">{{ card.best.currency }}</span></div>
+              <div class="k-badges">
+                @if (card.basis === 'estimated_all_in') { <span class="k-badge est">✦ estimé tout compris</span> }
+                @else if (card.basis === 'base_fare_bags_excluded') { <span class="k-badge warn">⚠ hors bagages</span> }
+                @else if (card.allIn) { <span class="k-badge est">tout compris</span> }
+              </div>
+            } @else {
+              <div class="k-nodata">aucun relevé</div>
+            }
+          </div>
+        </div>
+
+        <!-- Courbe -->
+        @if (card.chart; as ch) {
+          <div class="k-spark">
+            <svg [attr.viewBox]="'0 0 ' + ch.w + ' ' + ch.h" width="100%" preserveAspectRatio="none">
+              <defs>
+                <linearGradient [attr.id]="'kg' + card.target.id" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" [attr.stop-color]="ch.down ? 'var(--green)' : 'var(--accent)'" stop-opacity="0.22" />
+                  <stop offset="1" [attr.stop-color]="ch.down ? 'var(--green)' : 'var(--accent)'" stop-opacity="0" />
+                </linearGradient>
+              </defs>
+              <path [attr.d]="ch.area" [attr.fill]="'url(#kg' + card.target.id + ')'" />
+              <path [attr.d]="ch.line" fill="none" [attr.stroke]="ch.down ? 'var(--green)' : 'var(--accent)'"
+                    stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+              <circle [attr.cx]="ch.endX" [attr.cy]="ch.endY" r="3.6"
+                      [attr.fill]="ch.down ? 'var(--green)' : 'var(--accent)'" stroke="var(--surface)" stroke-width="1.5" />
+            </svg>
+          </div>
+        } @else {
+          <div class="k-spark-empty">Pas encore assez d'historique — lance une collecte.</div>
+        }
+
+        <!-- Variantes -->
+        @if (card.variants.length) {
+          <div class="k-variants">
+            @for (v of card.variants; track v.label) {
+              <div class="k-variant" [class.best]="v.best">
+                <div class="k-vd">{{ v.label }}</div>
+                <div class="k-vp">{{ money(v.price) }}</div>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Providers + actions -->
+        <div class="k-foot">
+          <div class="k-provs">
+            @for (p of card.providers; track p.name) {
+              <span class="k-prov" [attr.title]="p.tier">
+                <span class="k-dot" [class.on]="p.on" [class.best]="p.tier === 'best'"></span>{{ p.name }}
+              </span>
+            }
+          </div>
+          <div class="k-actions">
+            @if (card.best?.deep_link) {
+              <a class="btn btn-ghost btn-sm" [href]="card.best!.deep_link" target="_blank" rel="noopener">
+                <lucide-icon [img]="ExternalLink" [size]="13" /> Voir l'offre
+              </a>
+            }
+            <button class="btn btn-ghost btn-sm" (click)="collect(card.target.id)" [disabled]="collecting() !== null">
+              <lucide-icon [img]="RefreshCw" [size]="13" [class.spin]="collecting() === card.target.id" />
+              Collecter
+            </button>
+            <button class="btn btn-danger btn-sm" (click)="remove(card.target.id)" aria-label="Supprimer">
+              <lucide-icon [img]="Trash2" [size]="13" />
+            </button>
+          </div>
+        </div>
+      </section>
+    }
+  </div>
+
+  <!-- Alertes -->
+  @if (alerts().length) {
+    <section class="card k-panel">
+      <h3 class="k-h3"><lucide-icon [img]="Bell" [size]="14" /> Alertes récentes</h3>
+      @for (a of alerts(); track a.id) {
+        <div class="k-alert">
+          <div class="k-alert-ic">▼</div>
+          <div>
+            <div class="k-alert-msg">{{ a.message }}</div>
+            <div class="k-alert-meta">{{ targetLabel(a.target_id) }} · {{ ago(a.notified_at) }}</div>
+          </div>
+        </div>
+      }
+    </section>
+  }
+</div>
