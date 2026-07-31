@@ -30,6 +30,8 @@ node_modules
 
 # local seed DB (données perso — la vraie vit sur le PVC du cluster)
 nexus-expenses.db
+nexus-immigration.db
+nexus-logs.db
 
 # misc
 /.sass-cache

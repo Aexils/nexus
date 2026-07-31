@@ -3,7 +3,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 import { LayoutService } from '../layout.service';
 import {
   LucideAngularModule, LucideIconData,
-  LayoutDashboard, User, Home, Database, Smartphone, Target, TrendingDown,
+  LayoutDashboard, User, Home, Database, Smartphone, Target, TrendingDown, Plane,
 } from 'lucide-angular';
 
 interface NavItem {
@@ -31,6 +31,7 @@ export class SidebarComponent {
     { label: 'Sideloop',         route: '/sideloop',  icon: Smartphone      },
     { label: 'Versions',         route: '/versions',  icon: Target          },
     { label: 'Kestrel',          route: '/kestrel',   icon: TrendingDown    },
+    { label: 'Entrée Express',   route: '/immigration', icon: Plane         },
   ];
 
   readonly navAdmin: NavItem[] = [
