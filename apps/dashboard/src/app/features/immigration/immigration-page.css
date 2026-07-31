@@ -177,7 +177,7 @@
   border-radius: var(--radius);
   border: 1px solid var(--border);
   background: var(--surface2);
-  overflow: hidden;
+  /* pas d'overflow:hidden : la bulle d'info doit pouvoir déborder du document */
   transition: border-color var(--t-fast), background var(--t-fast);
 }
 .doc:hover { border-color: var(--border2); }
@@ -186,6 +186,7 @@
   position: absolute; left: 0; top: 0; bottom: 0;
   width: 3px;
   background: var(--text3);
+  border-radius: var(--radius) 0 0 var(--radius);   /* suit le coin arrondi de la carte */
   transition: background var(--t-fast);
 }
 .doc.s-in_progress .doc__rail { background: var(--kodi); }
@@ -205,6 +206,46 @@
   border-radius: var(--radius-full);
   background: color-mix(in srgb, var(--text3) 14%, transparent);
   white-space: nowrap;
+}
+
+/* ── Bulle d'info par document ── */
+.doc__info-wrap { position: relative; display: inline-flex; align-items: center; align-self: center; }
+.doc__info {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; padding: 0;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border2);
+  background: transparent; color: var(--text3);
+  cursor: help; transition: all var(--t-fast);
+}
+.doc__info:hover,
+.doc__info-wrap:focus-within .doc__info {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+}
+.doc__tip {
+  position: absolute; bottom: calc(100% + 9px); left: -4px;
+  width: max-content; max-width: 300px;
+  padding: 0.6rem 0.7rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  color: var(--text2);
+  font-size: 0.75rem; font-weight: 400; line-height: 1.5; letter-spacing: 0;
+  text-align: left; text-transform: none; white-space: normal;
+  opacity: 0; visibility: hidden;
+  transform: translateY(4px);
+  transition: opacity var(--t-fast), transform var(--t-fast), visibility var(--t-fast);
+  z-index: 40; pointer-events: none;
+}
+.doc__tip::after {
+  content: ''; position: absolute; top: 100%; left: 12px;
+  border: 5px solid transparent; border-top-color: var(--border2);
+}
+.doc__info-wrap:hover .doc__tip,
+.doc__info-wrap:focus-within .doc__tip {
+  opacity: 1; visibility: visible; transform: translateY(0);
 }
 
 .doc__actions { display: flex; align-items: center; gap: 0.6rem; flex-shrink: 0; }

@@ -85,6 +85,14 @@
                   <div class="doc__title">
                     {{ doc.name }}
                     @if (doc.detail) { <span class="doc__detail">{{ doc.detail }}</span> }
+                    @if (docInfo(doc.name); as info) {
+                      <span class="doc__info-wrap">
+                        <button type="button" class="doc__info" [attr.aria-label]="'Infos : ' + doc.name">
+                          <lucide-icon [img]="icons.Info" [size]="13"></lucide-icon>
+                        </button>
+                        <span class="doc__tip" role="tooltip">{{ info }}</span>
+                      </span>
+                    }
                   </div>
                 </div>
 
@@ -125,6 +133,14 @@
                       <div class="doc__title">
                         {{ doc.name }}
                         @if (doc.detail) { <span class="doc__detail">{{ doc.detail }}</span> }
+                        @if (docInfo(doc.name); as info) {
+                          <span class="doc__info-wrap">
+                            <button type="button" class="doc__info" [attr.aria-label]="'Infos : ' + doc.name">
+                              <lucide-icon [img]="icons.Info" [size]="13"></lucide-icon>
+                            </button>
+                            <span class="doc__tip" role="tooltip">{{ info }}</span>
+                          </span>
+                        }
                       </div>
                     </div>
                     <div class="doc__actions">

@@ -8,7 +8,7 @@ import { PageHeaderComponent } from '../../shared/page-header/page-header';
 import {
   LucideAngularModule,
   Plane, CalendarDays, Pencil, MessageSquare, Plus, X, Check,
-  Clock, Circle, Trash2, ChevronDown, Sparkles,
+  Clock, Circle, Trash2, ChevronDown, Sparkles, Info,
 } from 'lucide-angular';
 import {
   ImmigrationOverview, ApplicantProgress, RequiredDocument, DocComment,
@@ -20,6 +20,54 @@ const STATUSES: { value: DocStatus; label: string }[] = [
   { value: 'in_progress',  label: DOC_STATUS_LABELS.in_progress  },
   { value: 'provided',     label: DOC_STATUS_LABELS.provided     },
 ];
+
+/**
+ * Explication de chaque type de document (bulle d'info), d'après le guide pvtistes.net
+ * « Entrée Express » et les exigences d'IRCC. Indicatif — vérifier sur le site officiel
+ * d'IRCC pour ta situation précise. Clé = `name` du document.
+ */
+const DOC_INFO: Record<string, string> = {
+  'Études':
+    "Preuve de tes études déclarées : en général l'Évaluation des Diplômes d'Études (EDE) — " +
+    "numéro de référence + attestation d'un organisme agréé (IRCC la vérifie auprès de lui). " +
+    "Tes diplômes/grades et relevés de notes (lycée, université) peuvent aussi être demandés.",
+  "Relevé d'emploi":
+    "Preuve d'une expérience déclarée : lettre de l'employeur sur papier en-tête (postes, " +
+    "fonctions, période, heures/semaine, salaire, avantages), signée par ton supérieur ou le RH, " +
+    "cohérente avec le code CNP déclaré. Au Canada : aussi T4 / avis de cotisation. " +
+    "Travailleur autonome : preuves de statut, de revenus et de clients.",
+  'Preuve de ressources financières suffisantes':
+    "Preuve de fonds : lettre de ta banque (en-tête, tes numéros de comptes, dates d'ouverture, " +
+    "solde actuel et solde moyen des 6 derniers mois, dettes/emprunts). Non exigée si tu es déjà au " +
+    "Canada avec un permis de travail, avec une offre d'emploi valide, ou via la Catégorie de " +
+    "l'expérience canadienne.",
+  'Certificat de police':
+    "Extrait de casier judiciaire pour chaque pays où tu as vécu 6 mois consécutifs ou plus depuis " +
+    "tes 18 ans. Celui de ton pays de résidence actuel doit dater de moins de 6 mois. Anticipe : " +
+    "certains pays sont longs. Exemptions IRCC : séjours < 6 mois, avant 18 ans, ou il y a plus de 20 ans.",
+  'Photographie':
+    "2 photos d'identité numériques aux normes IRCC pour résidents permanents (pas de photomaton), " +
+    "prises chez un photographe pro dans les 6 derniers mois. Garde le reçu daté. Mieux vaut attendre " +
+    "l'invitation (validité 6 mois).",
+  'Passeports / titres de voyage':
+    "Copie des pages d'identification de ton passeport, valide et à jour. Anticipe un renouvellement " +
+    "si l'expiration approche, sous peine de retards.",
+  "Preuve d'examen médical préalable":
+    "Confirmation d'une visite médicale chez un médecin désigné par IRCC (liste sur leur site). " +
+    "Valide moins d'un an, ~250–300 €, non remboursée. À faire AVANT de soumettre la demande. Tous " +
+    "les membres de la famille doivent la passer, même les enfants à charge non accompagnants.",
+  "Déclaration officielle d'union de fait":
+    "Formulaire IMM 5409, à remplir si tu te déclares en union de fait, avec preuve de vie commune " +
+    "depuis au moins 12 mois : comptes conjoints, bail ou acte commun, factures (eau, électricité) " +
+    "aux deux noms.",
+  "Document d'identité national":
+    "Copie de ta ou tes pièces d'identité nationales (carte d'identité), en complément du passeport.",
+  'Renseignements du client':
+    "Renseignements personnels complémentaires demandés via ton compte IRCC (adresses successives, " +
+    "voyages, historique familial…). Si tu recours à un représentant en immigration agréé, tu le " +
+    "déclares avec le formulaire IMM 5476 (et IMM 5475 pour l'autorisation de communiquer tes " +
+    "renseignements).",
+};
 
 @Component({
   selector: 'app-immigration-page',
@@ -34,9 +82,14 @@ export class ImmigrationPage implements OnInit {
 
   readonly icons = {
     Plane, CalendarDays, Pencil, MessageSquare, Plus, X, Check,
-    Clock, Circle, Trash2, ChevronDown, Sparkles,
+    Clock, Circle, Trash2, ChevronDown, Sparkles, Info,
   };
   readonly statuses = STATUSES;
+
+  /** Texte de la bulle d'info d'un document (par son intitulé), ou null si aucun. */
+  docInfo(name: string): string | null {
+    return DOC_INFO[name] ?? null;
+  }
 
   // ── State ────────────────────────────────────────────────────────────────
   readonly overview   = signal<ImmigrationOverview | null>(null);
