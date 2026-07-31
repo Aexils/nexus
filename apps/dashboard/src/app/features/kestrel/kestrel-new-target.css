@@ -3,7 +3,8 @@
 .k-modal-back {
   position: fixed; inset: 0; z-index: 100;
   background: rgba(0, 0, 0, 0.62); backdrop-filter: blur(3px);
-  display: grid; place-items: center; padding: 20px;
+  /* safe center + scroll : si la modale dépasse l'écran, on aligne en haut (pas de rognage). */
+  display: grid; place-items: safe center; overflow-y: auto; padding: 20px;
   animation: k-fade 0.18s ease both;
 }
 @keyframes k-fade { from { opacity: 0; } to { opacity: 1; } }
