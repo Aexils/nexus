@@ -1,4 +1,4 @@
-# État persistant de l'api : expenses.db + états de lecture (kodi/abs).
+# État persistant de l'api : expenses.db + immigration.db + logs.db + états de lecture (kodi/abs).
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:

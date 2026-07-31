@@ -17,6 +17,7 @@ api:
     PORT: "3000"
     CORS_ORIGIN: "*"
     EXPENSE_DB_PATH: /nexus-state/expenses.db
+    IMMIGRATION_DB_PATH: /nexus-state/immigration.db
     LOG_DB_PATH: /nexus-state/logs.db
     KODI_STATE_PATH: /nexus-state/kodi-state.json
     ABS_STATE_PATH: /nexus-state/abs-state.json
