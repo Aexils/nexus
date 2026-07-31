@@ -10,7 +10,10 @@ import {
 // /kestrel/api — réécrit en /api (proxy dev → localhost:8000, HTTPRoute en prod).
 // Le préfixe est distinct de la route SPA /kestrel pour éviter que le rechargement
 // de la page (Ctrl+R) soit routé vers le backend au lieu du dashboard.
-const BASE = '/kestrel/api';
+// Préfixe distinct de la route Angular /kestrel (sinon un refresh sur la page /kestrel
+// serait capturé par la gateway et renvoyé au backend → 404). La gateway réécrit
+// /kestrel-api → /api ; en dev, proxy.conf.json fait pareil.
+const BASE = '/kestrel-api';
 
 @Injectable({ providedIn: 'root' })
 export class KestrelService {
