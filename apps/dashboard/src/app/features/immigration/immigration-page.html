@@ -1,0 +1,206 @@
+<div class="imm">
+  <nxs-page-header
+    [icon]="icons.Plane"
+    title="Entrée"
+    accent="Express"
+    subtitle="Suivi du dossier d'immigration Canada — Alexis & Marion">
+  </nxs-page-header>
+
+  @if (loading()) {
+    <div class="imm__loading">Chargement du dossier…</div>
+  } @else if (overview(); as ov) {
+
+    <!-- ═══ Compte à rebours (hero) ═══ -->
+    <section class="hero" [class]="'u-' + urgency()">
+      <div class="hero__glow"></div>
+
+      <div class="hero__count">
+        <div class="hero__days">
+          <span class="hero__num">{{ daysLabel() }}</span>
+          <span class="hero__unit">
+            @if (daysLeft() !== null && daysLeft()! < 0) { jours de retard }
+            @else { jours restants }
+          </span>
+        </div>
+        <div class="hero__deadline">
+          <lucide-icon [img]="icons.CalendarDays" [size]="15"></lucide-icon>
+          @if (editingDeadline()) {
+            <input type="date" class="hero__date-input" [(ngModel)]="deadlineDraft"
+                   (keyup.enter)="saveDeadline()" />
+            <button class="hero__mini-btn" (click)="saveDeadline()" aria-label="Enregistrer">
+              <lucide-icon [img]="icons.Check" [size]="14"></lucide-icon>
+            </button>
+            <button class="hero__mini-btn" (click)="editingDeadline.set(false)" aria-label="Annuler">
+              <lucide-icon [img]="icons.X" [size]="14"></lucide-icon>
+            </button>
+          } @else {
+            <span class="hero__date">Échéance&nbsp;: {{ deadlineDisplay(ov.deadline) }}</span>
+            <button class="hero__edit" (click)="startEditDeadline()" aria-label="Modifier l'échéance">
+              <lucide-icon [img]="icons.Pencil" [size]="13"></lucide-icon>
+            </button>
+          }
+        </div>
+      </div>
+
+      <div class="hero__progress">
+        <div class="hero__progress-top">
+          <span class="hero__progress-label">Progression globale</span>
+          <span class="hero__progress-val">{{ ov.totalProvided }} / {{ ov.totalRequired }}</span>
+        </div>
+        <div class="bar bar--lg">
+          <div class="bar__fill" [style.width.%]="globalPercent()"></div>
+        </div>
+        <div class="hero__progress-pct">{{ globalPercent() }}% des documents requis fournis</div>
+      </div>
+    </section>
+
+    <!-- ═══ Colonnes par personne ═══ -->
+    <div class="grid">
+      @for (a of ov.applicants; track a.id) {
+        <section class="person">
+          <header class="person__head">
+            <div class="person__id">
+              <div class="person__avatar" [class]="avatarClass(a.id)">{{ avatarInitial(a.id) }}</div>
+              <div>
+                <h2 class="person__name">{{ a.name }}</h2>
+                <p class="person__meta">
+                  {{ a.requiredProvided }}/{{ a.requiredTotal }} fournis
+                  @if (a.requiredInProgress > 0) { · {{ a.requiredInProgress }} en cours }
+                </p>
+              </div>
+            </div>
+            <div class="person__pct">{{ percentFor(a) }}%</div>
+          </header>
+
+          <div class="bar person__bar">
+            <div class="bar__fill" [style.width.%]="percentFor(a)"></div>
+          </div>
+
+          <!-- Documents requis -->
+          <ul class="docs">
+            @for (doc of requiredDocs(a); track doc.id) {
+              <li class="doc" [class]="'s-' + doc.status">
+                <span class="doc__rail"></span>
+                <div class="doc__body">
+                  <div class="doc__title">
+                    {{ doc.name }}
+                    @if (doc.detail) { <span class="doc__detail">{{ doc.detail }}</span> }
+                  </div>
+                </div>
+
+                <div class="doc__actions">
+                  <div class="seg" role="group" aria-label="Statut">
+                    @for (s of statuses; track s.value) {
+                      <button
+                        class="seg__btn"
+                        [class]="'seg--' + s.value"
+                        [class.active]="doc.status === s.value"
+                        (click)="setStatus(doc, s.value)"
+                        [attr.aria-pressed]="doc.status === s.value"
+                        [title]="s.label">
+                        {{ s.label }}
+                      </button>
+                    }
+                  </div>
+
+                  <button class="doc__comment" [class.has]="doc.commentCount > 0"
+                          (click)="openComments(doc)" [title]="doc.commentCount + ' commentaire(s)'">
+                    <lucide-icon [img]="icons.MessageSquare" [size]="15"></lucide-icon>
+                    @if (doc.commentCount > 0) { <span>{{ doc.commentCount }}</span> }
+                  </button>
+                </div>
+              </li>
+            }
+          </ul>
+
+          <!-- Documents optionnels -->
+          @if (optionalDocs(a).length) {
+            <div class="optional">
+              <span class="optional__label">Optionnel</span>
+              <ul class="docs docs--opt">
+                @for (doc of optionalDocs(a); track doc.id) {
+                  <li class="doc doc--opt" [class]="'s-' + doc.status">
+                    <span class="doc__rail"></span>
+                    <div class="doc__body">
+                      <div class="doc__title">
+                        {{ doc.name }}
+                        @if (doc.detail) { <span class="doc__detail">{{ doc.detail }}</span> }
+                      </div>
+                    </div>
+                    <div class="doc__actions">
+                      <div class="seg" role="group" aria-label="Statut">
+                        @for (s of statuses; track s.value) {
+                          <button class="seg__btn" [class]="'seg--' + s.value"
+                                  [class.active]="doc.status === s.value"
+                                  (click)="setStatus(doc, s.value)" [title]="s.label">
+                            {{ s.label }}
+                          </button>
+                        }
+                      </div>
+                      <button class="doc__comment" [class.has]="doc.commentCount > 0"
+                              (click)="openComments(doc)" [title]="doc.commentCount + ' commentaire(s)'">
+                        <lucide-icon [img]="icons.MessageSquare" [size]="15"></lucide-icon>
+                        @if (doc.commentCount > 0) { <span>{{ doc.commentCount }}</span> }
+                      </button>
+                    </div>
+                  </li>
+                }
+              </ul>
+            </div>
+          }
+        </section>
+      }
+    </div>
+  } @else {
+    <div class="imm__empty">Impossible de charger le dossier.</div>
+  }
+</div>
+
+<!-- ═══ Panneau de commentaires (drawer) ═══ -->
+@if (commentDoc(); as doc) {
+  <div class="drawer-overlay" (click)="closeComments()"></div>
+  <aside class="drawer">
+    <header class="drawer__head">
+      <div class="drawer__title-wrap">
+        <span class="drawer__eyebrow">Annotations</span>
+        <h3 class="drawer__title">{{ doc.name }}</h3>
+        @if (doc.detail) { <p class="drawer__detail">{{ doc.detail }}</p> }
+      </div>
+      <button class="drawer__close" (click)="closeComments()" aria-label="Fermer">
+        <lucide-icon [img]="icons.X" [size]="18"></lucide-icon>
+      </button>
+    </header>
+
+    <div class="drawer__add">
+      <textarea [(ngModel)]="newComment" rows="2"
+                placeholder="Ajouter une note… (ex. courriel envoyé à l'employeur, en attente)"
+                (keydown.meta.enter)="addComment()" (keydown.control.enter)="addComment()"></textarea>
+      <button class="btn btn-primary btn-sm" (click)="addComment()" [disabled]="!newComment.trim()">
+        <lucide-icon [img]="icons.Plus" [size]="15"></lucide-icon> Ajouter
+      </button>
+    </div>
+
+    <div class="drawer__list">
+      @if (commentsLoading()) {
+        <p class="drawer__muted">Chargement…</p>
+      } @else if (comments().length === 0) {
+        <div class="drawer__none">
+          <lucide-icon [img]="icons.MessageSquare" [size]="26"></lucide-icon>
+          <p>Aucune note pour l'instant.</p>
+        </div>
+      } @else {
+        @for (c of comments(); track c.id) {
+          <div class="note">
+            <div class="note__text">{{ c.text }}</div>
+            <div class="note__foot">
+              <span class="note__date">{{ commentDate(c.createdAt) }}</span>
+              <button class="note__del" (click)="deleteComment(c)" aria-label="Supprimer">
+                <lucide-icon [img]="icons.Trash2" [size]="13"></lucide-icon>
+              </button>
+            </div>
+          </div>
+        }
+      }
+    </div>
+  </aside>
+}

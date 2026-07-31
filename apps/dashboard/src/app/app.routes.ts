@@ -57,6 +57,11 @@ export const appRoutes: Route[] = [
         loadComponent: () =>
           import('./features/kestrel/kestrel-page').then(m => m.KestrelPage),
       },
+      {
+        path: 'immigration',
+        loadComponent: () =>
+          import('./features/immigration/immigration-page').then(m => m.ImmigrationPage),
+      },
     ],
   },
 ];
