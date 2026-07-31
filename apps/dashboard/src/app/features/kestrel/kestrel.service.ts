@@ -6,9 +6,11 @@ import {
   KestrelTarget, KestrelTargetCreate,
 } from '@nexus/shared-types';
 
-// Le microservice Kestrel expose son API sous /api ; on l'atteint via le préfixe /kestrel
-// (réécrit par le proxy dev → localhost:8000, et par l'ingress en prod).
-const BASE = '/kestrel';
+// Le microservice Kestrel expose son API sous /api ; on l'atteint via le préfixe
+// /kestrel/api — réécrit en /api (proxy dev → localhost:8000, HTTPRoute en prod).
+// Le préfixe est distinct de la route SPA /kestrel pour éviter que le rechargement
+// de la page (Ctrl+R) soit routé vers le backend au lieu du dashboard.
+const BASE = '/kestrel/api';
 
 @Injectable({ providedIn: 'root' })
 export class KestrelService {

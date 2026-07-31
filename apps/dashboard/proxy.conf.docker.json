@@ -8,9 +8,9 @@
     "secure": false,
     "ws": true
   },
-  "/kestrel": {
+  "/kestrel/api": {
     "target": "http://kestrel:8000",
     "secure": false,
-    "pathRewrite": { "^/kestrel": "/api" }
+    "pathRewrite": { "^/kestrel/api": "/api" }
   }
 }

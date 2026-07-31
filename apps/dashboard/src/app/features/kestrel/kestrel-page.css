@@ -4,8 +4,11 @@
   padding: var(--page-y, 24px) var(--page-x, 24px);
   max-width: 1180px;
   margin: 0 auto;
-  animation: nxsFadeUp 0.4s var(--ease, ease) both;
+  /* Fondu SANS transform : un transform résiduel (fill both) ferait de .kestrel le bloc
+     conteneur du position:fixed de la modale → elle ne se centrerait plus sur l'écran. */
+  animation: k-page-in 0.35s ease both;
 }
+@keyframes k-page-in { from { opacity: 0; } to { opacity: 1; } }
 
 /* ── Header ── */
 .k-top {
