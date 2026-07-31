@@ -1,8 +1,11 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule, X, Plus } from 'lucide-angular';
 import { KestrelSource } from '@nexus/shared-types';
 import { KestrelService } from './kestrel.service';
+import { AIRPORTS, Airport } from './airports';
+
+const AIRPORT_FIELDS = new Set(['origin', 'destination']);
 
 type Ctrl = 'text' | 'date' | 'number' | 'stepper' | 'enum' | 'dateArray';
 interface Field {
@@ -39,8 +42,12 @@ export class KestrelNewTarget implements OnInit {
   @Output() closed = new EventEmitter<void>();
 
   private readonly api = inject(KestrelService);
+  private readonly cdr = inject(ChangeDetectorRef);
   readonly X = X;
   readonly Plus = Plus;
+
+  /** Champ aéroport dont la liste d'autocomplétion est ouverte (par clé). */
+  openAirport: string | null = null;
 
   sourceId = '';
   label = '';
@@ -143,6 +150,53 @@ export class KestrelNewTarget implements OnInit {
       || (f.ctrl === 'number' && !!f.description);
   }
 
+  // ── Aéroports (autocomplétion origine / destination) ───────────────────────
+  isAirport(f: Field): boolean {
+    return AIRPORT_FIELDS.has(f.key);
+  }
+
+  airportMatches(f: Field): Airport[] {
+    const q = String(this.values[f.key] ?? '').trim().toLowerCase();
+    if (!q) return [];
+    const matches = AIRPORTS.filter(
+      a => a.code.toLowerCase().includes(q) || a.city.toLowerCase().includes(q),
+    );
+    // les codes qui commencent par la saisie d'abord (ex. "yu" → YUL en tête)
+    matches.sort((a, b) => {
+      const ap = a.code.toLowerCase().startsWith(q) ? 0 : 1;
+      const bp = b.code.toLowerCase().startsWith(q) ? 0 : 1;
+      return ap - bp || a.code.localeCompare(b.code);
+    });
+    // masque si la saisie est déjà exactement un code sélectionné
+    if (matches.length === 1 && matches[0].code.toLowerCase() === q) return [];
+    return matches.slice(0, 8);
+  }
+
+  pickAirport(f: Field, code: string): void {
+    this.values[f.key] = code;
+    this.openAirport = null;
+  }
+
+  openAirportMenu(f: Field): void {
+    this.openAirport = f.key;
+  }
+
+  onAirportBlur(f: Field): void {
+    // délai : laisse le clic sur un item se produire avant de fermer.
+    setTimeout(() => {
+      if (this.openAirport === f.key) {
+        this.openAirport = null;
+        this.cdr.markForCheck();
+      }
+    }, 130);
+  }
+
+  /** Visibilité conditionnelle d'un champ (ex. coût bagage caché tant qu'aucun bagage). */
+  visible(f: Field): boolean {
+    if (f.key === 'bag_fee_estimate') return Number(this.values['checked_bags'] ?? 0) > 0;
+    return true;
+  }
+
   private buildFields(s?: KestrelSource): Field[] {
     if (!s) return [];
     const schema = s.params_schema as {
@@ -182,6 +236,9 @@ export class KestrelNewTarget implements OnInit {
 
     const params: Record<string, unknown> = { ...this.values };
     if (this.arrField && this.dates.length) params[this.arrField.key] = this.dates;
+    for (const key of AIRPORT_FIELDS) {
+      if (typeof params[key] === 'string') params[key] = (params[key] as string).trim().toUpperCase();
+    }
 
     this.api.createTarget({
       source: s.id,

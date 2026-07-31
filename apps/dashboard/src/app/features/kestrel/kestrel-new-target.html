@@ -27,6 +27,7 @@
           <div class="sec-title">{{ sec.title }}</div>
           <div class="fields">
             @for (f of sec.fields; track f.key) {
+              @if (visible(f)) {
               <div class="field" [class.span2]="isWide(f)">
                 <label>{{ f.title }} @if (f.required) { <span class="req">*</span> }</label>
                 @switch (f.ctrl) {
@@ -60,11 +61,30 @@
                     </div>
                   }
                   @default {
-                    <input type="text" class="mono" [(ngModel)]="values[f.key]" [ngModelOptions]="{ standalone: true }" [placeholder]="f.title" />
+                    @if (isAirport(f)) {
+                      <div class="ac">
+                        <input type="text" class="mono" [(ngModel)]="values[f.key]" [ngModelOptions]="{ standalone: true }"
+                               [placeholder]="f.title" autocomplete="off"
+                               (focus)="openAirportMenu(f)" (input)="openAirportMenu(f)" (blur)="onAirportBlur(f)" />
+                        @if (openAirport === f.key && airportMatches(f).length) {
+                          <ul class="ac__menu">
+                            @for (a of airportMatches(f); track a.code) {
+                              <li class="ac__item" (mousedown)="$event.preventDefault(); pickAirport(f, a.code)">
+                                <span class="ac__code">{{ a.code }}</span>
+                                <span class="ac__city">{{ a.city }}</span>
+                              </li>
+                            }
+                          </ul>
+                        }
+                      </div>
+                    } @else {
+                      <input type="text" class="mono" [(ngModel)]="values[f.key]" [ngModelOptions]="{ standalone: true }" [placeholder]="f.title" />
+                    }
                   }
                 }
                 @if (f.description) { <div class="fieldhint">{{ f.description }}</div> }
               </div>
+              }
             }
           </div>
         </div>
