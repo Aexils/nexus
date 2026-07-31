@@ -167,6 +167,31 @@
         </section>
       }
     </div>
+
+    <!-- ═══ Encart « À savoir » ═══ -->
+    <section class="tips">
+      <header class="tips__head">
+        <lucide-icon [img]="icons.Info" [size]="17"></lucide-icon>
+        <div>
+          <h2 class="tips__title">À savoir — Entrée Express</h2>
+          <p class="tips__sub">
+            Conseils et points de vigilance sur les documents (d'après pvtistes.net + IRCC).
+            Indicatif : vérifie toujours sur le site officiel d'IRCC pour ta situation.
+          </p>
+        </div>
+      </header>
+
+      <div class="tips__grid">
+        @for (t of tips; track t.title) {
+          <div class="tip-card">
+            <h3 class="tip-card__title">{{ t.title }}</h3>
+            <ul class="tip-card__list">
+              @for (item of t.items; track $index) { <li>{{ item }}</li> }
+            </ul>
+          </div>
+        }
+      </div>
+    </section>
   } @else {
     <div class="imm__empty">Impossible de charger le dossier.</div>
   }

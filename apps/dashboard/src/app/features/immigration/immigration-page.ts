@@ -91,6 +91,47 @@ export class ImmigrationPage implements OnInit {
     return DOC_INFO[name] ?? null;
   }
 
+  /**
+   * Encart « À savoir » — conseils, spécificités et pièges sur les documents.
+   * D'après le guide pvtistes.net « Entrée Express » et IRCC (indicatif).
+   */
+  readonly tips: { title: string; items: string[] }[] = [
+    {
+      title: 'Timing & délais',
+      items: [
+        "Après l'invitation (IPD), tu as 60 jours pour soumettre le dossier complet.",
+        'Traitement visé : 6 mois (80 % des dossiers complets) — compte 6 à 12 mois en pratique.',
+        'Anticipe les certificats de police : certains pays (ex. États-Unis) prennent des mois.',
+      ],
+    },
+    {
+      title: 'Validité — à ne pas faire trop tôt',
+      items: [
+        "Examen médical : valide moins d'un an. Depuis le 21 août 2025, il est obligatoire AVANT de soumettre la demande.",
+        "Photos d'identité : moins de 6 mois, photographe pro, normes IRCC.",
+        'Certificat de police du pays de résidence actuel : moins de 6 mois.',
+        "Preuve de fonds (lettre bancaire) : récente. Attends l'invitation pour ces documents.",
+      ],
+    },
+    {
+      title: 'Forme des documents',
+      items: [
+        "Document non FR/EN : traduction par un traducteur agréé (copie de l'original + traduction), payante.",
+        'Passeport valide et à jour — anticipe le renouvellement. Prévois aussi les passeports des 10 dernières années si demandés.',
+        "Lettres d'emploi sur papier à en-tête : poste, fonctions, dates, heures/semaine, salaire, avantages — cohérentes avec le code CNP déclaré.",
+      ],
+    },
+    {
+      title: 'Pièges à éviter',
+      items: [
+        'Fausses déclarations = refus + interdiction de territoire jusqu\'à 5 ans. Ne gonfle rien, garde les preuves de tout.',
+        "Examen médical ET biométrie pour toute la famille, même les enfants à charge qui ne t'accompagnent pas.",
+        'Un document manquant après soumission → 7 jours pour répondre. Puis biométrie (lettre d\'instructions).',
+        'Garde une copie de TOUT : formulaires, reçus, certificats, confirmations, échanges avec IRCC.',
+      ],
+    },
+  ];
+
   // ── State ────────────────────────────────────────────────────────────────
   readonly overview   = signal<ImmigrationOverview | null>(null);
   readonly loading    = signal(true);
