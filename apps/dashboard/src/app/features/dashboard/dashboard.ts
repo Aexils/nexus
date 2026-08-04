@@ -40,7 +40,7 @@ export class Dashboard {
   toggle(ns: string): void {
     this.expanded.update(set => {
       const next = new Set(set);
-      next.has(ns) ? next.delete(ns) : next.add(ns);
+      if (next.has(ns)) next.delete(ns); else next.add(ns);
       return next;
     });
   }

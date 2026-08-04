@@ -8,6 +8,7 @@ import { ExpenseModule } from './expense/expense.module';
 import { AdminModule } from './admin/admin.module';
 import { SideloopModule } from './sideloop/sideloop.module';
 import { NextcloudModule } from './nextcloud/nextcloud.module';
+import { LinkModule } from './link/link.module';
 import { EventsModule } from './events/events.module';
 import { JobsModule } from './jobs/jobs.module';
 import { VzdumpModule } from './vzdump/vzdump.module';
@@ -24,6 +25,7 @@ import { ImmigrationModule } from './immigration/immigration.module';
     AdminModule,
     SideloopModule,
     NextcloudModule,
+    LinkModule,
     EventsModule,
     JobsModule,
     VzdumpModule,

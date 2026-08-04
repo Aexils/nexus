@@ -6,5 +6,6 @@ export const WS_EVENTS = {
   APP_VERSIONS:   'app:versions',     // versions infra/workload
   SIDELOOP_STATUS: 'sideloop:status', // état sideloop (apps re-signées, expiration, devices)
   NEXTCLOUD_STATUS: 'nextcloud:status', // santé Nextcloud (serverinfo : espace, fichiers, actifs)
+  LINK_STATUS:      'link:status',      // santé connexion Internet (passerelle Hub + WAN, coupures)
   LOG_ENTRY:      'log:entry',
 } as const;

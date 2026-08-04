@@ -87,10 +87,11 @@ export class KestrelNewTarget implements OnInit {
     const order: string[] = [];
     const map = new Map<string, Field[]>();
     for (const f of this.fields) {
-      if (!map.has(f.group)) { map.set(f.group, []); order.push(f.group); }
-      map.get(f.group)!.push(f);
+      let arr = map.get(f.group);
+      if (!arr) { arr = []; map.set(f.group, arr); order.push(f.group); }
+      arr.push(f);
     }
-    return order.map(title => ({ title, fields: map.get(title)! }));
+    return order.map(title => ({ title, fields: map.get(title) ?? [] }));
   }
 
   get arrField(): Field | undefined {

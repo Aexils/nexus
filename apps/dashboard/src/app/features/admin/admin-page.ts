@@ -1,7 +1,7 @@
 import {
   Component, ChangeDetectionStrategy, inject, signal, computed, OnInit,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import {
@@ -27,7 +27,7 @@ const MONTH_LABELS: Record<string, string> = {
 @Component({
   selector: 'app-admin-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule, PageHeaderComponent],
+  imports: [FormsModule, LucideAngularModule, PageHeaderComponent],
   templateUrl: './admin-page.html',
   styleUrl: './admin-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -74,7 +74,7 @@ export class AdminPage implements OnInit {
 
   readonly dbSchema        = signal<{ name: string; rowCount: number; columns: string[] }[]>([]);
   readonly selectedDbTable = signal<string | null>(null);
-  readonly dbTableData     = signal<{ columns: string[]; rows: any[][] } | null>(null);
+  readonly dbTableData     = signal<{ columns: string[]; rows: unknown[][] } | null>(null);
   readonly dbLoading       = signal(false);
 
   loadSchema() {
@@ -87,7 +87,7 @@ export class AdminPage implements OnInit {
   selectDbTable(name: string) {
     this.selectedDbTable.set(name);
     this.dbLoading.set(true);
-    this.http.get<{ columns: string[]; rows: any[][] }>(`/api/admin/table/${name}`).subscribe(d => {
+    this.http.get<{ columns: string[]; rows: unknown[][] }>(`/api/admin/table/${name}`).subscribe(d => {
       this.dbTableData.set(d);
       this.dbLoading.set(false);
     });

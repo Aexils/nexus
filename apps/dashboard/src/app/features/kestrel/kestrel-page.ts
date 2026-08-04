@@ -162,7 +162,7 @@ export class KestrelPage implements OnInit {
     const providers: ProviderPill[] = declared.map(name => {
       const o = seen.get(name);
       const on = !!o;
-      const tier: ProviderPill['tier'] = !on ? 'off' : (o!.trusted && !BEST_EFFORT.has(name) ? 'trusted' : 'best');
+      const tier: ProviderPill['tier'] = !o ? 'off' : (o.trusted && !BEST_EFFORT.has(name) ? 'trusted' : 'best');
       return { name, on, tier };
     });
 

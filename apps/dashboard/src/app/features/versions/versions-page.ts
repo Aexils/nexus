@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy, inject, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { LucideAngularModule, Boxes, Puzzle, Hexagon, Server, CheckCircle2, ArrowUpCircle, Minus } from 'lucide-angular';
 import { NexusService } from '../../core/services/nexus.service';
 import { PageHeaderComponent } from '../../shared/page-header/page-header';
@@ -16,7 +16,7 @@ interface Section {
 @Component({
   selector: 'app-versions-page',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule, PageHeaderComponent],
+  imports: [LucideAngularModule, PageHeaderComponent],
   templateUrl: './versions-page.html',
   styleUrl: './versions-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

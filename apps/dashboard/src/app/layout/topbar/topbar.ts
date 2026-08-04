@@ -4,7 +4,7 @@ import {
 } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { LucideAngularModule, Palette, Bell, Menu, Activity } from 'lucide-angular';
-import { ThemeService, THEMES } from '../../core/services/theme';
+import { ThemeService, THEMES, Theme } from '../../core/services/theme';
 import { LayoutService } from '../layout.service';
 
 @Component({
@@ -33,5 +33,5 @@ export class TopbarComponent implements OnInit {
   }
 
   toggleThemePicker() { this.themePickerOpen = !this.themePickerOpen; }
-  selectTheme(id: any) { this.themeService.setTheme(id); this.themePickerOpen = false; }
+  selectTheme(id: Theme) { this.themeService.setTheme(id); this.themePickerOpen = false; }
 }

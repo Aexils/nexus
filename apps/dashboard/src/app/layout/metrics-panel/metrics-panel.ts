@@ -1,9 +1,9 @@
 import { Component, ChangeDetectionStrategy, inject, effect, signal, untracked, WritableSignal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { RouterLink } from '@angular/router';
-import { LucideAngularModule, Download, Upload, HardDrive, ChevronRight } from 'lucide-angular';
+import { LucideAngularModule, Download, Upload, HardDrive, ChevronRight, Wifi, WifiOff } from 'lucide-angular';
 import { NexusService } from '../../core/services/nexus.service';
-import { DiskInfo, TempInfo, VersionItem } from '@nexus/shared-types';
+import { DiskInfo, TempInfo, VersionItem, LinkStatus, LinkOutage } from '@nexus/shared-types';
 
 const MOUNT_LABELS: Record<string, string> = {
   '/': 'système',
@@ -18,14 +18,14 @@ const MOUNT_LABELS: Record<string, string> = {
 @Component({
   selector: 'nxs-metrics-panel',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule, RouterLink],
+  imports: [LucideAngularModule, RouterLink],
   templateUrl: './metrics-panel.html',
   styleUrl: './metrics-panel.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MetricsPanelComponent {
   readonly nexus = inject(NexusService);
-  readonly icons = { Download, Upload, HardDrive, ChevronRight };
+  readonly icons = { Download, Upload, HardDrive, ChevronRight, Wifi, WifiOff };
 
   // ── Sparklines : historique glissant accumulé depuis le flux live ──
   private readonly HISTORY = 40;                 // ~2 min à 3 s/point
@@ -73,6 +73,43 @@ export class MetricsPanelComponent {
   get temps()      { return this.m?.temps ?? []; }
 
   mountLabel(mount: string): string { return MOUNT_LABELS[mount] ?? mount; }
+
+  // ── Connexion Internet ──
+  get link(): LinkStatus | null { return this.nexus.link(); }
+  get linkOnline(): boolean { return this.link?.online ?? false; }
+
+  /** Uptime 24 h formaté : entier si parfait, 2 décimales sinon. */
+  get uptime24h(): string {
+    if (!this.link) return '—';
+    const p = this.link.uptime24hPct;
+    return p >= 99.995 ? '100' : p.toFixed(2);
+  }
+  uptimeClass(): string {
+    const p = this.link?.uptime24hPct ?? 100;
+    if (p >= 99.9) return 'ok';
+    if (p >= 98)   return 'warn';
+    return 'crit';
+  }
+
+  /** Durée dans l'état courant (en ligne / hors ligne). */
+  get linkSince(): string {
+    const min = Math.floor((this.link?.stateSinceMs ?? 0) / 60_000);
+    if (min < 1)  return "à l'instant";
+    if (min < 60) return `${min} min`;
+    const h = Math.floor(min / 60);
+    return h < 24 ? `${h} h` : `${Math.floor(h / 24)} j`;
+  }
+
+  get outages(): LinkOutage[] { return this.link?.recentOutages ?? []; }
+
+  fmtOutageDur(o: LinkOutage): string {
+    const m = Math.floor(o.durationSec / 60), s = o.durationSec % 60;
+    return m > 0 ? `${m}m${s.toString().padStart(2, '0')}` : `${s}s`;
+  }
+  fmtOutageTime(o: LinkOutage): string {
+    return new Date(o.start).toLocaleString('fr-CA',
+      { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+  }
 
   // ── Versions (widget compact : applications seulement) ──
   get appVersions(): VersionItem[] {

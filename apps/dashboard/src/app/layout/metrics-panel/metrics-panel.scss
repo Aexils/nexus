@@ -381,3 +381,64 @@
 }
 .mp-spark polyline.cpu { stroke: var(--accent); opacity: 0.8; }
 .mp-spark polyline.ram { stroke: var(--accent2); opacity: 0.8; }
+
+/* ── Connexion Internet ── */
+.mp-link-status {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: 'Roboto', sans-serif;
+}
+.mp-link-status.online  { color: var(--green); }
+.mp-link-status.offline { color: var(--red); animation: dot-pulse 1.6s ease infinite; }
+
+.mp-link-state  { font-size: 13px; font-weight: 700; letter-spacing: 0.01em; }
+.mp-link-since  { margin-left: auto; font-family: var(--font-mono); font-size: 9.5px; color: var(--text3); }
+
+.mp-link-badges { display: flex; align-items: center; gap: 6px; }
+.mp-link-badge {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 1px 5px;
+  border-radius: 4px;
+
+  &.up   { color: var(--green); background: color-mix(in srgb, var(--green) 12%, transparent); }
+  &.down { color: var(--red);   background: color-mix(in srgb, var(--red) 15%, transparent); }
+}
+.mp-link-uptime {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 600;
+
+  &.ok   { color: var(--green); }
+  &.warn { color: var(--yellow); }
+  &.crit { color: var(--red); }
+}
+
+.mp-link-outages { display: flex; flex-direction: column; gap: 3px; margin-top: 2px; }
+.mp-link-outage {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 0;
+
+  & + & { border-top: 1px solid var(--border2); }
+  &.ongoing .mp-link-outage-dur { color: var(--red); }
+}
+.mp-link-outage-time { font-family: var(--font-mono); font-size: 9.5px; color: var(--text3); }
+.mp-link-outage-dur  { margin-left: auto; font-family: var(--font-mono); font-size: 9.5px; color: var(--text2); }
+.mp-link-outage-tag {
+  font-family: 'Roboto', sans-serif;
+  font-size: 8.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--red);
+  background: color-mix(in srgb, var(--red) 14%, transparent);
+  padding: 0 4px;
+  border-radius: 3px;
+}
+.mp-link-none { font-family: var(--font-mono); font-size: 9.5px; color: var(--text3); }

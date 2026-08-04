@@ -11,8 +11,8 @@
   <!-- Qui a payé -->
   <div class="form-row">
     <div class="field-group full">
-      <label class="field-label">Qui a payé ?</label>
-      <div class="paidbby-toggle">
+      <label class="field-label" for="m-paidby">Qui a payé ?</label>
+      <div class="paidbby-toggle" id="m-paidby">
         <button class="paid-btn" [class.active]="formPaidBy === 'alexis'" (click)="formPaidBy = 'alexis'">
           Alexis
         </button>
@@ -27,9 +27,9 @@
   <div class="form-row-3">
     <!-- Catégorie -->
     <div class="field-group">
-      <label class="field-label">Catégorie</label>
+      <label class="field-label" for="m-category">Catégorie</label>
       @if (!addingCategory()) {
-        <select class="field-input" [ngModel]="formCategory" (ngModelChange)="onCategorySelect($event)" name="category">
+        <select class="field-input" id="m-category" [ngModel]="formCategory" (ngModelChange)="onCategorySelect($event)" name="category">
           <option value="" disabled>Choisir…</option>
           @for (cat of categories(); track cat) {
             <option [value]="cat">{{ cat }}</option>
@@ -48,9 +48,9 @@
 
     <!-- Sous-catégorie -->
     <div class="field-group">
-      <label class="field-label">Sous-catégorie</label>
+      <label class="field-label" for="m-subcategory">Sous-catégorie</label>
       @if (!addingSubcategory()) {
-        <select class="field-input" [ngModel]="formSubcategory" (ngModelChange)="onSubcategorySelect($event)"
+        <select class="field-input" id="m-subcategory" [ngModel]="formSubcategory" (ngModelChange)="onSubcategorySelect($event)"
                 name="subcategory" [disabled]="!formCategory">
           <option value="" disabled>{{ formCategory ? 'Choisir…' : 'Catégorie d\'abord' }}</option>
           @for (s of subcategories(); track s) {
@@ -72,9 +72,9 @@
 
     <!-- Enseigne -->
     <div class="field-group">
-      <label class="field-label">Enseigne</label>
+      <label class="field-label" for="m-enseigne">Enseigne</label>
       @if (!addingEnseigne()) {
-        <select class="field-input" [ngModel]="formEnseigne" (ngModelChange)="onEnseigneSelect($event)"
+        <select class="field-input" id="m-enseigne" [ngModel]="formEnseigne" (ngModelChange)="onEnseigneSelect($event)"
                 name="enseigne" [disabled]="!formSubcategory">
           <option value="" disabled>{{ formSubcategory ? 'Choisir…' : 'Sous-cat. d\'abord' }}</option>
           @for (e of enseignes(); track e) {
@@ -98,21 +98,21 @@
   <!-- Montant + Date -->
   <div class="form-row">
     <div class="field-group">
-      <label class="field-label">Montant ($)</label>
-      <input class="field-input" type="number" [(ngModel)]="formAmount" name="amount"
+      <label class="field-label" for="m-amount">Montant ($)</label>
+      <input class="field-input" id="m-amount" type="number" [(ngModel)]="formAmount" name="amount"
              placeholder="0.00" min="0.01" step="0.01">
     </div>
     <div class="field-group">
-      <label class="field-label">Date</label>
-      <input class="field-input" type="date" [(ngModel)]="formDate" name="date">
+      <label class="field-label" for="m-date">Date</label>
+      <input class="field-input" id="m-date" type="date" [(ngModel)]="formDate" name="date">
     </div>
   </div>
 
   <!-- Commentaire -->
   <div class="form-row">
     <div class="field-group full">
-      <label class="field-label">Commentaire <span class="optional-hint">(optionnel)</span></label>
-      <input class="field-input" type="text" [(ngModel)]="formComment" name="comment"
+      <label class="field-label" for="m-comment">Commentaire <span class="optional-hint">(optionnel)</span></label>
+      <input class="field-input" id="m-comment" type="text" [(ngModel)]="formComment" name="comment"
              placeholder="Numéro de commande, détails…">
     </div>
   </div>
@@ -537,8 +537,8 @@
 
       <!-- Section : Payé par -->
       <div class="modal-section">
-        <label class="field-label">Payé par</label>
-        <div class="paidbby-toggle">
+        <label class="field-label" for="me-paidby">Payé par</label>
+        <div class="paidbby-toggle" id="me-paidby">
           <button class="paid-btn" [class.active]="editPaidBy === 'alexis'" (click)="editPaidBy = 'alexis'">Alexis</button>
           <button class="paid-btn marion" [class.active]="editPaidBy === 'marion'" (click)="editPaidBy = 'marion'">Marion</button>
         </div>
@@ -546,24 +546,24 @@
 
       <!-- Section : Montant + Date -->
       <div class="modal-section">
-        <label class="field-label">Montant ($)</label>
-        <input class="field-input" type="number" [(ngModel)]="editAmount" name="editAmount"
+        <label class="field-label" for="me-amount">Montant ($)</label>
+        <input class="field-input" id="me-amount" type="number" [(ngModel)]="editAmount" name="editAmount"
                placeholder="0.00" min="0.01" step="0.01">
-        <label class="field-label">Date</label>
-        <input class="field-input" type="date" [(ngModel)]="editDate" name="editDate">
+        <label class="field-label" for="me-date">Date</label>
+        <input class="field-input" id="me-date" type="date" [(ngModel)]="editDate" name="editDate">
       </div>
 
       <!-- Section : Catégorie › Sous-catégorie › Enseigne -->
       <div class="modal-section">
-        <label class="field-label">Catégorie</label>
-        <select class="field-input" [ngModel]="editCategory" (ngModelChange)="onEditCategoryChange($event)" name="editCategory">
+        <label class="field-label" for="me-category">Catégorie</label>
+        <select class="field-input" id="me-category" [ngModel]="editCategory" (ngModelChange)="onEditCategoryChange($event)" name="editCategory">
           <option value="" disabled>Choisir…</option>
           @for (cat of categories(); track cat) { <option [value]="cat">{{ cat }}</option> }
         </select>
 
-        <label class="field-label">Sous-catégorie</label>
+        <label class="field-label" for="me-subcategory">Sous-catégorie</label>
         @if (!addingEditSubcat()) {
-          <select class="field-input" [ngModel]="editSubcategory" (ngModelChange)="onEditSubcategoryChange($event)"
+          <select class="field-input" id="me-subcategory" [ngModel]="editSubcategory" (ngModelChange)="onEditSubcategoryChange($event)"
                   name="editSubcategory" [disabled]="!editCategory">
             <option value="">Aucune</option>
             @for (s of editSubcategories(); track s) { <option [value]="s">{{ s }}</option> }
@@ -578,9 +578,9 @@
           </div>
         }
 
-        <label class="field-label">Enseigne</label>
+        <label class="field-label" for="me-enseigne">Enseigne</label>
         @if (!addingEditEnseigne()) {
-          <select class="field-input" [ngModel]="editEnseigne" (ngModelChange)="onEditEnseigneSelect($event)"
+          <select class="field-input" id="me-enseigne" [ngModel]="editEnseigne" (ngModelChange)="onEditEnseigneSelect($event)"
                   name="editEnseigne" [disabled]="!editSubcategory">
             <option value="">Aucune</option>
             @for (e of editEnseignes(); track e) { <option [value]="e">{{ e }}</option> }
@@ -598,8 +598,8 @@
 
       <!-- Section : Commentaire -->
       <div class="modal-section">
-        <label class="field-label">Commentaire <span class="optional-hint">(optionnel)</span></label>
-        <input class="field-input" type="text" [(ngModel)]="editComment" name="editComment"
+        <label class="field-label" for="me-comment">Commentaire <span class="optional-hint">(optionnel)</span></label>
+        <input class="field-input" id="me-comment" type="text" [(ngModel)]="editComment" name="editComment"
                placeholder="Numéro de commande, détails…">
       </div>
 

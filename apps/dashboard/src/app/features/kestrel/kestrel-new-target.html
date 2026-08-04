@@ -29,7 +29,7 @@
             @for (f of sec.fields; track f.key) {
               @if (visible(f)) {
               <div class="field" [class.span2]="isWide(f)">
-                <label>{{ f.title }} @if (f.required) { <span class="req">*</span> }</label>
+                <label [for]="f.key">{{ f.title }} @if (f.required) { <span class="req">*</span> }</label>
                 @switch (f.ctrl) {
                   @case ('stepper') {
                     <div class="step">
@@ -46,10 +46,10 @@
                     </div>
                   }
                   @case ('date') {
-                    <input type="date" class="mono" [(ngModel)]="values[f.key]" [ngModelOptions]="{ standalone: true }" />
+                    <input type="date" [id]="f.key" class="mono" [(ngModel)]="values[f.key]" [ngModelOptions]="{ standalone: true }" />
                   }
                   @case ('number') {
-                    <input type="number" [(ngModel)]="values[f.key]" [ngModelOptions]="{ standalone: true }" />
+                    <input type="number" [id]="f.key" [(ngModel)]="values[f.key]" [ngModelOptions]="{ standalone: true }" />
                   }
                   @case ('dateArray') {
                     <div class="chips">
@@ -63,7 +63,7 @@
                   @default {
                     @if (isAirport(f)) {
                       <div class="ac">
-                        <input type="text" class="mono" [(ngModel)]="values[f.key]" [ngModelOptions]="{ standalone: true }"
+                        <input type="text" [id]="f.key" class="mono" [(ngModel)]="values[f.key]" [ngModelOptions]="{ standalone: true }"
                                [placeholder]="f.title" autocomplete="off"
                                (focus)="openAirportMenu(f)" (input)="openAirportMenu(f)" (blur)="onAirportBlur(f)" />
                         @if (openAirport === f.key && airportMatches(f).length) {
@@ -78,7 +78,7 @@
                         }
                       </div>
                     } @else {
-                      <input type="text" class="mono" [(ngModel)]="values[f.key]" [ngModelOptions]="{ standalone: true }" [placeholder]="f.title" />
+                      <input type="text" [id]="f.key" class="mono" [(ngModel)]="values[f.key]" [ngModelOptions]="{ standalone: true }" [placeholder]="f.title" />
                     }
                   }
                 }
@@ -101,8 +101,8 @@
           <div class="inline"><span class="unit muted">Préviens-moi sous</span><input type="number" placeholder="ex. 650" [(ngModel)]="threshold" [ngModelOptions]="{ standalone: true }" /><span class="unit">{{ currency }}</span></div>
         } @else {
           <div class="fields">
-            <div class="field"><label>Baisse ≥ (%)</label><input type="number" [(ngModel)]="percent" [ngModelOptions]="{ standalone: true }" /></div>
-            <div class="field"><label>Fenêtre (jours)</label><input type="number" [(ngModel)]="windowDays" [ngModelOptions]="{ standalone: true }" /></div>
+            <div class="field"><label for="kr-percent">Baisse ≥ (%)</label><input id="kr-percent" type="number" [(ngModel)]="percent" [ngModelOptions]="{ standalone: true }" /></div>
+            <div class="field"><label for="kr-window">Fenêtre (jours)</label><input id="kr-window" type="number" [(ngModel)]="windowDays" [ngModelOptions]="{ standalone: true }" /></div>
           </div>
         }
       </div>
@@ -111,9 +111,9 @@
       <div class="section">
         <div class="sec-title">Réglages</div>
         <div class="fields">
-          <div class="field span2"><label>Nom (optionnel)</label><input type="text" [(ngModel)]="label" [ngModelOptions]="{ standalone: true }" placeholder="Ex. MTL → CDG (fév 2027)" /></div>
-          <div class="field"><label>Devise</label><input type="text" class="mono" [(ngModel)]="currency" [ngModelOptions]="{ standalone: true }" /></div>
-          <div class="field"><label>Vérifier toutes les (h)</label><input type="number" min="1" [(ngModel)]="intervalH" [ngModelOptions]="{ standalone: true }" /></div>
+          <div class="field span2"><label for="kr-name">Nom (optionnel)</label><input id="kr-name" type="text" [(ngModel)]="label" [ngModelOptions]="{ standalone: true }" placeholder="Ex. MTL → CDG (fév 2027)" /></div>
+          <div class="field"><label for="kr-currency">Devise</label><input id="kr-currency" type="text" class="mono" [(ngModel)]="currency" [ngModelOptions]="{ standalone: true }" /></div>
+          <div class="field"><label for="kr-interval">Vérifier toutes les (h)</label><input id="kr-interval" type="number" min="1" [(ngModel)]="intervalH" [ngModelOptions]="{ standalone: true }" /></div>
         </div>
       </div>
 

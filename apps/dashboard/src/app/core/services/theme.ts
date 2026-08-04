@@ -37,8 +37,8 @@ export class ThemeService {
     // Auto-switch theme when navigating to/from service pages
     this.router.events
       .pipe(filter(e => e instanceof NavigationEnd))
-      .subscribe((e: any) => {
-        const url: string = e.urlAfterRedirects;
+      .subscribe(e => {
+        const url: string = (e as NavigationEnd).urlAfterRedirects;
         if (url.startsWith('/kodi')) {
           this.serviceTheme.set('kodi');
           this.apply('kodi');

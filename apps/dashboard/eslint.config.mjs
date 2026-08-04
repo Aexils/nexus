@@ -12,7 +12,8 @@ export default [
         'error',
         {
           type: 'attribute',
-          prefix: 'app',
+          // 'app' (features) + 'nxs' (shell/layout) — cf. conventions du CLAUDE.md
+          prefix: ['app', 'nxs'],
           style: 'camelCase',
         },
       ],
@@ -20,7 +21,7 @@ export default [
         'error',
         {
           type: 'element',
-          prefix: 'app',
+          prefix: ['app', 'nxs'],
           style: 'kebab-case',
         },
       ],
@@ -28,7 +29,13 @@ export default [
   },
   {
     files: ['**/*.html'],
-    // Override or add rules here
-    rules: {},
+    rules: {
+      // Dashboard perso mono-utilisateur : les règles d'interaction clavier/ARIA
+      // (nav clavier sur div cliquables, autofocus) n'apportent rien ici. On garde
+      // en revanche label-has-associated-control (formulaires corrects = utile).
+      '@angular-eslint/template/click-events-have-key-events': 'off',
+      '@angular-eslint/template/interactive-supports-focus': 'off',
+      '@angular-eslint/template/no-autofocus': 'off',
+    },
   },
 ];

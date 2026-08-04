@@ -11,7 +11,7 @@ import { NotifierService } from '../notifier/notifier.service';
 import { LogStoreService } from './log-store.service';
 import {
   HostMetrics, NodeMetrics, WorkloadMetric, WS_EVENTS, LogEntry, LogLevel, LogSource, VersionsReport,
-  SideloopStatus, NextcloudStatus,
+  SideloopStatus, NextcloudStatus, LinkStatus,
 } from '@nexus/shared-types';
 
 const LOG_BUFFER_MAX = 500;
@@ -31,6 +31,7 @@ export class NexusGateway
   private cachedVersions:    VersionsReport | null = null;
   private cachedSideloop:    SideloopStatus    | null = null;
   private cachedNextcloud:   NextcloudStatus   | null = null;
+  private cachedLink:        LinkStatus        | null = null;
 
   @WebSocketServer()
   server: Server;
@@ -56,6 +57,7 @@ export class NexusGateway
     if (this.cachedVersions)         client.emit(WS_EVENTS.APP_VERSIONS, this.cachedVersions);
     if (this.cachedSideloop)         client.emit(WS_EVENTS.SIDELOOP_STATUS, this.cachedSideloop);
     if (this.cachedNextcloud)        client.emit(WS_EVENTS.NEXTCLOUD_STATUS, this.cachedNextcloud);
+    if (this.cachedLink)             client.emit(WS_EVENTS.LINK_STATUS, this.cachedLink);
   }
 
   handleDisconnect(client: Socket) {
@@ -92,6 +94,11 @@ export class NexusGateway
   emitNextcloudStatus(payload: NextcloudStatus): void {
     this.cachedNextcloud = payload;
     this.server?.emit(WS_EVENTS.NEXTCLOUD_STATUS, payload);
+  }
+
+  emitLinkStatus(payload: LinkStatus): void {
+    this.cachedLink = payload;
+    this.server?.emit(WS_EVENTS.LINK_STATUS, payload);
   }
 
   // ── Logging ───────────────────────────────────────────────────────────────

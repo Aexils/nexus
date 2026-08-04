@@ -1,5 +1,5 @@
 import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { RouterModule } from '@angular/router';
 import { LucideAngularModule, ChevronLeft, LucideIconData } from 'lucide-angular';
 
@@ -19,7 +19,7 @@ import { LucideAngularModule, ChevronLeft, LucideIconData } from 'lucide-angular
 @Component({
   selector: 'nxs-page-header',
   standalone: true,
-  imports: [CommonModule, RouterModule, LucideAngularModule],
+  imports: [RouterModule, LucideAngularModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <header class="ph">

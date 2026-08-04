@@ -7,26 +7,30 @@
 
   <!-- ── Nœuds ── -->
   <section class="nodes-grid">
-    <div class="node-card" *ngFor="let n of nodes()">
-      <div class="node-head">
-        <span class="node-dot" [class.ready]="n.ready"></span>
-        <span class="node-name">{{ n.name }}</span>
-        <span class="node-role">{{ n.role }}</span>
+    @for (n of nodes(); track n) {
+      <div class="node-card">
+        <div class="node-head">
+          <span class="node-dot" [class.ready]="n.ready"></span>
+          <span class="node-name">{{ n.name }}</span>
+          <span class="node-role">{{ n.role }}</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">CPU</span>
+          <div class="bar"><div class="bar-fill" [class]="nodeBarClass(n.cpuPercent)" [style.width.%]="n.cpuPercent"></div></div>
+          <span class="metric-val">{{ n.cpuPercent }}%</span>
+          <span class="metric-sub">{{ fmtCpu(n.cpuMillicores) }}</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">RAM</span>
+          <div class="bar"><div class="bar-fill" [class]="nodeBarClass(n.ramPercent)" [style.width.%]="n.ramPercent"></div></div>
+          <span class="metric-val">{{ n.ramPercent }}%</span>
+          <span class="metric-sub">{{ fmtRam(n.ramBytes) }}</span>
+        </div>
       </div>
-      <div class="metric">
-        <span class="metric-label">CPU</span>
-        <div class="bar"><div class="bar-fill" [class]="nodeBarClass(n.cpuPercent)" [style.width.%]="n.cpuPercent"></div></div>
-        <span class="metric-val">{{ n.cpuPercent }}%</span>
-        <span class="metric-sub">{{ fmtCpu(n.cpuMillicores) }}</span>
-      </div>
-      <div class="metric">
-        <span class="metric-label">RAM</span>
-        <div class="bar"><div class="bar-fill" [class]="nodeBarClass(n.ramPercent)" [style.width.%]="n.ramPercent"></div></div>
-        <span class="metric-val">{{ n.ramPercent }}%</span>
-        <span class="metric-sub">{{ fmtRam(n.ramBytes) }}</span>
-      </div>
-    </div>
-    <div class="node-card empty" *ngIf="nodes().length === 0">En attente des métriques nœuds…</div>
+    }
+    @if (nodes().length === 0) {
+      <div class="node-card empty">En attente des métriques nœuds…</div>
+    }
   </section>
 
   <!-- ── Workloads (apps) ── -->
@@ -45,35 +49,42 @@
   </section>
 
   <!-- ── Nextcloud ── -->
-  <section class="nc-panel" *ngIf="nextcloud() as nc">
-    <header class="nc-header">
-      <span class="nc-dot" [class.ok]="nc.reachable"></span>
-      <span class="nc-title">Nextcloud</span>
-      <span class="nc-version" *ngIf="nc.version">v{{ nc.version }}</span>
-      <span class="nc-sync" *ngIf="nc.reachable && (nc.active5m ?? 0) > 0">sync actif</span>
-    </header>
-    <div class="nc-stats" *ngIf="nc.reachable; else ncDown">
-      <div class="nc-stat">
-        <span class="nc-val" [class.warn]="lowSpace(nc)">{{ fmtGB(nc.freeBytes) }}</span>
-        <span class="nc-label">libres</span>
-      </div>
-      <div class="nc-stat">
-        <span class="nc-val">{{ nc.numFiles }}</span>
-        <span class="nc-label">fichiers</span>
-      </div>
-      <div class="nc-stat">
-        <span class="nc-val">{{ nc.active24h ?? 0 }}/{{ nc.numUsers ?? 0 }}</span>
-        <span class="nc-label">actifs 24 h</span>
-      </div>
-      <div class="nc-stat">
-        <span class="nc-val">{{ fmtMB(nc.dbSizeBytes) }}</span>
-        <span class="nc-label">base SQL</span>
-      </div>
-    </div>
-    <ng-template #ncDown>
-      <div class="nc-downmsg">Injoignable — dernière vérification {{ formatTime(nc.checkedAt) }}</div>
-    </ng-template>
-  </section>
+  @if (nextcloud(); as nc) {
+    <section class="nc-panel">
+      <header class="nc-header">
+        <span class="nc-dot" [class.ok]="nc.reachable"></span>
+        <span class="nc-title">Nextcloud</span>
+        @if (nc.version) {
+          <span class="nc-version">v{{ nc.version }}</span>
+        }
+        @if (nc.reachable && (nc.active5m ?? 0) > 0) {
+          <span class="nc-sync">sync actif</span>
+        }
+      </header>
+      @if (nc.reachable) {
+        <div class="nc-stats">
+          <div class="nc-stat">
+            <span class="nc-val" [class.warn]="lowSpace(nc)">{{ fmtGB(nc.freeBytes) }}</span>
+            <span class="nc-label">libres</span>
+          </div>
+          <div class="nc-stat">
+            <span class="nc-val">{{ nc.numFiles }}</span>
+            <span class="nc-label">fichiers</span>
+          </div>
+          <div class="nc-stat">
+            <span class="nc-val">{{ nc.active24h ?? 0 }}/{{ nc.numUsers ?? 0 }}</span>
+            <span class="nc-label">actifs 24 h</span>
+          </div>
+          <div class="nc-stat">
+            <span class="nc-val">{{ fmtMB(nc.dbSizeBytes) }}</span>
+            <span class="nc-label">base SQL</span>
+          </div>
+        </div>
+      } @else {
+        <div class="nc-downmsg">Injoignable — dernière vérification {{ formatTime(nc.checkedAt) }}</div>
+      }
+    </section>
+  }
 
   <!-- ── Journal ── -->
   <section class="log-panel">
@@ -85,22 +96,30 @@
       </div>
     </header>
     <div class="log-filters">
-      <button *ngFor="let lvl of ['all','info','ok','warn','error']"
-              type="button" [class.active]="filterLevel() === lvl" (click)="setFilterLevel($any(lvl))">{{ lvl }}</button>
-      <ng-container *ngIf="logSources().length > 2">
+      @for (lvl of ['all','info','ok','warn','error']; track lvl) {
+        <button
+        type="button" [class.active]="filterLevel() === lvl" (click)="setFilterLevel($any(lvl))">{{ lvl }}</button>
+      }
+      @if (logSources().length > 2) {
         <span class="log-filter-sep"></span>
-        <button *ngFor="let src of logSources()"
-                type="button" [class.active]="filterSource() === src" (click)="setFilterSource(src)">{{ src }}</button>
-      </ng-container>
+        @for (src of logSources(); track src) {
+          <button
+          type="button" [class.active]="filterSource() === src" (click)="setFilterSource(src)">{{ src }}</button>
+        }
+      }
     </div>
     <ul class="log-list">
-      <li class="log-entry" *ngFor="let entry of filteredLogs()" [class]="logLevelClass(entry.level)">
-        <span class="log-time">{{ formatTime(entry.timestamp) }}</span>
-        <span class="log-level">{{ logLevelLabel(entry.level) }}</span>
-        <span class="log-source" [class.kodi]="entry.source === 'kodi'" [class.events]="entry.source === 'events'" [class.jobs]="entry.source === 'jobs'" [class.vzdump]="entry.source === 'vzdump'">{{ entry.source }}</span>
-        <span class="log-message">{{ entry.message }}</span>
-      </li>
-      <li class="log-empty" *ngIf="filteredLogs().length === 0">Aucun log.</li>
+      @for (entry of filteredLogs(); track entry) {
+        <li class="log-entry" [class]="logLevelClass(entry.level)">
+          <span class="log-time">{{ formatTime(entry.timestamp) }}</span>
+          <span class="log-level">{{ logLevelLabel(entry.level) }}</span>
+          <span class="log-source" [class.kodi]="entry.source === 'kodi'" [class.events]="entry.source === 'events'" [class.jobs]="entry.source === 'jobs'" [class.vzdump]="entry.source === 'vzdump'">{{ entry.source }}</span>
+          <span class="log-message">{{ entry.message }}</span>
+        </li>
+      }
+      @if (filteredLogs().length === 0) {
+        <li class="log-empty">Aucun log.</li>
+      }
     </ul>
   </section>
 </div>
@@ -108,26 +127,36 @@
 <!-- Template réutilisable : liste de workloads dépliable -->
 <ng-template #wlList let-list>
   <div class="wl-list">
-    <div class="wl-row-wrap" *ngFor="let w of list">
-      <button type="button" class="wl-row" (click)="toggle(w.namespace)">
-        <span class="wl-caret" [class.open]="isExpanded(w.namespace)">▸</span>
-        <span class="wl-health" [class]="wlHealthClass(w)"></span>
-        <span class="wl-name">{{ w.namespace }}</span>
-        <span class="wl-pods">{{ w.readyCount }}/{{ w.podCount }} pods</span>
-        <span class="wl-cpu">{{ fmtCpu(w.cpuMillicores) }}</span>
-        <span class="wl-ram">{{ fmtRam(w.ramBytes) }}</span>
-      </button>
-      <div class="wl-pods-detail" *ngIf="isExpanded(w.namespace)">
-        <div class="pod-row" *ngFor="let p of w.pods">
-          <span class="pod-health" [class.ready]="p.ready"></span>
-          <span class="pod-name">{{ p.name }}</span>
-          <span class="pod-node">{{ p.node }}</span>
-          <span class="pod-restarts" *ngIf="p.restarts > 0" title="redémarrages">↻ {{ p.restarts }}</span>
-          <span class="pod-cpu">{{ fmtCpu(p.cpuMillicores) }}</span>
-          <span class="pod-ram">{{ fmtRam(p.ramBytes) }}</span>
-        </div>
+    @for (w of list; track w) {
+      <div class="wl-row-wrap">
+        <button type="button" class="wl-row" (click)="toggle(w.namespace)">
+          <span class="wl-caret" [class.open]="isExpanded(w.namespace)">▸</span>
+          <span class="wl-health" [class]="wlHealthClass(w)"></span>
+          <span class="wl-name">{{ w.namespace }}</span>
+          <span class="wl-pods">{{ w.readyCount }}/{{ w.podCount }} pods</span>
+          <span class="wl-cpu">{{ fmtCpu(w.cpuMillicores) }}</span>
+          <span class="wl-ram">{{ fmtRam(w.ramBytes) }}</span>
+        </button>
+        @if (isExpanded(w.namespace)) {
+          <div class="wl-pods-detail">
+            @for (p of w.pods; track p) {
+              <div class="pod-row">
+                <span class="pod-health" [class.ready]="p.ready"></span>
+                <span class="pod-name">{{ p.name }}</span>
+                <span class="pod-node">{{ p.node }}</span>
+                @if (p.restarts > 0) {
+                  <span class="pod-restarts" title="redémarrages">↻ {{ p.restarts }}</span>
+                }
+                <span class="pod-cpu">{{ fmtCpu(p.cpuMillicores) }}</span>
+                <span class="pod-ram">{{ fmtRam(p.ramBytes) }}</span>
+              </div>
+            }
+          </div>
+        }
       </div>
-    </div>
-    <div class="wl-empty" *ngIf="list.length === 0">Aucune app.</div>
+    }
+    @if (list.length === 0) {
+      <div class="wl-empty">Aucune app.</div>
+    }
   </div>
 </ng-template>

@@ -1,7 +1,7 @@
 import {
   Component, ChangeDetectionStrategy, inject, signal, computed, OnInit,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { PageHeaderComponent } from '../../shared/page-header/page-header';
@@ -72,7 +72,7 @@ const DOC_INFO: Record<string, string> = {
 @Component({
   selector: 'app-immigration-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule, PageHeaderComponent],
+  imports: [FormsModule, LucideAngularModule, PageHeaderComponent],
   templateUrl: './immigration-page.html',
   styleUrl: './immigration-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

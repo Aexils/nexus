@@ -1,5 +1,40 @@
 <aside class="metrics-panel">
 
+  <!-- Connexion Internet -->
+  @if (link) {
+    <div class="mp-section">
+      <div class="mp-section-label">Connexion</div>
+
+      <div class="mp-link-status" [class.online]="linkOnline" [class.offline]="!linkOnline">
+        <lucide-icon [img]="linkOnline ? icons.Wifi : icons.WifiOff" [size]="15" strokeWidth="2.2"></lucide-icon>
+        <span class="mp-link-state">{{ linkOnline ? 'En ligne' : 'Hors ligne' }}</span>
+        <span class="mp-link-since">{{ linkSince }}</span>
+      </div>
+
+      <div class="mp-link-badges">
+        <span class="mp-link-badge" [class.up]="link.gatewayUp" [class.down]="!link.gatewayUp">Hub</span>
+        <span class="mp-link-badge" [class.up]="link.wanUp" [class.down]="!link.wanUp">WAN</span>
+        <span class="mp-link-uptime" [class]="uptimeClass()">{{ uptime24h }}% / 24 h</span>
+      </div>
+
+      @if (outages.length > 0) {
+        <div class="mp-link-outages">
+          @for (o of outages.slice(0, 4); track o.start) {
+            <div class="mp-link-outage" [class.hub]="o.hubDown" [class.ongoing]="o.end === null">
+              <span class="mp-link-outage-time">{{ fmtOutageTime(o) }}</span>
+              <span class="mp-link-outage-dur">{{ fmtOutageDur(o) }}</span>
+              @if (o.hubDown) {
+                <span class="mp-link-outage-tag" title="Home Hub injoignable = reboot du boîtier">reboot</span>
+              }
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="mp-link-none">Aucune coupure récente</div>
+      }
+    </div>
+  }
+
   <!-- System -->
   <div class="mp-section">
     <div class="mp-section-label">Système</div>
@@ -50,54 +85,72 @@
   </div>
 
   <!-- Températures -->
-  <div class="mp-section" *ngIf="temps.length > 0">
-    <div class="mp-section-label">Températures</div>
-
-    <div class="mp-row" *ngFor="let t of temps; trackBy: trackTemp">
-      <span class="mp-label mp-label--disk">{{ t.label }}</span>
-      <span class="mp-temp-badge" [class]="'mp-temp-badge ' + tempClass(t.celsius)" style="margin-left:auto">{{ t.celsius }}°</span>
+  @if (temps.length > 0) {
+    <div class="mp-section">
+      <div class="mp-section-label">Températures</div>
+      @for (t of temps; track trackTemp($index, t)) {
+        <div class="mp-row">
+          <span class="mp-label mp-label--disk">{{ t.label }}</span>
+          <span class="mp-temp-badge" [class]="'mp-temp-badge ' + tempClass(t.celsius)" style="margin-left:auto">{{ t.celsius }}°</span>
+        </div>
+      }
     </div>
-  </div>
+  }
 
   <!-- Storage — regroupé par disque physique -->
-  <div class="mp-section" *ngIf="diskGroups.length > 0">
-    <div class="mp-section-label">Stockage</div>
-
-    <div class="mp-disk-card" *ngFor="let g of diskGroups">
-      <div class="mp-disk-head">
-        <lucide-icon [img]="icons.HardDrive" [size]="12" strokeWidth="2" color="var(--text2)"></lucide-icon>
-        <span class="mp-disk-name">{{ g.label }}</span>
-        <span class="mp-disk-size">{{ formatDisk(g.totalGB) }}</span>
-      </div>
-
-      <div class="mp-disk-mount" *ngFor="let d of g.mounts">
-        <div class="mp-mount-top">
-          <span class="mp-mount-name">{{ mountLabel(d.mount) }}</span>
-          <span class="mp-mount-usage">{{ formatDisk(d.usedGB) }} / {{ formatDisk(d.totalGB) }}</span>
+  @if (diskGroups.length > 0) {
+    <div class="mp-section">
+      <div class="mp-section-label">Stockage</div>
+      @for (g of diskGroups; track g) {
+        <div class="mp-disk-card">
+          <div class="mp-disk-head">
+            <lucide-icon [img]="icons.HardDrive" [size]="12" strokeWidth="2" color="var(--text2)"></lucide-icon>
+            <span class="mp-disk-name">{{ g.label }}</span>
+            <span class="mp-disk-size">{{ formatDisk(g.totalGB) }}</span>
+          </div>
+          @for (d of g.mounts; track d) {
+            <div class="mp-disk-mount">
+              <div class="mp-mount-top">
+                <span class="mp-mount-name">{{ mountLabel(d.mount) }}</span>
+                <span class="mp-mount-usage">{{ formatDisk(d.usedGB) }} / {{ formatDisk(d.totalGB) }}</span>
+              </div>
+              <div class="mp-bar-bg">
+                <div [class]="'mp-bar-fill disk ' + diskClass(d)" [style.width.%]="d.usedPercent"></div>
+              </div>
+            </div>
+          }
         </div>
-        <div class="mp-bar-bg">
-          <div [class]="'mp-bar-fill disk ' + diskClass(d)" [style.width.%]="d.usedPercent"></div>
-        </div>
-      </div>
+      }
     </div>
-  </div>
+  }
 
   <!-- Versions (applications seulement — détail complet sur /versions) -->
-  <div class="mp-section" *ngIf="appVersions.length > 0">
-    <div class="mp-section-label mp-ver-head">
-      Versions
-      <a class="mp-ver-more" routerLink="/versions">voir tout <lucide-icon [img]="icons.ChevronRight" [size]="11" strokeWidth="2.5"></lucide-icon></a>
+  @if (appVersions.length > 0) {
+    <div class="mp-section">
+      <div class="mp-section-label mp-ver-head">
+        Versions
+        <a class="mp-ver-more" routerLink="/versions">voir tout <lucide-icon [img]="icons.ChevronRight" [size]="11" strokeWidth="2.5"></lucide-icon></a>
+      </div>
+      @for (v of appVersions; track v) {
+        <a class="mp-ver-row" routerLink="/versions" [class]="versionState(v)">
+          <span class="mp-ver-name">{{ v.name }}</span>
+          <span class="mp-ver-cur">{{ v.current }}</span>
+          <span class="mp-ver-badge">
+            @switch (versionState(v)) {
+              @case ('ok') {
+                <span class="dot"></span>
+              }
+              @case ('update') {
+                <span>{{ v.latest }}</span>
+              }
+              @default {
+                <span class="dot idle"></span>
+              }
+            }
+          </span>
+        </a>
+      }
     </div>
-
-    <a class="mp-ver-row" routerLink="/versions" *ngFor="let v of appVersions" [class]="versionState(v)">
-      <span class="mp-ver-name">{{ v.name }}</span>
-      <span class="mp-ver-cur">{{ v.current }}</span>
-      <span class="mp-ver-badge" [ngSwitch]="versionState(v)">
-        <span *ngSwitchCase="'ok'" class="dot"></span>
-        <span *ngSwitchCase="'update'">{{ v.latest }}</span>
-        <span *ngSwitchDefault class="dot idle"></span>
-      </span>
-    </a>
-  </div>
+  }
 
 </aside>

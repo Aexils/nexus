@@ -8,7 +8,7 @@ import {
   LucideAngularModule,
   PlusCircle, Trash2, Home, Filter, TrendingUp, ChevronLeft, ChevronRight,
   CheckCircle, Pencil, ArrowUpDown, ArrowUp, ArrowDown, X,
-  ShoppingCart, Cat, Utensils, Package, Car, Gamepad2, Music, Heart,
+  ShoppingCart, Cat, Utensils, Car, Gamepad2, Music, Heart,
   Shirt, Laptop, Dumbbell, Plane, Coffee, Baby, Pill, ShoppingBag, Beef, Tag,
   Zap, Shield, Wifi, Building2,
   Calculator, Copy, Check,
