@@ -16,11 +16,16 @@
 
       <div class="hero__count">
         <div class="hero__days">
-          <span class="hero__num">{{ daysLabel() }}</span>
-          <span class="hero__unit">
-            @if (daysLeft() !== null && daysLeft()! < 0) { jours de retard }
-            @else { jours restants }
-          </span>
+          @if (daysLeft() === 0) {
+            <span class="hero__num">{{ hoursLeft() }}</span>
+            <span class="hero__unit">heures restantes</span>
+          } @else {
+            <span class="hero__num">{{ daysLabel() }}</span>
+            <span class="hero__unit">
+              @if (daysLeft() !== null && daysLeft()! < 0) { jours de retard }
+              @else { jours restants }
+            </span>
+          }
         </div>
         <div class="hero__deadline">
           <lucide-icon [img]="icons.CalendarDays" [size]="15"></lucide-icon>
@@ -175,8 +180,8 @@
         <div>
           <h2 class="tips__title">À savoir — Entrée Express</h2>
           <p class="tips__sub">
-            Conseils et points de vigilance sur les documents (d'après pvtistes.net + IRCC).
-            Indicatif : vérifie toujours sur le site officiel d'IRCC pour ta situation.
+            Points de vigilance propres à ce dossier (CEC), tirés des infobulles du portail IRCC
+            relevées le 08/09/2026 et de l'audit des pièces.
           </p>
         </div>
       </header>

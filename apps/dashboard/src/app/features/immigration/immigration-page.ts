@@ -22,51 +22,60 @@ const STATUSES: { value: DocStatus; label: string }[] = [
 ];
 
 /**
- * Explication de chaque type de document (bulle d'info), d'après le guide pvtistes.net
- * « Entrée Express » et les exigences d'IRCC. Indicatif — vérifier sur le site officiel
- * d'IRCC pour ta situation précise. Clé = `name` du document.
+ * Explication de chaque type de document, condensée depuis les **infobulles officielles du
+ * portail IRCC** relevées le 08/09/2026 sur le profil E004432006 (et non depuis un guide tiers).
+ * La liste de contrôle de l'eAPR étant générée dynamiquement, ces textes font foi pour ce
+ * dossier précis. Clé = `name` du document.
  */
 const DOC_INFO: Record<string, string> = {
   'Études':
-    "Preuve de tes études déclarées : en général l'Évaluation des Diplômes d'Études (EDE) — " +
-    "numéro de référence + attestation d'un organisme agréé (IRCC la vérifie auprès de lui). " +
-    "Tes diplômes/grades et relevés de notes (lycée, université) peuvent aussi être demandés.",
+    "Preuve d'achèvement des études postsecondaires : un diplôme ou un grade universitaire. " +
+    "Sont acceptés les formations en apprentissage, les diplômes de premier cycle (baccalauréat), " +
+    "les maîtrises et les doctorats. L'évaluation des diplômes (EDE/WES) n'est pas réclamée par " +
+    "cette case — elle est validée automatiquement depuis le profil Entrée Express.",
   "Relevé d'emploi":
-    "Preuve d'une expérience déclarée : lettre de l'employeur sur papier en-tête (postes, " +
-    "fonctions, période, heures/semaine, salaire, avantages), signée par ton supérieur ou le RH, " +
-    "cohérente avec le code CNP déclaré. Au Canada : aussi T4 / avis de cotisation. " +
-    "Travailleur autonome : preuves de statut, de revenus et de clients.",
+    "Lettre de référence de l'employeur, sur papier à en-tête, portant ton nom, les coordonnées de " +
+    "l'entreprise et la signature de ton supérieur immédiat. Elle doit indiquer tous les postes " +
+    "occupés, et pour chacun : titre, fonctions, situation d'emploi, dates de début et de fin, " +
+    "NOMBRE D'HEURES PAR SEMAINE, salaire annuel et avantages sociaux. Les relevés de paie " +
+    "antérieurs sont explicitement bienvenus. Un seul fichier par expérience, et un fichier " +
+    "distinct pour chaque expérience.",
   'Preuve de ressources financières suffisantes':
-    "Preuve de fonds : lettre de ta banque (en-tête, tes numéros de comptes, dates d'ouverture, " +
-    "solde actuel et solde moyen des 6 derniers mois, dettes/emprunts). Non exigée si tu es déjà au " +
-    "Canada avec un permis de travail, avec une offre d'emploi valide, ou via la Catégorie de " +
-    "l'expérience canadienne.",
+    "Lettre officielle de l'institution financière indiquant : tous les comptes (opérations, " +
+    "épargne, placements) avec leurs numéros, leur date d'ouverture et leur solde sur les SIX " +
+    "DERNIERS MOIS ; la liste des dettes non réglées ; le tout sur papier à en-tête, avec ton nom " +
+    "et les coordonnées de l'institution. Un simple relevé de compte ne suffit pas. " +
+    "À noter : la preuve de fonds n'est pas une exigence légale en Catégorie de l'expérience canadienne.",
   'Certificat de police':
-    "Extrait de casier judiciaire pour chaque pays où tu as vécu 6 mois consécutifs ou plus depuis " +
-    "tes 18 ans. Celui de ton pays de résidence actuel doit dater de moins de 6 mois. Anticipe : " +
-    "certains pays sont longs. Exemptions IRCC : séjours < 6 mois, avant 18 ans, ou il y a plus de 20 ans.",
+    "Certificat délivré par le pays ou territoire concerné. Il permet à IRCC de déterminer si tu as " +
+    "un casier judiciaire et si tu représentes un risque pour la sécurité du Canada.",
   'Photographie':
-    "2 photos d'identité numériques aux normes IRCC pour résidents permanents (pas de photomaton), " +
-    "prises chez un photographe pro dans les 6 derniers mois. Garde le reçu daté. Mieux vaut attendre " +
-    "l'invitation (validité 6 mois).",
+    "Tête de face, visage au centre, haut des épaules inclus. Tête de 31 à 36 mm du menton au " +
+    "sommet. Image d'au moins 420 × 540 pixels, cadre final d'au moins 35 × 45 mm, format JPEG ou " +
+    "JPEG2000, couleur 24 bits RGB, environ 240 Ko et 4 Mo maximum. Photo numérisée : 600 ppp " +
+    "minimum. Les coordonnées du photographe (nom, adresse, date de prise de vue) se téléversent " +
+    "sous « Renseignements du client ».",
   'Passeports / titres de voyage':
-    "Copie des pages d'identification de ton passeport, valide et à jour. Anticipe un renouvellement " +
-    "si l'expiration approche, sous peine de retards.",
+    "Copie lisible du titre de voyage valide : la page montrant la date de naissance et le pays " +
+    "d'origine, ET TOUTE PAGE portant des timbres, visas ou inscriptions. À défaut de passeport, un " +
+    "titre délivré par un gouvernement mentionnant nom, date de naissance, numéro, citoyenneté ou " +
+    "statut de résidence, photo et date d'expiration.",
   "Preuve d'examen médical préalable":
-    "Confirmation d'une visite médicale chez un médecin désigné par IRCC (liste sur leur site). " +
-    "Valide moins d'un an, ~250–300 €, non remboursée. À faire AVANT de soumettre la demande. Tous " +
-    "les membres de la famille doivent la passer, même les enfants à charge non accompagnants.",
+    "Imprimé du rapport médical ou formulaire Rapport médical préalable IMM 1017B, remis par le " +
+    "médecin désigné à l'issue de l'examen. Si l'examen ne peut pas avoir lieu avant la date " +
+    "limite, une preuve de rendez-vous est acceptée.",
   "Déclaration officielle d'union de fait":
-    "Formulaire IMM 5409, à remplir si tu te déclares en union de fait, avec preuve de vie commune " +
-    "depuis au moins 12 mois : comptes conjoints, bail ou acte commun, factures (eau, électricité) " +
-    "aux deux noms.",
+    "Au-delà du formulaire IMM 5409 : des documents prouvant que vous avez mis vos affaires en " +
+    "commun et établi un ménage au même domicile — relevé de compte ou de carte conjoints, " +
+    "propriété ou bail conjoint, reçu de location, facture de service public commune, preuve de " +
+    "gestion conjointe des dépenses, achat conjoint, courrier adressé à la même adresse.",
   "Document d'identité national":
-    "Copie de ta ou tes pièces d'identité nationales (carte d'identité), en complément du passeport.",
+    "Copie de la ou des pièces d'identité nationales, en complément du passeport. " +
+    "(Aucune infobulle dédiée sur le portail pour cette case.)",
   'Renseignements du client':
-    "Renseignements personnels complémentaires demandés via ton compte IRCC (adresses successives, " +
-    "voyages, historique familial…). Si tu recours à un représentant en immigration agréé, tu le " +
-    "déclares avec le formulaire IMM 5476 (et IMM 5475 pour l'autorisation de communiquer tes " +
-    "renseignements).",
+    "Case facultative servant de dépôt aux documents complémentaires : lettres d'explication (LOE) " +
+    "et coordonnées du photographe exigées par la case Photographie. C'est l'endroit prévu pour " +
+    "expliquer une pièce incomplète ou une incohérence apparente entre deux documents.",
 };
 
 @Component({
@@ -92,42 +101,61 @@ export class ImmigrationPage implements OnInit {
   }
 
   /**
-   * Encart « À savoir » — conseils, spécificités et pièges sur les documents.
-   * D'après le guide pvtistes.net « Entrée Express » et IRCC (indicatif).
+   * Encart « À savoir » — points de vigilance propres à CE dossier (CEC, ITA du 22/07/2026),
+   * tirés des infobulles du portail IRCC et de l'audit des pièces.
    */
   readonly tips: { title: string; items: string[] }[] = [
     {
-      title: 'Timing & délais',
+      title: 'Échéance & dépôt',
       items: [
-        "Après l'invitation (IPD), tu as 60 jours pour soumettre le dossier complet.",
-        'Traitement visé : 6 mois (80 % des dossiers complets) — compte 6 à 12 mois en pratique.',
-        'Anticipe les certificats de police : certains pays (ex. États-Unis) prennent des mois.',
+        "IRCC ferme à la fin de la journée d'échéance EN UTC, soit 20 h heure de Montréal — quatre heures plus tôt que ce que « minuit » laisse croire.",
+        "Aucune prolongation n'est accordée (texte de l'ITA).",
+        "Téléverser ne suffit pas : tant que la demande n'est pas soumise, tout reste au statut « Documents téléversés – pas soumis à IRCC ».",
       ],
     },
     {
-      title: 'Validité — à ne pas faire trop tôt',
+      title: 'Validité des pièces',
       items: [
-        "Examen médical : valide moins d'un an. Depuis le 21 août 2025, il est obligatoire AVANT de soumettre la demande.",
-        "Photos d'identité : moins de 6 mois, photographe pro, normes IRCC.",
-        'Certificat de police du pays de résidence actuel : moins de 6 mois.',
-        "Preuve de fonds (lettre bancaire) : récente. Attends l'invitation pour ces documents.",
+        "Test de langue : moins de 2 ans LE JOUR DU DÉPÔT, pas le jour de l'invitation. Aucune case ne le réclame, mais c'est une condition d'admissibilité.",
+        "Examen médical : valide 12 mois. Sans le consentement eMedical, le dossier n'est pas transmis à IRCC.",
+        'Évaluation des diplômes (EDE/WES) : valide 5 ans.',
+        'Certificat de police du pays de résidence : le plus récent fait foi.',
       ],
     },
     {
-      title: 'Forme des documents',
+      title: 'Forme et format',
       items: [
-        "Document non FR/EN : traduction par un traducteur agréé (copie de l'original + traduction), payante.",
-        'Passeport valide et à jour — anticipe le renouvellement. Prévois aussi les passeports des 10 dernières années si demandés.',
-        "Lettres d'emploi sur papier à en-tête : poste, fonctions, dates, heures/semaine, salaire, avantages — cohérentes avec le code CNP déclaré.",
+        '4 Mo maximum par fichier téléversé.',
+        'Un seul fichier par case : fusionner les pièces multiples en un PDF.',
+        "Un fichier DISTINCT par expérience de travail — ne jamais regrouper plusieurs emplois dans le même PDF.",
+        "Documents acceptés en anglais ou en français uniquement, sinon traduction certifiée + affidavit.",
+      ],
+    },
+    {
+      title: 'Lettre d\'emploi — les 3 oublis classiques',
+      items: [
+        "Le nombre d'heures PAR SEMAINE, en chiffre précis (« 35 heures par semaine », pas « temps plein »).",
+        'Le salaire ANNUEL et les avantages sociaux — un taux horaire seul ne suffit pas.',
+        "La signature du supérieur immédiat. À défaut, une attestation RH s'explique en une ligne dans « Renseignements du client ».",
+        'À défaut de lettre parfaite : bulletins de paie, T4 et avis de cotisation complètent utilement.',
+      ],
+    },
+    {
+      title: 'Spécificités CEC',
+      items: [
+        "L'admissibilité repose sur l'expérience canadienne : 1 560 h en 3 ans, dans un poste TEER 0/1/2/3.",
+        "L'expérience doit avoir été acquise avec une autorisation de travail valide.",
+        "La preuve de fonds n'est pas une exigence légale en CEC, même si la case est marquée « requis ».",
+        "L'expérience étrangère ne joue pas sur l'admissibilité, mais pèse sur le score CRS — elle doit rester défendable.",
       ],
     },
     {
       title: 'Pièges à éviter',
       items: [
-        'Fausses déclarations = refus + interdiction de territoire jusqu\'à 5 ans. Ne gonfle rien, garde les preuves de tout.',
-        "Examen médical ET biométrie pour toute la famille, même les enfants à charge qui ne t'accompagnent pas.",
-        'Un document manquant après soumission → 7 jours pour répondre. Puis biométrie (lettre d\'instructions).',
-        'Garde une copie de TOUT : formulaires, reçus, certificats, confirmations, échanges avec IRCC.',
+        "Fausses déclarations : refus et interdiction de territoire jusqu'à 5 ans. Ne rien gonfler, tout documenter.",
+        "Ne pas ouvrir de case inutile : une expérience déclarée seulement dans « Activités personnelles » n'exige aucune lettre.",
+        'Vérifier chaque fichier téléchargé du portail : un PDF de 0 octet passe inaperçu.',
+        'Garder une copie de tout, y compris les versions antérieures des attestations.',
       ],
     },
   ];
@@ -146,13 +174,24 @@ export class ImmigrationPage implements OnInit {
   newComment = '';
 
   // ── Computeds ──────────────────────────────────────────────────────────────
-  readonly daysLeft = computed(() => {
+  /**
+   * Instant réel de fermeture : IRCC accepte jusqu'à la fin de la journée d'échéance **en UTC**.
+   * À Montréal cela tombe quatre heures plus tôt que « minuit », d'où le calcul explicite.
+   */
+  private readonly cutoff = computed(() => {
     const ov = this.overview();
-    if (!ov) return null;
-    const target = new Date(ov.deadline + 'T12:00:00');
-    const today  = new Date();
-    today.setHours(12, 0, 0, 0);
-    return Math.round((target.getTime() - today.getTime()) / 86_400_000);
+    return ov ? new Date(`${ov.deadline}T23:59:59Z`) : null;
+  });
+
+  readonly daysLeft = computed(() => {
+    const c = this.cutoff();
+    return c ? Math.floor((c.getTime() - Date.now()) / 86_400_000) : null;
+  });
+
+  /** Heures restantes — affiché à la place des jours le dernier jour. */
+  readonly hoursLeft = computed(() => {
+    const c = this.cutoff();
+    return c ? Math.max(0, Math.floor((c.getTime() - Date.now()) / 3_600_000)) : null;
   });
 
   /** green > 30j · orange 10–30j · red < 10j (ou dépassé) */
@@ -309,9 +348,15 @@ export class ImmigrationPage implements OnInit {
   }
 
   deadlineDisplay(iso: string): string {
-    return new Date(iso + 'T12:00:00').toLocaleDateString('fr-CA', {
+    const cutoff = new Date(`${iso}T23:59:59Z`);
+    const date = cutoff.toLocaleDateString('fr-CA', {
       weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+      timeZone: 'America/Montreal',
     });
+    const time = cutoff.toLocaleTimeString('fr-CA', {
+      hour: '2-digit', minute: '2-digit', timeZone: 'America/Montreal',
+    });
+    return `${date}, ${time} (heure de Montréal)`;
   }
 
   commentDate(iso: string): string {
