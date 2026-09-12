@@ -4,7 +4,8 @@ import {
 import { DecimalPipe } from '@angular/common';
 import { forkJoin } from 'rxjs';
 import {
-  LucideAngularModule, AlertTriangle, CheckCircle2, Flame, Fuel, RefreshCw, TrendingDown,
+  LucideAngularModule, AlertTriangle, ArrowRight, CheckCircle2, Flame, Fuel, Pause,
+  Play, RefreshCw, Timer, TrendingDown,
 } from 'lucide-angular';
 import {
   VolkorneEnclosState, VolkorneTrend, VolkorneYieldReport,
@@ -13,8 +14,17 @@ import { VolkorneService } from './volkorne.service';
 
 /** Plafond de remplissage du Gigantesque Extrait : la jauge ne va pas au-delà. */
 const FILL_CAP = 40000;
+/** Points de jauge par extrait. Affiché à l'écran : « ajouter » doit être un geste dont
+ *  on voit l'effet, pas un bouton dont on devine le résultat. */
+const POINTS_PER_EXTRACT = 5000;
+/** Seuil d'alerte du backend : sous 2 h de jauge, il faut agir. */
+const SOON_MS = 2 * 3600_000;
+const PRICE_KEY = 'volkorne.gaPaPrice';
 
 interface TrendView { label: string; tone: 'good' | 'bad' | 'neutral'; detail: string; }
+
+/** L'instruction affichée en tête de carte : QUOI FAIRE, maintenant. */
+interface NextAction { verb: string; detail: string; tone: 'bad' | 'warn' | 'good' | 'idle'; }
 
 interface Curve { w: number; h: number; line: string; area: string; ref: number; }
 
@@ -35,12 +45,23 @@ export class VolkornePage implements OnInit, OnDestroy {
   readonly AlertTriangle = AlertTriangle;
   readonly CheckCircle2 = CheckCircle2;
   readonly TrendingDown = TrendingDown;
+  readonly Pause = Pause;
+  readonly Play = Play;
+  readonly Timer = Timer;
+  readonly ArrowRight = ArrowRight;
 
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
   readonly busy = signal<number | null>(null);
   readonly states = signal<VolkorneEnclosState[]>([]);
   readonly report = signal<VolkorneYieldReport | null>(null);
+
+  readonly POINTS_PER_EXTRACT = POINTS_PER_EXTRACT;
+
+  /** Prix de vente d'une Ga PA, saisi par l'utilisateur et conservé localement.
+   *  Sans lui, aucun bénéfice n'est affiché — on n'invente pas un prix de marché. */
+  readonly gaPaPrice = signal<number | null>(
+    Number(localStorage.getItem(PRICE_KEY)) || null);
 
   /**
    * Horloge locale, rafraîchie chaque seconde. Les échéances viennent du backend sous
@@ -90,7 +111,20 @@ export class VolkornePage implements OnInit, OnDestroy {
   }
 
   private loadReport(): void {
-    this.api.yieldReport().subscribe({ next: r => this.report.set(r), error: () => void 0 });
+    this.api.yieldReport(this.gaPaPrice() ?? undefined)
+      .subscribe({ next: r => this.report.set(r), error: () => void 0 });
+  }
+
+  setPrice(raw: string): void {
+    const v = Number(raw);
+    if (!v || v <= 0) {
+      localStorage.removeItem(PRICE_KEY);
+      this.gaPaPrice.set(null);
+    } else {
+      localStorage.setItem(PRICE_KEY, String(v));
+      this.gaPaPrice.set(v);
+    }
+    this.loadReport();
   }
 
   private fail(): void {
@@ -114,6 +148,76 @@ export class VolkornePage implements OnInit, OnDestroy {
       next: () => { this.busy.set(null); this.load(true); },
       error: () => { this.busy.set(null); this.error.set('Le remplissage a échoué.'); },
     });
+  }
+
+  togglePause(s: VolkorneEnclosState): void {
+    this.busy.set(s.id);
+    this.api.pause(s.id, s.gauge_active).subscribe({
+      next: () => { this.busy.set(null); this.load(true); },
+      error: () => { this.busy.set(null); this.error.set('La mise en pause a échoué.'); },
+    });
+  }
+
+  // ── Quoi faire maintenant ──────────────────────────────────────────────────
+
+  /**
+   * L'information principale de la page. Un tableau de bord qui affiche des chiffres
+   * laisse l'utilisateur faire la synthèse lui-même ; ici on la fait pour lui, parce
+   * que la page est consultée en jouant, d'une main, entre deux combats.
+   *
+   * L'ordre des cas est une priorité, pas une suite de tests indépendants : une jauge
+   * vide passe avant un enclos incomplet, parce qu'on ne peut pas tout faire à la fois.
+   */
+  nextAction(s: VolkorneEnclosState): NextAction {
+    if (!s.gauge_active) {
+      return { verb: 'En pause', detail: 'La production est arrêtée, rien ne se consomme.', tone: 'idle' };
+    }
+    if (s.all_ready) {
+      return {
+        verb: 'Sors tes montures',
+        detail: `${s.mounts.length} au niveau 100 — au-delà, la mangeoire continue jusqu'à 200 et le carburant est perdu.`,
+        tone: 'good',
+      };
+    }
+    if (!s.mount_count) {
+      return { verb: 'Ajoute des montures', detail: "L'enclos est vide.", tone: 'idle' };
+    }
+    if (s.consumes && s.gauge_value <= 0) {
+      return {
+        verb: `Ajoute ${s.extracts_to_finish || 8} extrait(s)`,
+        detail: 'Jauge à sec : la production est à l\'arrêt, chaque minute est perdue.',
+        tone: 'bad',
+      };
+    }
+    if (s.is_underfilled) {
+      return {
+        verb: `Complète l'enclos (${s.capacity - s.mount_count} place(s))`,
+        detail: 'Le carburant coûte pareil pour 1 monture que pour 10.',
+        tone: 'warn',
+      };
+    }
+    if (s.consumes && s.empty_at && new Date(s.empty_at).getTime() - this.tick() < SOON_MS) {
+      return {
+        verb: 'Prépare des extraits',
+        detail: `La jauge tombe à sec dans ${this.until(s.empty_at)}.`,
+        tone: 'warn',
+      };
+    }
+    if (!s.consumes) {
+      return { verb: 'Rien à faire', detail: 'Aucune monture n\'a besoin de l\'effet.', tone: 'idle' };
+    }
+    return {
+      verb: 'Rien à faire',
+      detail: s.finishes_at
+        ? `Fournée terminée dans ${this.until(s.finishes_at)}.`
+        : 'La production tourne.',
+      tone: 'idle',
+    };
+  }
+
+  /** Extraits nécessaires pour remplir jusqu'au plafond du carburant. */
+  toFill(s: VolkorneEnclosState): number {
+    return Math.max(0, Math.ceil((FILL_CAP - s.gauge_value) / POINTS_PER_EXTRACT));
   }
 
   // ── Affichage ──────────────────────────────────────────────────────────────

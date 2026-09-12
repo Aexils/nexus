@@ -87,6 +87,20 @@ export interface VolkorneBatchYield {
 
 export type VolkorneTrend = 'insufficient_data' | 'declining' | 'stable' | 'improving';
 
+/** Rapport temps / dépense / bénéfice. Absent tant qu'aucun prix de Ga PA n'est connu. */
+export interface VolkorneProfitability {
+  ga_pa_price: number;
+  total_ga_pa: number;
+  revenue: number;
+  cash_cost: number;
+  profit: number;
+  margin: number | null;
+  hours: number;
+  /** Le juge de paix : comparable à n'importe quelle autre activité du jeu. */
+  kamas_per_hour: number | null;
+  is_profitable: boolean;
+}
+
 /** La réponse au § 8 : combien coûte une Ga PA, et est-ce que le rendement baisse. */
 export interface VolkorneYieldReport {
   batches: VolkorneBatchYield[];
@@ -100,6 +114,7 @@ export interface VolkorneYieldReport {
   overall_cash_per_ga_pa: number | null;
   total_ga_pa: number;
   total_cash_cost: number;
+  profitability: VolkorneProfitability | null;
 }
 
 export interface VolkorneStock {

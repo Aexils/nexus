@@ -31,7 +31,7 @@
 }
 
 /* ── KPI ── */
-.v-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 16px; }
+.v-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
 .v-stat {
   padding: 14px 16px; background: var(--surface);
   border: 1px solid var(--border); border-radius: var(--radius, 12px);
@@ -54,7 +54,68 @@
   background: var(--surface); border: 1px solid var(--border);
   border-radius: var(--radius, 12px); padding: 16px; margin-bottom: 12px;
 }
-.v-card.urgent { border-color: color-mix(in srgb, var(--red) 45%, transparent); }
+/* La bordure porte l'urgence : on doit repérer la carte qui demande une action sans
+   lire un mot, en balayant la page du pouce. */
+.v-card[data-tone='bad']  { border-color: color-mix(in srgb, var(--red) 50%, transparent); }
+.v-card[data-tone='warn'] { border-color: color-mix(in srgb, var(--yellow) 45%, transparent); }
+.v-card[data-tone='good'] { border-color: color-mix(in srgb, var(--green) 40%, transparent); }
+
+/* ── L'instruction : l'élément le plus lisible de la carte ── */
+.v-do {
+  display: flex; gap: 11px; align-items: flex-start;
+  margin: 14px 0; padding: 13px 14px;
+  border-radius: var(--radius, 12px);
+  background: color-mix(in srgb, var(--text3) 12%, transparent);
+  border-left: 3px solid var(--text3);
+}
+.v-do-arrow { flex: 0 0 auto; margin-top: 2px; color: var(--text3); }
+.v-do-verb { font-size: 16px; font-weight: 800; letter-spacing: -0.01em; color: var(--text); }
+.v-do-detail { font-size: 12.5px; color: var(--text2); margin-top: 3px; line-height: 1.45; }
+
+.v-card[data-tone='bad']  .v-do { background: color-mix(in srgb, var(--red) 13%, transparent);    border-left-color: var(--red); }
+.v-card[data-tone='bad']  .v-do-arrow, .v-card[data-tone='bad']  .v-do-verb { color: var(--red); }
+.v-card[data-tone='warn'] .v-do { background: color-mix(in srgb, var(--yellow) 13%, transparent); border-left-color: var(--yellow); }
+.v-card[data-tone='warn'] .v-do-arrow, .v-card[data-tone='warn'] .v-do-verb { color: var(--yellow); }
+.v-card[data-tone='good'] .v-do { background: color-mix(in srgb, var(--green) 13%, transparent);  border-left-color: var(--green); }
+.v-card[data-tone='good'] .v-do-arrow, .v-card[data-tone='good'] .v-do-verb { color: var(--green); }
+
+/* ── Les deux échéances ── */
+.v-timers { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.v-timer {
+  padding: 11px 13px; border-radius: var(--radius, 12px);
+  background: var(--surface2); border: 1px solid var(--border);
+}
+.v-timer .v-label { display: inline-flex; align-items: center; gap: 5px; }
+.v-timer-v {
+  font-family: var(--font-mono); font-size: 21px; font-weight: 700;
+  margin-top: 7px; line-height: 1; color: var(--text); letter-spacing: -0.02em;
+}
+.v-timer.warn .v-timer-v { color: var(--yellow); }
+.v-timer.bad  .v-timer-v { color: var(--red); }
+.v-timer-v.good { color: var(--green); }
+
+/* ── Ajout d'extraits ── */
+.v-add { margin-top: 4px; }
+.v-add-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 8px; }
+
+/* ── Rapport ── */
+.v-report {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius, 12px); padding: 16px; margin-top: 18px;
+}
+.v-report-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; flex-wrap: wrap; margin-bottom: 14px; }
+.v-price { display: flex; flex-direction: column; gap: 6px; }
+.v-price input {
+  min-height: 40px; width: 150px; padding: 0 12px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--radius, 12px); color: var(--text);
+  font-family: var(--font-mono); font-size: 14px;
+}
+.v-price input:focus { outline: none; border-color: var(--accent); }
+.v-stat-empty .v-v { color: var(--text3); }
+
+.v-mounts-wrap { margin-top: 14px; }
+.v-mounts-wrap summary { cursor: pointer; padding: 6px 0; }
 .v-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .v-name { font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
 
@@ -116,11 +177,8 @@
 .v-mount-eta { font-family: var(--font-mono); color: var(--text2); white-space: nowrap; }
 
 /* ── Courbe ── */
-.v-curve {
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius, 12px); padding: 16px; margin-top: 16px;
-}
-.v-curve-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 12px; }
+.v-curve { margin-top: 16px; }
+.v-curve-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 10px; }
 .v-svg { width: 100%; height: 90px; display: block; }
 .v-line { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
 .v-area { fill: color-mix(in srgb, var(--accent) 14%, transparent); stroke: none; }

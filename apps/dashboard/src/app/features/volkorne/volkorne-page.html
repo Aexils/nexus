@@ -4,7 +4,7 @@
       <div class="v-mark"><lucide-icon [img]="Flame" [size]="30" /></div>
       <div>
         <div class="v-word">Volk<b>orne</b></div>
-        <div class="v-tag">Production de runes Ga PA</div>
+        <div class="v-tag">Gestion des enclos · runes Ga PA</div>
       </div>
     </div>
     <button class="v-btn ghost" (click)="load()" [disabled]="loading()">
@@ -16,34 +16,6 @@
     <div class="v-error"><lucide-icon [img]="AlertTriangle" [size]="16" /> {{ error() }}</div>
   }
 
-  @if (report(); as r) {
-    <section class="v-stats">
-      <div class="v-stat">
-        <div class="v-label">Coût par Ga PA</div>
-        <div class="v-v">{{ kamas(r.overall_cash_per_ga_pa) }}</div>
-        <div class="v-s">sur {{ r.total_ga_pa.toFixed(1) }} Ga PA</div>
-      </div>
-      <div class="v-stat">
-        <div class="v-label">Rendement</div>
-        <div class="v-v" [class.bad]="trendView()?.tone === 'bad'"
-             [class.good]="trendView()?.tone === 'good'">
-          {{ r.last_ga_pa_per_mount !== null ? r.last_ga_pa_per_mount.toFixed(3) : '—' }}
-        </div>
-        <div class="v-s">{{ trendView()?.label }}</div>
-      </div>
-      <div class="v-stat">
-        <div class="v-label">Montures prêtes</div>
-        <div class="v-v" [class.good]="readyCount() > 0">{{ readyCount() }}</div>
-        <div class="v-s">à sortir de l'enclos</div>
-      </div>
-      <div class="v-stat">
-        <div class="v-label">Fournées</div>
-        <div class="v-v">{{ r.batches.length }}</div>
-        <div class="v-s">{{ kamas(r.total_cash_cost) }} dépensés</div>
-      </div>
-    </section>
-  }
-
   @if (loading()) {
     <div class="v-empty">Chargement…</div>
   } @else if (!states().length) {
@@ -51,89 +23,169 @@
   }
 
   @for (s of states(); track s.id) {
-    <article class="v-card" [class.urgent]="gaugeTone(s) === 'bad'">
+    <article class="v-card" [attr.data-tone]="nextAction(s).tone">
       <div class="v-card-top">
         <div>
           <div class="v-name">{{ s.name }}</div>
           <div class="v-s">{{ s.mount_count }} / {{ s.capacity }} montures</div>
         </div>
-        @if (s.all_ready) {
-          <span class="v-pill good"><lucide-icon [img]="CheckCircle2" [size]="13" /> Fournée prête</span>
-        } @else if (!s.consumes) {
-          <span class="v-pill">En pause</span>
-        } @else if (s.is_underfilled) {
-          <span class="v-pill warn"><lucide-icon [img]="AlertTriangle" [size]="13" /> Places vides</span>
-        }
+        <button class="v-btn ghost" (click)="togglePause(s)" [disabled]="busy() === s.id">
+          @if (s.gauge_active) {
+            <lucide-icon [img]="Pause" [size]="14" /> Pause
+          } @else {
+            <lucide-icon [img]="Play" [size]="14" /> Reprendre
+          }
+        </button>
       </div>
 
-      <!-- Jauge rapportée au plafond du carburant (40 000), pas au max de la jauge -->
+      <!-- L'INSTRUCTION : ce que l'utilisateur vient chercher. La synthèse est faite
+           ici, pas laissée à sa charge entre deux combats. -->
+      <div class="v-do">
+        <lucide-icon [img]="ArrowRight" [size]="18" class="v-do-arrow" />
+        <div>
+          <div class="v-do-verb">{{ nextAction(s).verb }}</div>
+          <div class="v-do-detail">{{ nextAction(s).detail }}</div>
+        </div>
+      </div>
+
+      <!-- Les deux échéances qui pilotent tout -->
+      <div class="v-timers">
+        <div class="v-timer" [class.warn]="gaugeTone(s) === 'warn'" [class.bad]="gaugeTone(s) === 'bad'">
+          <div class="v-label"><lucide-icon [img]="Fuel" [size]="12" /> Jauge à sec dans</div>
+          <div class="v-timer-v">{{ s.consumes ? until(s.empty_at) : '—' }}</div>
+        </div>
+        <div class="v-timer">
+          <div class="v-label"><lucide-icon [img]="Timer" [size]="12" /> Niveau 100 dans</div>
+          <div class="v-timer-v" [class.good]="s.all_ready">
+            {{ s.all_ready ? 'atteint' : (s.finishes_at ? until(s.finishes_at) : '—') }}
+          </div>
+        </div>
+      </div>
+
       <div class="v-gauge">
         <div class="v-gauge-bar" [attr.data-tone]="gaugeTone(s)">
           <span [style.width.%]="fillPct(s)"></span>
         </div>
         <div class="v-gauge-meta">
-          <span class="v-mono">{{ s.gauge_value | number: '1.0-0' }}</span>
-          @if (s.consumes) {
-            <span [class.warn]="gaugeTone(s) !== 'ok'">
-              <lucide-icon [img]="Fuel" [size]="13" /> vide dans {{ until(s.empty_at) }}
-            </span>
-          } @else {
-            <span>jauge figée — personne n'en a besoin</span>
-          }
+          <span class="v-mono">{{ s.gauge_value | number: '1.0-0' }} / 40 000</span>
+          @if (!s.gauge_active) { <span>figée — en pause</span> }
         </div>
       </div>
 
-      <!-- « Je viens de remplir » : deux taps, pas de saisie -->
-      <div class="v-actions">
-        <button class="v-btn primary" (click)="refillToMax(s)" [disabled]="busy() === s.id">
-          Rempli à fond
-        </button>
-        <button class="v-btn" (click)="refill(s, 5)" [disabled]="busy() === s.id">+5</button>
-        <button class="v-btn" (click)="refill(s, 1)" [disabled]="busy() === s.id">+1</button>
-      </div>
-
-      @if (s.extracts_to_finish > 0) {
-        <div class="v-hint">
-          Encore <b>{{ s.extracts_to_finish }}</b> extrait(s) pour finir la fournée
-          @if (s.finishes_at) { — terminée dans {{ until(s.finishes_at) }} }
+      <!-- « Ajouter des mangeoires » : le geste et son effet, tous deux visibles -->
+      <div class="v-add">
+        <div class="v-add-head">
+          <span class="v-label">Ajouter des extraits</span>
+          <span class="v-s">1 extrait = +{{ POINTS_PER_EXTRACT | number: '1.0-0' }} de jauge</span>
         </div>
-      }
+        <div class="v-actions">
+          <button class="v-btn" (click)="refill(s, 1)" [disabled]="busy() === s.id">+1</button>
+          <button class="v-btn" (click)="refill(s, 5)" [disabled]="busy() === s.id">+5</button>
+          <button class="v-btn primary" (click)="refillToMax(s)"
+                  [disabled]="busy() === s.id || toFill(s) === 0">
+            Remplir à fond
+            @if (toFill(s) > 0) { <b>({{ toFill(s) }})</b> }
+          </button>
+        </div>
+        @if (s.extracts_to_finish > 0) {
+          <div class="v-hint">
+            <b>{{ s.extracts_to_finish }}</b> extrait(s) au total pour finir la fournée.
+          </div>
+        }
+      </div>
 
       @if (s.mounts.length) {
-        <div class="v-mounts">
-          @for (m of s.mounts; track m.id) {
-            <div class="v-mount" [class.done]="m.is_done">
-              <div class="v-mount-name">{{ m.name || ('monture ' + m.id) }}</div>
-              <div class="v-mount-bar"><span [style.width.%]="mountPct(m)"></span></div>
-              <div class="v-mount-eta">
-                @if (m.is_done) { niveau {{ m.target_level }} }
-                @else if (m.eta_target) { {{ until(m.eta_target) }} }
-                @else { panne sèche avant la cible }
+        <details class="v-mounts-wrap">
+          <summary class="v-s">Détail des {{ s.mounts.length }} montures</summary>
+          <div class="v-mounts">
+            @for (m of s.mounts; track m.id) {
+              <div class="v-mount" [class.done]="m.is_done">
+                <div class="v-mount-name">{{ m.name || ('monture ' + m.id) }}</div>
+                <div class="v-mount-bar"><span [style.width.%]="mountPct(m)"></span></div>
+                <div class="v-mount-eta">
+                  @if (m.is_done) { niveau {{ m.target_level }} }
+                  @else if (m.eta_target) { {{ until(m.eta_target) }} }
+                  @else { panne sèche avant }
+                </div>
               </div>
-            </div>
-          }
-        </div>
+            }
+          </div>
+        </details>
       }
     </article>
   }
 
-  @if (curve(); as c) {
-    <section class="v-curve">
-      <div class="v-curve-head">
+  <!-- Rapport temps / dépense / bénéfice -->
+  @if (report(); as r) {
+    <section class="v-report">
+      <div class="v-report-head">
         <div>
-          <div class="v-label">Taux de brisage, fournée après fournée</div>
+          <div class="v-name">Temps, dépense, bénéfice</div>
+          <div class="v-s">{{ r.batches.length }} fournée(s) · {{ r.total_ga_pa.toFixed(1) }} Ga PA produites</div>
+        </div>
+        <label class="v-price">
+          <span class="v-label">Prix d'une Ga PA</span>
+          <input type="number" inputmode="numeric" placeholder="ex. 50000"
+                 [value]="gaPaPrice() ?? ''" (change)="setPrice($any($event.target).value)" />
+        </label>
+      </div>
+
+      <div class="v-stats">
+        <div class="v-stat">
+          <div class="v-label">Coût par Ga PA</div>
+          <div class="v-v">{{ kamas(r.overall_cash_per_ga_pa) }}</div>
+          <div class="v-s">{{ kamas(r.total_cash_cost) }} dépensés</div>
+        </div>
+        @if (r.profitability; as p) {
+          <div class="v-stat">
+            <div class="v-label">Bénéfice</div>
+            <div class="v-v" [class.good]="p.is_profitable" [class.bad]="!p.is_profitable">
+              {{ kamas(p.profit) }}
+            </div>
+            <div class="v-s">{{ p.margin !== null ? (p.margin * 100).toFixed(0) + ' % de marge' : '—' }}</div>
+          </div>
+          <div class="v-stat">
+            <div class="v-label">Kamas / heure</div>
+            <div class="v-v" [class.good]="p.is_profitable" [class.bad]="!p.is_profitable">
+              {{ kamas(p.kamas_per_hour) }}
+            </div>
+            <div class="v-s">sur {{ p.hours.toFixed(0) }} h de production</div>
+          </div>
+        } @else {
+          <div class="v-stat v-stat-empty">
+            <div class="v-label">Bénéfice</div>
+            <div class="v-v">—</div>
+            <!-- On n'invente pas un prix de marché : sans lui, pas de chiffre. -->
+            <div class="v-s">saisis le prix d'une Ga PA</div>
+          </div>
+        }
+        <div class="v-stat">
+          <div class="v-label">Rendement</div>
+          <div class="v-v" [class.bad]="trendView()?.tone === 'bad'"
+               [class.good]="trendView()?.tone === 'good'">
+            {{ r.last_ga_pa_per_mount !== null ? r.last_ga_pa_per_mount.toFixed(3) : '—' }}
+          </div>
+          <div class="v-s">{{ trendView()?.label }}</div>
+        </div>
+      </div>
+
+      @if (curve(); as c) {
+        <div class="v-curve">
+          <div class="v-curve-head">
+            <span class="v-label">Taux de brisage, fournée après fournée</span>
+            @if (trendView()?.tone === 'bad') {
+              <span class="v-pill bad"><lucide-icon [img]="TrendingDown" [size]="13" /> en baisse</span>
+            }
+          </div>
+          <svg [attr.viewBox]="'0 0 ' + c.w + ' ' + c.h" preserveAspectRatio="none" class="v-svg">
+            <path [attr.d]="c.area" class="v-area" />
+            <path [attr.d]="c.line" class="v-line" />
+            <!-- Repère du taux théorique : c'est l'ÉCART qui informe -->
+            <line x1="0" [attr.y1]="c.ref" [attr.x2]="c.w" [attr.y2]="c.ref" class="v-ref" />
+          </svg>
           <div class="v-s">{{ trendView()?.detail }}</div>
         </div>
-        @if (trendView()?.tone === 'bad') {
-          <span class="v-pill bad"><lucide-icon [img]="TrendingDown" [size]="13" /> en baisse</span>
-        }
-      </div>
-      <svg [attr.viewBox]="'0 0 ' + c.w + ' ' + c.h" preserveAspectRatio="none" class="v-svg">
-        <path [attr.d]="c.area" class="v-area" />
-        <path [attr.d]="c.line" class="v-line" />
-        <!-- Repère du taux théorique : c'est l'ÉCART qui informe, pas la valeur -->
-        <line x1="0" [attr.y1]="c.ref" [attr.x2]="c.w" [attr.y2]="c.ref" class="v-ref" />
-      </svg>
+      }
     </section>
   }
 </div>

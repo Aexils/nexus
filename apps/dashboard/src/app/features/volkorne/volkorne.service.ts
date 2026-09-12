@@ -54,8 +54,19 @@ export class VolkorneService {
     return this.http.post(`${BASE}/mounts/${mountId}/break`, { runes });
   }
 
-  yieldReport(): Observable<VolkorneYieldReport> {
-    return this.http.get<VolkorneYieldReport>(`${BASE}/batches/reports/yield`);
+  /**
+   * Suspend ou reprend la consommation. Le backend fige la jauge à sa valeur courante
+   * et ne décompte JAMAIS le temps passé en pause à la reprise.
+   */
+  pause(id: number, paused: boolean): Observable<VolkorneEnclosState> {
+    return this.http.post<VolkorneEnclosState>(
+      `${BASE}/enclos/${id}/gauge/pause`, { paused });
+  }
+
+  /** `gaPaPrice` absent = pas de bloc rentabilité : on n'invente jamais un prix. */
+  yieldReport(gaPaPrice?: number): Observable<VolkorneYieldReport> {
+    const q = gaPaPrice ? `?ga_pa_price=${gaPaPrice}` : '';
+    return this.http.get<VolkorneYieldReport>(`${BASE}/batches/reports/yield${q}`);
   }
 
   stock(itemId: number): Observable<VolkorneStock> {
