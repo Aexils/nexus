@@ -42,7 +42,7 @@
 .v-v.good { color: var(--green); }
 .v-v.bad { color: var(--red); }
 .v-s { font-size: 11px; color: var(--text3); margin-top: 5px; }
-.v-mono { font-family: var(--font-mono); font-weight: 700; }
+.v-mono { font-family: var(--font-mono); font-weight: 700; color: var(--text); font-size: 14px; }
 
 .v-empty {
   text-align: center; padding: 38px 20px; color: var(--text2); font-size: 14px;
@@ -64,20 +64,22 @@
   background: color-mix(in srgb, var(--text3) 14%, transparent); color: var(--text2);
 }
 .v-pill.good { background: color-mix(in srgb, var(--green) 16%, transparent); color: var(--green); }
-.v-pill.warn { background: color-mix(in srgb, var(--orange, #e8a33d) 18%, transparent); color: var(--orange, #e8a33d); }
+.v-pill.warn { background: color-mix(in srgb, var(--yellow) 18%, transparent); color: var(--yellow); }
 .v-pill.bad  { background: color-mix(in srgb, var(--red) 16%, transparent); color: var(--red); }
 
 /* ── Jauge ── */
 .v-gauge { margin: 14px 0 12px; }
 .v-gauge-bar { height: 12px; border-radius: 999px; background: color-mix(in srgb, var(--text3) 18%, transparent); overflow: hidden; }
 .v-gauge-bar > span { display: block; height: 100%; border-radius: 999px; background: var(--accent); transition: width 0.4s ease; }
-.v-gauge-bar[data-tone='warn'] > span { background: var(--orange, #e8a33d); }
+.v-gauge-bar[data-tone='warn'] > span { background: var(--yellow); }
 .v-gauge-bar[data-tone='bad']  > span { background: var(--red); }
+/* --text2 et non --text3 : « vide dans 2 h 14 » est l'information que l'utilisateur
+   vient chercher, elle ne doit pas être dans le gris le plus effacé du thème. */
 .v-gauge-meta {
   display: flex; justify-content: space-between; align-items: center;
-  gap: 10px; margin-top: 7px; font-size: 12px; color: var(--text3);
+  gap: 10px; margin-top: 7px; font-size: 13px; color: var(--text2);
 }
-.v-gauge-meta .warn { color: var(--orange, #e8a33d); font-weight: 700; }
+.v-gauge-meta .warn { color: var(--yellow); font-weight: 700; }
 .v-gauge-meta span { display: inline-flex; align-items: center; gap: 5px; }
 
 /* ── Actions : cibles larges, utilisables d'une main en jouant ── */
@@ -91,7 +93,13 @@
 }
 .v-btn:hover:not(:disabled) { filter: brightness(1.12); }
 .v-btn:disabled { opacity: 0.45; cursor: not-allowed; }
-.v-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+/* color: var(--bg) et SURTOUT PAS #fff — `--accent` vaut #f4f4f5 (quasi blanc) dans le
+   thème par défaut, donc du blanc sur accent était purement invisible. `--bg` suit le
+   thème : sombre sur l'accent clair par défaut, sombre aussi sur le cyan et le violet.
+   Même motif que maison-page. */
+.v-btn.primary { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+/* brightness ne fait presque rien sur un accent déjà quasi blanc : on joue l'opacité. */
+.v-btn.primary:hover:not(:disabled) { filter: none; opacity: 0.85; }
 .v-btn.ghost { min-height: 38px; font-size: 13px; font-weight: 600; }
 
 .v-hint { margin-top: 11px; font-size: 12px; color: var(--text2); }
@@ -105,7 +113,7 @@
 .v-mount-bar { height: 6px; border-radius: 999px; background: color-mix(in srgb, var(--text3) 18%, transparent); overflow: hidden; }
 .v-mount-bar > span { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
 .v-mount.done .v-mount-bar > span { background: var(--green); }
-.v-mount-eta { font-family: var(--font-mono); color: var(--text3); white-space: nowrap; }
+.v-mount-eta { font-family: var(--font-mono); color: var(--text2); white-space: nowrap; }
 
 /* ── Courbe ── */
 .v-curve {
