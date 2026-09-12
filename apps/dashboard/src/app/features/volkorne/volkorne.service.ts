@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import {
-  VolkorneCheckpointResponse, VolkorneEnclos, VolkorneEnclosState,
+  VolkorneCatalog, VolkorneCheckpointResponse, VolkorneEnclos, VolkorneEnclosState,
   VolkorneRefillResponse, VolkorneStock, VolkorneYieldReport,
 } from '@nexus/shared-types';
 
@@ -25,15 +25,21 @@ export class VolkorneService {
     return this.http.get<VolkorneEnclosState>(`${BASE}/enclos/${id}/state`);
   }
 
-  /** Bouton « Rempli à fond » : remplit jusqu'au plafond du carburant (40 000). */
-  refillToMax(id: number): Observable<VolkorneRefillResponse> {
-    return this.http.post<VolkorneRefillResponse>(
-      `${BASE}/enclos/${id}/gauge/refill`, { to_max: true });
+  /** Les cinq paliers de carburant, avec leurs icônes du jeu. */
+  catalog(): Observable<VolkorneCatalog> {
+    return this.http.get<VolkorneCatalog>(`${BASE}/inventory/catalog`);
   }
 
-  refill(id: number, extracts: number): Observable<VolkorneRefillResponse> {
+  /** « Remplir à fond » : jusqu'au plafond du carburant (40 000 pour les cinq paliers). */
+  refillToMax(id: number, fuel?: string): Observable<VolkorneRefillResponse> {
     return this.http.post<VolkorneRefillResponse>(
-      `${BASE}/enclos/${id}/gauge/refill`, { extracts });
+      `${BASE}/enclos/${id}/gauge/refill`, { to_max: true, fuel });
+  }
+
+  /** `fuel` est décisif : un Petit Extrait recharge 2 000, un Gigantesque 5 000. */
+  refill(id: number, extracts: number, fuel?: string): Observable<VolkorneRefillResponse> {
+    return this.http.post<VolkorneRefillResponse>(
+      `${BASE}/enclos/${id}/gauge/refill`, { extracts, fuel });
   }
 
   /**

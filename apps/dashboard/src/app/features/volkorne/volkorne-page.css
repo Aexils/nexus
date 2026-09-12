@@ -190,3 +190,19 @@
   .v-stats { grid-template-columns: repeat(4, 1fr); gap: 14px; }
   .v-actions { grid-template-columns: 200px 90px 90px; justify-content: start; }
 }
+
+/* ── Choix du palier de carburant ── */
+.v-fuels { display: flex; gap: 6px; margin-bottom: 9px; flex-wrap: wrap; }
+.v-fuel {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  min-width: 48px; min-height: 52px; padding: 5px 6px; cursor: pointer;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm, 8px); color: var(--text3);
+  font-family: var(--font-mono); font-size: 10px; font-weight: 700;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+.v-fuel img { width: 26px; height: 26px; object-fit: contain; }
+.v-fuel:hover { border-color: var(--border2); }
+/* Le palier actif doit être évident : c'est lui qui décide du gain de jauge ET de
+   l'objet décrémenté de l'inventaire. */
+.v-fuel.on { border-color: var(--accent); color: var(--text); background: color-mix(in srgb, var(--accent) 10%, var(--surface2)); }

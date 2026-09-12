@@ -128,3 +128,23 @@ export interface VolkorneStock {
   inconsistent: boolean;
   shortfall: number;
 }
+
+
+/** Un palier de carburant de mangeoire. Les cinq plafonnent à 40 000. */
+export interface VolkorneFuel {
+  name: string;
+  label: string;
+  /** Points de jauge rechargés par unité : de 1 000 (Minuscule) à 5 000 (Gigantesque). */
+  gauge_points: number;
+  fill_cap: number;
+  dofusdb_id: number | null;
+  /** Icône DofusDB. Purement décorative : rien ne casse si elle ne répond pas. */
+  img: string | null;
+  is_default: boolean;
+}
+
+export interface VolkorneCatalog {
+  fuels: VolkorneFuel[];
+  gauge_max: number;
+  catalog: Record<string, unknown>;
+}

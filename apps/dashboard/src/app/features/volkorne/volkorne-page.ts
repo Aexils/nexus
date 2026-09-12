@@ -8,15 +8,13 @@ import {
   Play, RefreshCw, Timer, TrendingDown,
 } from 'lucide-angular';
 import {
-  VolkorneEnclosState, VolkorneTrend, VolkorneYieldReport,
+  VolkorneEnclosState, VolkorneFuel, VolkorneTrend, VolkorneYieldReport,
 } from '@nexus/shared-types';
 import { VolkorneService } from './volkorne.service';
 
 /** Plafond de remplissage du Gigantesque Extrait : la jauge ne va pas au-delà. */
 const FILL_CAP = 40000;
-/** Points de jauge par extrait. Affiché à l'écran : « ajouter » doit être un geste dont
- *  on voit l'effet, pas un bouton dont on devine le résultat. */
-const POINTS_PER_EXTRACT = 5000;
+const FUEL_KEY = 'volkorne.fuel';
 /** Seuil d'alerte du backend : sous 2 h de jauge, il faut agir. */
 const SOON_MS = 2 * 3600_000;
 const PRICE_KEY = 'volkorne.gaPaPrice';
@@ -56,7 +54,23 @@ export class VolkornePage implements OnInit, OnDestroy {
   readonly states = signal<VolkorneEnclosState[]>([]);
   readonly report = signal<VolkorneYieldReport | null>(null);
 
-  readonly POINTS_PER_EXTRACT = POINTS_PER_EXTRACT;
+  readonly fuels = signal<VolkorneFuel[]>([]);
+  /** Palier posé, conservé localement : on vide rarement une pile d'extraits d'un coup,
+   *  et reprendre le choix à chaque visite serait une friction inutile. */
+  readonly fuelName = signal<string | null>(localStorage.getItem(FUEL_KEY));
+
+  readonly fuel = computed<VolkorneFuel | null>(() => {
+    const list = this.fuels();
+    if (!list.length) return null;
+    return list.find(f => f.name === this.fuelName())
+      ?? list.find(f => f.is_default)
+      ?? list[list.length - 1];
+  });
+
+  selectFuel(name: string): void {
+    localStorage.setItem(FUEL_KEY, name);
+    this.fuelName.set(name);
+  }
 
   /** Prix de vente d'une Ga PA, saisi par l'utilisateur et conservé localement.
    *  Sans lui, aucun bénéfice n'est affiché — on n'invente pas un prix de marché. */
@@ -77,6 +91,7 @@ export class VolkornePage implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.load();
+    this.api.catalog().subscribe({ next: c => this.fuels.set(c.fuels), error: () => void 0 });
     this.timer = setInterval(() => this.tick.set(Date.now()), 1000);
     this.refresh = setInterval(() => this.load(true), 60_000);
   }
@@ -136,7 +151,7 @@ export class VolkornePage implements OnInit, OnDestroy {
 
   refillToMax(s: VolkorneEnclosState): void {
     this.busy.set(s.id);
-    this.api.refillToMax(s.id).subscribe({
+    this.api.refillToMax(s.id, this.fuel()?.name).subscribe({
       next: () => { this.busy.set(null); this.load(true); },
       error: () => { this.busy.set(null); this.error.set('Le remplissage a échoué.'); },
     });
@@ -144,7 +159,7 @@ export class VolkornePage implements OnInit, OnDestroy {
 
   refill(s: VolkorneEnclosState, extracts: number): void {
     this.busy.set(s.id);
-    this.api.refill(s.id, extracts).subscribe({
+    this.api.refill(s.id, extracts, this.fuel()?.name).subscribe({
       next: () => { this.busy.set(null); this.load(true); },
       error: () => { this.busy.set(null); this.error.set('Le remplissage a échoué.'); },
     });
@@ -215,9 +230,11 @@ export class VolkornePage implements OnInit, OnDestroy {
     };
   }
 
-  /** Extraits nécessaires pour remplir jusqu'au plafond du carburant. */
+  /** Extraits du palier choisi nécessaires pour atteindre le plafond (40 000). */
   toFill(s: VolkorneEnclosState): number {
-    return Math.max(0, Math.ceil((FILL_CAP - s.gauge_value) / POINTS_PER_EXTRACT));
+    const per = this.fuel()?.gauge_points ?? 5000;
+    const cap = this.fuel()?.fill_cap ?? FILL_CAP;
+    return Math.max(0, Math.ceil((cap - s.gauge_value) / per));
   }
 
   // ── Affichage ──────────────────────────────────────────────────────────────

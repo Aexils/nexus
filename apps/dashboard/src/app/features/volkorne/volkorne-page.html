@@ -76,8 +76,23 @@
       <div class="v-add">
         <div class="v-add-head">
           <span class="v-label">Ajouter des extraits</span>
-          <span class="v-s">1 extrait = +{{ POINTS_PER_EXTRACT | number: '1.0-0' }} de jauge</span>
+          @if (fuel(); as f) {
+            <span class="v-s">1 {{ f.label }} = +{{ f.gauge_points | number: '1.0-0' }} de jauge</span>
+          }
         </div>
+        <!-- Le palier est décisif : un Petit recharge 2 000, un Gigantesque 5 000.
+             Sans ce choix, l'inventaire serait décrémenté du mauvais objet. -->
+        @if (fuels().length) {
+          <div class="v-fuels">
+            @for (f of fuels(); track f.name) {
+              <button class="v-fuel" [class.on]="fuel()?.name === f.name"
+                      (click)="selectFuel(f.name)" [title]="f.label">
+                @if (f.img) { <img [src]="f.img" [alt]="f.label" loading="lazy" /> }
+                <span>{{ f.gauge_points / 1000 }}k</span>
+              </button>
+            }
+          </div>
+        }
         <div class="v-actions">
           <button class="v-btn" (click)="refill(s, 1)" [disabled]="busy() === s.id">+1</button>
           <button class="v-btn" (click)="refill(s, 5)" [disabled]="busy() === s.id">+5</button>
