@@ -11,6 +11,15 @@
   "/kestrel-api": {
     "target": "http://localhost:8000",
     "secure": false,
-    "pathRewrite": { "^/kestrel-api": "/api" }
+    "pathRewrite": {
+      "^/kestrel-api": "/api"
+    }
+  },
+  "/volkorne-api": {
+    "target": "http://localhost:8000",
+    "secure": false,
+    "pathRewrite": {
+      "^/volkorne-api": "/api"
+    }
   }
 }

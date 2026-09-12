@@ -17,3 +17,4 @@ export * from './lib/body-types';
 export * from './lib/kestrel-types';
 export * from './lib/immigration-types';
 export * from './lib/link-types';
+export * from './lib/volkorne-types';

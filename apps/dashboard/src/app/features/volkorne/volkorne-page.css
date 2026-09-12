@@ -1,0 +1,126 @@
+:host { display: block; }
+
+/* Mobile d'abord : la saisie se fait en jouant, à une main (spec § 5). Les cibles
+   tactiles ne descendent jamais sous 44 px, et la grille ne passe à plusieurs colonnes
+   qu'à partir de la tablette. */
+.volkorne {
+  padding: var(--page-y, 16px) var(--page-x, 14px);
+  max-width: 1180px;
+  margin: 0 auto;
+  animation: v-page-in 0.35s ease both;
+}
+@keyframes v-page-in { from { opacity: 0; } to { opacity: 1; } }
+
+/* ── Header ── */
+.v-top {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 14px; flex-wrap: wrap; margin-bottom: 18px;
+}
+.v-lockup { display: flex; align-items: center; gap: 12px; }
+.v-mark { color: var(--accent); display: flex; filter: drop-shadow(0 4px 14px rgba(var(--accent-rgb), 0.35)); }
+.v-word { font-size: 26px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; }
+.v-word b { color: var(--accent); }
+.v-tag { font-size: 12px; color: var(--text3); margin-top: 3px; }
+
+.v-error {
+  display: flex; align-items: center; gap: 9px;
+  background: color-mix(in srgb, var(--red) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--red) 32%, transparent);
+  color: var(--red); border-radius: var(--radius, 12px);
+  padding: 12px 16px; font-size: 13px; margin-bottom: 16px;
+}
+
+/* ── KPI ── */
+.v-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 16px; }
+.v-stat {
+  padding: 14px 16px; background: var(--surface);
+  border: 1px solid var(--border); border-radius: var(--radius, 12px);
+  border-top: 3px solid var(--accent);
+}
+.v-label { font-size: 10px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: var(--text3); }
+.v-v { font-family: var(--font-mono); font-size: 24px; font-weight: 700; letter-spacing: -0.02em; margin-top: 7px; line-height: 1; }
+.v-v.good { color: var(--green); }
+.v-v.bad { color: var(--red); }
+.v-s { font-size: 11px; color: var(--text3); margin-top: 5px; }
+.v-mono { font-family: var(--font-mono); font-weight: 700; }
+
+.v-empty {
+  text-align: center; padding: 38px 20px; color: var(--text2); font-size: 14px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius, 12px);
+}
+
+/* ── Carte enclos ── */
+.v-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius, 12px); padding: 16px; margin-bottom: 12px;
+}
+.v-card.urgent { border-color: color-mix(in srgb, var(--red) 45%, transparent); }
+.v-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.v-name { font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
+
+.v-pill {
+  display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;
+  font-size: 11px; font-weight: 700; padding: 5px 10px; border-radius: 999px;
+  background: color-mix(in srgb, var(--text3) 14%, transparent); color: var(--text2);
+}
+.v-pill.good { background: color-mix(in srgb, var(--green) 16%, transparent); color: var(--green); }
+.v-pill.warn { background: color-mix(in srgb, var(--orange, #e8a33d) 18%, transparent); color: var(--orange, #e8a33d); }
+.v-pill.bad  { background: color-mix(in srgb, var(--red) 16%, transparent); color: var(--red); }
+
+/* ── Jauge ── */
+.v-gauge { margin: 14px 0 12px; }
+.v-gauge-bar { height: 12px; border-radius: 999px; background: color-mix(in srgb, var(--text3) 18%, transparent); overflow: hidden; }
+.v-gauge-bar > span { display: block; height: 100%; border-radius: 999px; background: var(--accent); transition: width 0.4s ease; }
+.v-gauge-bar[data-tone='warn'] > span { background: var(--orange, #e8a33d); }
+.v-gauge-bar[data-tone='bad']  > span { background: var(--red); }
+.v-gauge-meta {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 10px; margin-top: 7px; font-size: 12px; color: var(--text3);
+}
+.v-gauge-meta .warn { color: var(--orange, #e8a33d); font-weight: 700; }
+.v-gauge-meta span { display: inline-flex; align-items: center; gap: 5px; }
+
+/* ── Actions : cibles larges, utilisables d'une main en jouant ── */
+.v-actions { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 8px; }
+.v-btn {
+  min-height: 44px; padding: 0 14px; font-size: 14px; font-weight: 700;
+  border-radius: var(--radius, 12px); border: 1px solid var(--border);
+  background: var(--surface2, var(--surface)); color: var(--text);
+  cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  transition: filter 0.15s ease;
+}
+.v-btn:hover:not(:disabled) { filter: brightness(1.12); }
+.v-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.v-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.v-btn.ghost { min-height: 38px; font-size: 13px; font-weight: 600; }
+
+.v-hint { margin-top: 11px; font-size: 12px; color: var(--text2); }
+.v-hint b { color: var(--text); font-family: var(--font-mono); }
+
+/* ── Montures ── */
+.v-mounts { margin-top: 14px; display: grid; gap: 7px; }
+.v-mount { display: grid; grid-template-columns: 1fr 2fr auto; gap: 10px; align-items: center; font-size: 12px; }
+.v-mount.done .v-mount-eta { color: var(--green); font-weight: 700; }
+.v-mount-name { color: var(--text2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.v-mount-bar { height: 6px; border-radius: 999px; background: color-mix(in srgb, var(--text3) 18%, transparent); overflow: hidden; }
+.v-mount-bar > span { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
+.v-mount.done .v-mount-bar > span { background: var(--green); }
+.v-mount-eta { font-family: var(--font-mono); color: var(--text3); white-space: nowrap; }
+
+/* ── Courbe ── */
+.v-curve {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius, 12px); padding: 16px; margin-top: 16px;
+}
+.v-curve-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 12px; }
+.v-svg { width: 100%; height: 90px; display: block; }
+.v-line { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.v-area { fill: color-mix(in srgb, var(--accent) 14%, transparent); stroke: none; }
+/* Repère du taux théorique : en pointillé, discret — c'est l'écart qui informe */
+.v-ref { stroke: var(--text3); stroke-width: 1; stroke-dasharray: 4 4; opacity: 0.55; }
+
+@media (min-width: 720px) {
+  .volkorne { padding: 24px; }
+  .v-stats { grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .v-actions { grid-template-columns: 200px 90px 90px; justify-content: start; }
+}

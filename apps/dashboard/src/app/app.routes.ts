@@ -58,6 +58,11 @@ export const appRoutes: Route[] = [
           import('./features/kestrel/kestrel-page').then(m => m.KestrelPage),
       },
       {
+        path: 'volkorne',
+        loadComponent: () =>
+          import('./features/volkorne/volkorne-page').then(m => m.VolkornePage),
+      },
+      {
         path: 'immigration',
         loadComponent: () =>
           import('./features/immigration/immigration-page').then(m => m.ImmigrationPage),
