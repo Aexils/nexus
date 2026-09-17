@@ -12,7 +12,6 @@ import { LinkModule } from './link/link.module';
 import { EventsModule } from './events/events.module';
 import { JobsModule } from './jobs/jobs.module';
 import { VzdumpModule } from './vzdump/vzdump.module';
-import { ImmigrationModule } from './immigration/immigration.module';
 
 @Module({
   imports: [
@@ -29,7 +28,6 @@ import { ImmigrationModule } from './immigration/immigration.module';
     EventsModule,
     JobsModule,
     VzdumpModule,
-    ImmigrationModule,
   ],
 })
 export class AppModule {}

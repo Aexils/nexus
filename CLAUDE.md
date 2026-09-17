@@ -72,22 +72,6 @@ libs/
   - CPU temp: `windows_thermalzone_temperature_celsius` (Windows, requires `--collectors.enabled ...,thermalzone`) or `/sys/class/thermal/*/temp` (Linux)
   - All GPU/temp sections are hidden in the UI when the collector is not enabled (graceful fallback)
 - **`AbsModule`** — `AbsService` polls Audiobookshelf API every 5 s.
-- **`ImmigrationModule`** — Express Entry / PR application tracker. `ImmigrationService` owns a
-  **better-sqlite3** database (`IMMIGRATION_DB_PATH`, default `nexus-immigration.db` at the
-  workspace root) with three tables: `immigration_documents`, `immigration_comments`,
-  `immigration_settings`. REST only (no WebSocket) at `/api/immigration/*`.
-  - The `SEED` constant mirrors the **actual IRCC portal checklist**, case by case. Employment
-    slots are named by job title because that is how the portal labels them; an experience
-    declared only under "Activités personnelles" opens no slot and must not be seeded.
-  - Seed changes require bumping **`SEED_VERSION`** — `syncSeed()` purges and replays the
-    document list when the stored version is older. Editing `SEED` alone changes nothing on an
-    existing database.
-  - ⚠️ Comments are re-attached by exact `(applicant, name, detail)` match. **Changing a
-    document's `detail` orphans its notes, and orphans are deleted.** If a reseed renames details
-    on a database that holds notes worth keeping, migrate them explicitly before bumping.
-  - The deadline is stored as `YYYY-MM-DD`, but IRCC closes at the **end of that day in UTC**
-    (20:00 in Montréal). The frontend derives the real cutoff from `T23:59:59Z` — never treat the
-    deadline as local midnight.
 
 The API prefix is `/api` (set in `main.ts`). CORS allows `http://localhost:4200`.
 
@@ -99,10 +83,6 @@ Routes (lazy-loaded standalone components):
 - `/dashboard` → `Dashboard` — overview cards for Kodi and ABS
 - `/kodi` → `KodiPage` — full now-playing UI with controls
 - `/audiobookshelf` → `AbsPage` — active sessions list
-- `/immigration` → `ImmigrationPage` — Express Entry checklist, per-document status and notes.
-  `DOC_INFO` holds the portal's official help-bubble text condensed per document (keyed by
-  document `name`); `tips` holds the "À savoir" cards. Both are sourced from the IRCC portal,
-  not from third-party guides — keep them attributed and dated when updating.
 
 **`NexusService`** (`providedIn: 'root'`) owns all state as Angular signals:
 - `kodiStatus`, `absStatus`, `metrics` — updated from Socket.io events

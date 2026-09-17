@@ -52,21 +52,6 @@ export const appRoutes: Route[] = [
         loadComponent: () =>
           import('./features/admin/admin-page').then(m => m.AdminPage),
       },
-      {
-        path: 'kestrel',
-        loadComponent: () =>
-          import('./features/kestrel/kestrel-page').then(m => m.KestrelPage),
-      },
-      {
-        path: 'volkorne',
-        loadComponent: () =>
-          import('./features/volkorne/volkorne-page').then(m => m.VolkornePage),
-      },
-      {
-        path: 'immigration',
-        loadComponent: () =>
-          import('./features/immigration/immigration-page').then(m => m.ImmigrationPage),
-      },
     ],
   },
 ];

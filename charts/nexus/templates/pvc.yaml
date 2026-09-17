@@ -1,4 +1,5 @@
-# État persistant de l'api : expenses.db + immigration.db + logs.db + états de lecture (kodi/abs).
+# État persistant de l'api : expenses.db + logs.db + états de lecture (kodi/abs).
+# immigration.db y subsiste, orphelin, depuis le retrait de la fonctionnalité Entrée Express.
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
