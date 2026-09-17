@@ -43,6 +43,17 @@
             </span>
 
             <span class="vdetail">{{ i.detail }}</span>
+
+            <span class="vopen">
+              @if (i.url) {
+                <a class="vopen-btn" [href]="i.url" target="_blank" rel="noopener noreferrer"
+                   [title]="'Ouvrir ' + i.name + ' — ' + i.url"
+                   [attr.aria-label]="'Ouvrir l\'interface de ' + i.name + ' dans un nouvel onglet'">
+                  <lucide-icon [img]="icons.ExternalLink" [size]="13" strokeWidth="2"></lucide-icon>
+                  <span class="vopen-label">Ouvrir</span>
+                </a>
+              }
+            </span>
           </div>
         }
       </div>

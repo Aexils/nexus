@@ -6,6 +6,14 @@ import { VersionCategory, VersionItem, VersionsReport } from '@nexus/shared-type
 
 const NODE_EXPORTER_URL = process.env['NODE_EXPORTER_URL'] ?? 'http://10.10.10.1:9100/metrics';
 
+// Domaine du Gateway Envoy : toutes les UIs sont routées en <app>.<HOMELAB_DOMAIN>.
+// En http — le certificat du gateway est auto-signé, https ferait crier le navigateur.
+const HOMELAB_DOMAIN = process.env['HOMELAB_DOMAIN'] ?? '10.10.10.210.nip.io';
+const ui = (sub: string) => `http://${sub}.${HOMELAB_DOMAIN}`;
+
+// Argo CD est exposé par son propre service MetalLB, hors du gateway.
+const ARGOCD_URL = process.env['ARGOCD_URL'] ?? 'https://10.10.10.200';
+
 /** Une entrée k8s : où lire la version courante (image d'un workload) + repo amont. */
 interface K8sEntry {
   name: string;
@@ -15,19 +23,22 @@ interface K8sEntry {
   github?: string;          // repo pour la dernière version
   own?: boolean;            // app maison (pas d'amont)
   detail?: string;
+  url?: string;             // UI web, si l'app en a une
 }
 
 const REGISTRY: K8sEntry[] = [
   // ── Applications (ce qu'on utilise) ──
-  { name: 'Nextcloud', category: 'application', ns: 'nextcloud', workload: 'nextcloud', github: 'nextcloud/server' },
-  { name: 'Jellyfin',  category: 'application', ns: 'jellyfin',  workload: 'jellyfin',  github: 'jellyfin/jellyfin' },
-  { name: 'Audiobookshelf', category: 'application', ns: 'audiobookshelf', workload: 'audiobookshelf', github: 'advplyr/audiobookshelf' },
-  { name: 'Calibre-Web',    category: 'application', ns: 'calibre-web',    workload: 'calibre-web',    github: 'crocodilestick/Calibre-Web-Automated' },
-  { name: 'qBittorrent',    category: 'application', ns: 'qbittorrent',    workload: 'qbittorrent',    github: 'qbittorrent/qBittorrent' },
-  { name: 'Sideloop',  category: 'application', ns: 'sideloop',  workload: 'sideloop',  own: true, detail: 'app maison' },
+  { name: 'Nextcloud', category: 'application', ns: 'nextcloud', workload: 'nextcloud', github: 'nextcloud/server', url: ui('nextcloud') },
+  { name: 'Jellyfin',  category: 'application', ns: 'jellyfin',  workload: 'jellyfin',  github: 'jellyfin/jellyfin', url: ui('jellyfin') },
+  { name: 'Audiobookshelf', category: 'application', ns: 'audiobookshelf', workload: 'audiobookshelf', github: 'advplyr/audiobookshelf', url: ui('audiobookshelf') },
+  { name: 'Calibre-Web',    category: 'application', ns: 'calibre-web',    workload: 'calibre-web',    github: 'crocodilestick/Calibre-Web-Automated', url: ui('calibre') },
+  { name: 'qBittorrent',    category: 'application', ns: 'qbittorrent',    workload: 'qbittorrent',    github: 'qbittorrent/qBittorrent', url: ui('qbittorrent') },
+  { name: 'Sideloop',  category: 'application', ns: 'sideloop',  workload: 'sideloop',  own: true, detail: 'app maison', url: ui('sideloop') },
+  // Nexus : pas d'url — c'est l'app dans laquelle on se trouve déjà.
   { name: 'Nexus',     category: 'application', ns: 'nexus',     workload: 'api',       own: true, detail: 'app maison' },
   // ── Composants (la plomberie du cluster) ──
-  { name: 'Argo CD',        category: 'component', ns: 'argocd',                workload: 'argocd-server',                                 github: 'argoproj/argo-cd' },
+  // Argo CD n'a pas de HTTPRoute : il est publié par son propre service MetalLB, en https.
+  { name: 'Argo CD',        category: 'component', ns: 'argocd',                workload: 'argocd-server',                                 github: 'argoproj/argo-cd', url: ARGOCD_URL },
   { name: 'Image Updater',  category: 'component', ns: 'argocd',                workload: 'image-updater-argocd-image-updater-controller', github: 'argoproj-labs/argocd-image-updater' },
   { name: 'Calico',         category: 'component', ns: 'calico-system',        workload: 'calico-node',                                   github: 'projectcalico/calico' },
   { name: 'Tigera Operator',category: 'component', ns: 'tigera-operator',      workload: 'tigera-operator',                               github: 'tigera/operator' },
@@ -36,7 +47,7 @@ const REGISTRY: K8sEntry[] = [
   { name: 'Sealed Secrets', category: 'component', ns: 'sealed-secrets',       workload: 'sealed-secrets-controller',                     github: 'bitnami-labs/sealed-secrets' },
   { name: 'metrics-server', category: 'component', ns: 'kube-system',          workload: 'metrics-server',                                github: 'kubernetes-sigs/metrics-server' },
   { name: 'local-path',     category: 'component', ns: 'local-path-storage',   workload: 'local-path-provisioner',                        github: 'rancher/local-path-provisioner' },
-  { name: 'ntfy',           category: 'component', ns: 'ntfy',                 workload: 'ntfy',                                          github: 'binwiederhier/ntfy' },
+  { name: 'ntfy',           category: 'component', ns: 'ntfy',                 workload: 'ntfy',                                          github: 'binwiederhier/ntfy', url: ui('ntfy') },
 ];
 
 // Cluster : github pour la dernière version amont.
@@ -92,7 +103,7 @@ export class VersionService implements OnModuleInit {
       const latest = e.github ? this.latestCache[e.github] ?? null : null;
       items.push(this.compare({
         name: e.name, category: e.category, current, latest,
-        repo: e.github, own: e.own, detail: e.detail,
+        repo: e.github, own: e.own, detail: e.detail, url: e.url,
       }));
     }
 
@@ -266,7 +277,7 @@ export class VersionService implements OnModuleInit {
 
   private compare(p: {
     name: string; category: VersionCategory; current: string | null; latest: string | null;
-    repo?: string; own?: boolean; detail?: string;
+    repo?: string; own?: boolean; detail?: string; url?: string;
   }): VersionItem {
     let upToDate: boolean | null = null;
     if (!p.own && p.current && p.current !== 'git' && p.current !== 'latest' && p.latest) {
@@ -275,7 +286,7 @@ export class VersionService implements OnModuleInit {
     return {
       name: p.name, category: p.category,
       current: p.current, latest: p.latest, upToDate,
-      repo: p.repo, detail: p.detail,
+      repo: p.repo, detail: p.detail, url: p.url,
     };
   }
 

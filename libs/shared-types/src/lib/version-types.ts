@@ -10,6 +10,7 @@ export interface VersionItem {
   upToDate: boolean | null;        // true/false ; null = indéterminé (app maison, source manquante)
   detail?: string;                 // note libre : "app maison", "1 mineure derrière (drill CKA)", "32 paquets"…
   repo?: string;                   // "jellyfin/jellyfin" (pour lien GitHub)
+  url?: string;                    // UI web de l'app (absent = pas d'interface, ex. Calico)
 }
 
 export interface VersionsReport {

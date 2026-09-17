@@ -1,6 +1,6 @@
 import { Component, ChangeDetectionStrategy, inject, computed } from '@angular/core';
 
-import { LucideAngularModule, Boxes, Puzzle, Hexagon, Server, CheckCircle2, ArrowUpCircle, Minus } from 'lucide-angular';
+import { LucideAngularModule, Boxes, Puzzle, Hexagon, Server, CheckCircle2, ArrowUpCircle, Minus, ExternalLink } from 'lucide-angular';
 import { NexusService } from '../../core/services/nexus.service';
 import { PageHeaderComponent } from '../../shared/page-header/page-header';
 import { VersionCategory, VersionItem } from '@nexus/shared-types';
@@ -24,7 +24,7 @@ interface Section {
 export class VersionsPage {
   readonly nexus = inject(NexusService);
 
-  readonly icons = { CheckCircle2, ArrowUpCircle, Minus };
+  readonly icons = { CheckCircle2, ArrowUpCircle, Minus, ExternalLink };
 
   readonly report = this.nexus.versions;
 
