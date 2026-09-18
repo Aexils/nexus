@@ -69,4 +69,5 @@ export interface WorkloadMetric {
   podCount: number;
   readyCount: number;
   pods: PodMetric[];
+  url?: string;            // UI web de l'app (absent = pas d'interface, ex. calico-system)
 }

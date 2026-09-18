@@ -129,14 +129,27 @@
   <div class="wl-list">
     @for (w of list; track w) {
       <div class="wl-row-wrap">
-        <button type="button" class="wl-row" (click)="toggle(w.namespace)">
-          <span class="wl-caret" [class.open]="isExpanded(w.namespace)">▸</span>
-          <span class="wl-health" [class]="wlHealthClass(w)"></span>
-          <span class="wl-name">{{ w.namespace }}</span>
-          <span class="wl-pods">{{ w.readyCount }}/{{ w.podCount }} pods</span>
-          <span class="wl-cpu">{{ fmtCpu(w.cpuMillicores) }}</span>
-          <span class="wl-ram">{{ fmtRam(w.ramBytes) }}</span>
-        </button>
+        <!-- Le lien est SŒUR du bouton, jamais imbriqué : un <a> dans un <button>
+             est du HTML invalide et le clic ne remonterait pas correctement. -->
+        <div class="wl-row-line">
+          <button type="button" class="wl-row" (click)="toggle(w.namespace)">
+            <span class="wl-caret" [class.open]="isExpanded(w.namespace)">▸</span>
+            <span class="wl-health" [class]="wlHealthClass(w)"></span>
+            <span class="wl-name">{{ w.namespace }}</span>
+            <span class="wl-pods">{{ w.readyCount }}/{{ w.podCount }} pods</span>
+            <span class="wl-cpu">{{ fmtCpu(w.cpuMillicores) }}</span>
+            <span class="wl-ram">{{ fmtRam(w.ramBytes) }}</span>
+          </button>
+          <span class="wl-open">
+            @if (w.url) {
+              <a class="wl-open-btn" [href]="w.url" target="_blank" rel="noopener noreferrer"
+                 [title]="'Ouvrir ' + w.namespace + ' — ' + w.url"
+                 [attr.aria-label]="'Ouvrir l\'interface de ' + w.namespace + ' dans un nouvel onglet'">
+                <lucide-icon [img]="icons.ExternalLink" [size]="13" strokeWidth="2"></lucide-icon>
+              </a>
+            }
+          </span>
+        </div>
         @if (isExpanded(w.namespace)) {
           <div class="wl-pods-detail">
             @for (p of w.pods; track p) {

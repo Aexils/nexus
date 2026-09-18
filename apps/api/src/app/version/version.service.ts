@@ -3,16 +3,9 @@ import { Interval } from '@nestjs/schedule';
 import { KubeConfig, AppsV1Api, CoreV1Api } from '@kubernetes/client-node';
 import { NexusGateway } from '../gateway/nexus.gateway';
 import { VersionCategory, VersionItem, VersionsReport } from '@nexus/shared-types';
+import { ui, ARGOCD_URL } from '../common/app-urls';
 
 const NODE_EXPORTER_URL = process.env['NODE_EXPORTER_URL'] ?? 'http://10.10.10.1:9100/metrics';
-
-// Domaine du Gateway Envoy : toutes les UIs sont routées en <app>.<HOMELAB_DOMAIN>.
-// En http — le certificat du gateway est auto-signé, https ferait crier le navigateur.
-const HOMELAB_DOMAIN = process.env['HOMELAB_DOMAIN'] ?? '10.10.10.210.nip.io';
-const ui = (sub: string) => `http://${sub}.${HOMELAB_DOMAIN}`;
-
-// Argo CD est exposé par son propre service MetalLB, hors du gateway.
-const ARGOCD_URL = process.env['ARGOCD_URL'] ?? 'https://10.10.10.200';
 
 /** Une entrée k8s : où lire la version courante (image d'un workload) + repo amont. */
 interface K8sEntry {

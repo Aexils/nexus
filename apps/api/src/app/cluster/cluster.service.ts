@@ -3,6 +3,7 @@ import { Interval } from '@nestjs/schedule';
 import { KubeConfig, CoreV1Api, Metrics } from '@kubernetes/client-node';
 import { NexusGateway } from '../gateway/nexus.gateway';
 import { NodeMetrics, WorkloadMetric, PodMetric } from '@nexus/shared-types';
+import { UI_BY_NAMESPACE } from '../common/app-urls';
 
 // Namespaces d'infra (le reste = workload). Nexus est exclu de rien ici : on le montre.
 const INFRA_NS = new Set([
@@ -146,6 +147,7 @@ export class ClusterService implements OnModuleInit {
             namespace: ns,
             kind: INFRA_NS.has(ns) ? 'infra' : 'workload',
             cpuMillicores: 0, ramBytes: 0, podCount: 0, readyCount: 0, pods: [],
+            url: UI_BY_NAMESPACE[ns],
           });
         }
         const w = byNs.get(ns)!;

@@ -8,6 +8,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { NexusService } from '../../core/services/nexus.service';
 import { PageHeaderComponent } from '../../shared/page-header/page-header';
+import { LucideAngularModule, ExternalLink } from 'lucide-angular';
 import { LogLevel, LogSource, NextcloudStatus, WorkloadMetric } from '@nexus/shared-types';
 
 type FilterLevel  = LogLevel | 'all';
@@ -16,13 +17,15 @@ type FilterSource = LogSource | 'all';
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, PageHeaderComponent],
+  imports: [CommonModule, PageHeaderComponent, LucideAngularModule],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Dashboard {
   readonly nexus = inject(NexusService);
+
+  readonly icons = { ExternalLink };
 
   // ── Nœuds ───────────────────────────────────────────────────────────────
   readonly nodes = this.nexus.nodeMetrics;
