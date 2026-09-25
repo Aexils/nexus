@@ -12,6 +12,7 @@ import { LinkModule } from './link/link.module';
 import { EventsModule } from './events/events.module';
 import { JobsModule } from './jobs/jobs.module';
 import { VzdumpModule } from './vzdump/vzdump.module';
+import { TytoModule } from './tyto/tyto.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { VzdumpModule } from './vzdump/vzdump.module';
     EventsModule,
     JobsModule,
     VzdumpModule,
+    TytoModule,
   ],
 })
 export class AppModule {}

@@ -1,0 +1,199 @@
+:host { display: block; }
+
+/* ── Pastille d'état (en-tête) ─────────────────────────────────────────── */
+.pill {
+  display: inline-flex; align-items: center; gap: .4rem;
+  padding: .35rem .7rem; border-radius: var(--radius-full);
+  font-size: .74rem; font-weight: 500;
+}
+.pill-ok   { color: var(--green);  background: color-mix(in srgb, var(--green) 12%, transparent);  border: 1px solid color-mix(in srgb, var(--green) 30%, transparent); }
+.pill-down { color: var(--red);    background: color-mix(in srgb, var(--red) 12%, transparent);    border: 1px solid color-mix(in srgb, var(--red) 30%, transparent); }
+.pill-live { color: var(--yellow); background: color-mix(in srgb, var(--yellow) 14%, transparent); border: 1px solid color-mix(in srgb, var(--yellow) 34%, transparent); }
+.pill-idle { color: var(--text3); background: color-mix(in srgb, var(--text) 6%, transparent);   border: 1px solid var(--border); }
+.pill-live lucide-icon { animation: tytoPulse 1.6s ease-in-out infinite; }
+@keyframes tytoPulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+
+/* ── Alerte ────────────────────────────────────────────────────────────── */
+.alert {
+  display: flex; gap: .7rem; align-items: flex-start;
+  padding: .85rem 1rem; margin-bottom: 1.5rem;
+  border-radius: var(--radius);
+  color: var(--text);
+  background: color-mix(in srgb, var(--red) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--red) 28%, transparent);
+  font-size: .82rem; line-height: 1.5;
+}
+.alert lucide-icon { color: var(--red); flex-shrink: 0; margin-top: .1rem; }
+.alert code { font-family: var(--font-mono); font-size: .78rem; color: var(--text2); }
+
+/* ── Sections ──────────────────────────────────────────────────────────── */
+.sec { margin-bottom: 1.75rem; animation: nxsFadeUp .4s var(--ease) both; }
+.sec-head {
+  display: flex; align-items: baseline; gap: .6rem;
+  padding-bottom: .5rem; margin-bottom: .9rem;
+  border-bottom: 1px solid var(--border);
+}
+.sec-icon  { color: var(--accent); align-self: center; }
+.sec-title { font-family: var(--font-display); font-weight: 700; font-size: 1rem; color: var(--text); }
+.sec-sub   { font-size: .78rem; color: var(--text3); }
+
+/* ── Audio hors écran : porte le flux direct, jamais affiché ──────────── */
+.hidden-audio { display: none; }
+
+/* ── Commandes ─────────────────────────────────────────────────────────── */
+.controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: .7rem; }
+
+.power, .ctl {
+  display: flex; flex-direction: column; align-items: flex-start; gap: .25rem;
+  padding: .85rem 1rem; text-align: left; cursor: pointer;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text2);
+  transition: all var(--t-fast);
+}
+.power:hover:not(:disabled), .ctl:hover:not(:disabled) { border-color: var(--border2); color: var(--text); }
+.power:disabled, .ctl:disabled { opacity: .45; cursor: not-allowed; }
+.power-label, .ctl-label { font-weight: 600; font-size: .9rem; }
+.power-hint, .ctl-hint   { font-size: .74rem; color: var(--text3); }
+
+/* L'interrupteur est le seul contrôle vert : c'est lui qui dit si le micro
+   capture, et c'est la première question qu'on se pose en arrivant. */
+.power lucide-icon { color: var(--text3); }
+.power.on {
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--green) 45%, transparent);
+  background: color-mix(in srgb, var(--green) 10%, var(--surface));
+}
+.power.on lucide-icon { color: var(--green); }
+
+.ctl.active {
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+}
+.ctl.active lucide-icon { color: var(--accent); }
+.live-btn.active lucide-icon { animation: tytoPulse 1.6s ease-in-out infinite; }
+
+.live-error {
+  margin-top: .7rem; font-size: .78rem; color: var(--yellow);
+}
+
+/* ── Sélecteur de mode ─────────────────────────────────────────────────── */
+.modes { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: .7rem; }
+
+.mode {
+  display: flex; flex-direction: column; align-items: flex-start; gap: .25rem;
+  padding: .85rem 1rem; text-align: left; cursor: pointer;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text2);
+  transition: all var(--t-fast);
+}
+.mode:hover:not(:disabled) { border-color: var(--border2); color: var(--text); }
+.mode:disabled { opacity: .55; cursor: progress; }
+.mode.active {
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+}
+.mode.active .mode-icon { color: var(--accent); }
+.mode-icon  { color: var(--text3); }
+.mode-label { font-weight: 600; font-size: .9rem; }
+.mode-hint  { font-size: .74rem; color: var(--text3); }
+
+/* ── Silence temporaire ────────────────────────────────────────────────── */
+.snooze {
+  display: flex; align-items: center; gap: .5rem; flex-wrap: wrap;
+  margin-top: .9rem;
+}
+.snooze-label { font-size: .78rem; color: var(--text2); }
+.snooze-note  { font-size: .74rem; color: var(--text3); }
+
+.chip {
+  padding: .3rem .65rem; cursor: pointer;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text2);
+  font-size: .76rem; font-family: var(--font-mono);
+  transition: all var(--t-fast);
+}
+.chip:hover:not(:disabled) { color: var(--text); border-color: var(--border2); }
+.chip:disabled { opacity: .5; cursor: progress; }
+
+.snooze-active {
+  display: flex; align-items: center; gap: .5rem;
+  margin-top: .9rem; padding: .5rem .8rem;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--yellow) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--yellow) 26%, transparent);
+  font-size: .78rem; color: var(--text);
+}
+.snooze-active lucide-icon { color: var(--yellow); }
+
+.link-btn {
+  background: none; border: 0; padding: 0; cursor: pointer;
+  color: var(--accent); font-size: .78rem; text-decoration: underline;
+}
+.link-btn:disabled { opacity: .5; cursor: progress; }
+
+/* ── Tuiles de niveau ──────────────────────────────────────────────────── */
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: .7rem; }
+
+.tile {
+  display: flex; flex-direction: column; gap: .2rem;
+  padding: .9rem 1rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+.tile-label { font-size: .74rem; color: var(--text3); text-transform: uppercase; letter-spacing: .04em; }
+.tile-value { font-family: var(--font-mono); font-size: 1.5rem; font-weight: 600; color: var(--text); line-height: 1.2; }
+.tile-value small { font-size: .7rem; color: var(--text3); margin-left: .3rem; font-weight: 400; }
+.tile-note  { font-size: .72rem; color: var(--text3); }
+
+.caveat {
+  margin-top: .9rem; font-size: .76rem; line-height: 1.55; color: var(--text3);
+  padding-left: .8rem; border-left: 2px solid var(--border2);
+}
+.caveat strong { color: var(--text2); font-family: var(--font-mono); }
+
+/* ── Liste des déclenchements ──────────────────────────────────────────── */
+.elist { display: flex; flex-direction: column; }
+
+.elist { gap: .5rem; }
+
+.ecard {
+  display: flex; flex-direction: column; gap: .5rem;
+  padding: .7rem .85rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+.emeta {
+  display: grid;
+  grid-template-columns: 110px 60px minmax(140px, auto) 1fr;
+  align-items: center; gap: 1rem;
+  font-size: .82rem;
+}
+.player { width: 100%; height: 34px; }
+
+.etime { display: flex; align-items: baseline; gap: .4rem; }
+.etime strong { font-family: var(--font-mono); color: var(--text); font-weight: 600; }
+.etime small  { font-size: .72rem; color: var(--text3); }
+
+.edur  { font-family: var(--font-mono); color: var(--text2); text-align: right; }
+.epeak { font-family: var(--font-mono); color: var(--text2); }
+.epeak small { color: var(--text3); }
+.enotif { justify-self: end; }
+.enotif lucide-icon { color: var(--accent); }
+.enotif .muted { color: var(--text3); }
+
+.empty { font-size: .82rem; color: var(--text3); padding: .5rem .25rem; }
+
+@media (max-width: 720px) {
+  .emeta { grid-template-columns: 96px 48px 1fr; }
+  .epeak small { display: none; }
+}

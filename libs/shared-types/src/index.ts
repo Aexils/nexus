@@ -15,3 +15,4 @@ export * from './lib/expense-types';
 export * from './lib/booklore-types';
 export * from './lib/body-types';
 export * from './lib/link-types';
+export * from './lib/tyto-types';

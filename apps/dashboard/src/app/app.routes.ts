@@ -23,6 +23,11 @@ export const appRoutes: Route[] = [
           import('./features/sideloop/sideloop-page').then(m => m.SideloopPage),
       },
       {
+        path: 'tyto',
+        loadComponent: () =>
+          import('./features/tyto/tyto-page').then(m => m.TytoPage),
+      },
+      {
         path: 'versions',
         loadComponent: () =>
           import('./features/versions/versions-page').then(m => m.VersionsPage),

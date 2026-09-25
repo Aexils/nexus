@@ -1,0 +1,173 @@
+<nxs-page-header
+  title="Tyto" accent="écoute"
+  subtitle="Enregistrement déclenché par le niveau sonore — micro USB sur le mini-PC">
+  @if (status(); as s) {
+    <span class="pill" [class.pill-live]="s.reachable && s.state === 'enregistrement'"
+                       [class.pill-ok]="s.reachable && s.state !== 'enregistrement' && s.state !== 'éteint'"
+                       [class.pill-idle]="s.reachable && s.state === 'éteint'"
+                       [class.pill-down]="!s.reachable">
+      @if (s.state === 'enregistrement') {
+        <lucide-icon [img]="icons.Disc" [size]="13"></lucide-icon>
+      } @else if (!s.reachable) {
+        <lucide-icon [img]="icons.AlertTriangle" [size]="13"></lucide-icon>
+      } @else if (s.state === 'éteint') {
+        <lucide-icon [img]="icons.Power" [size]="13"></lucide-icon>
+      } @else {
+        <lucide-icon [img]="icons.Ear" [size]="13"></lucide-icon>
+      }
+      {{ stateLabel() }}
+    </span>
+  }
+</nxs-page-header>
+
+<audio #live preload="none" class="hidden-audio"></audio>
+
+@if (status(); as s) {
+
+  @if (!s.reachable) {
+    <div class="alert">
+      <lucide-icon [img]="icons.AlertTriangle" [size]="16"></lucide-icon>
+      <div>
+        <strong>Tyto ne répond pas.</strong>
+        Le mode reste appliqué localement sur l'hôte — la surveillance n'est pas
+        désarmée — mais elle n'est plus confirmée d'ici.
+        Vérifier : <code>systemctl status tyto</code> sur pve.
+      </div>
+    </div>
+  }
+
+  <!-- ── Commandes ────────────────────────────────────────────────────── -->
+  <section class="sec">
+    <header class="sec-head">
+      <lucide-icon [img]="icons.Radio" [size]="16" strokeWidth="2" class="sec-icon"></lucide-icon>
+      <span class="sec-title">Commandes</span>
+      <span class="sec-sub">éteindre relâche réellement le micro sur l'hôte</span>
+    </header>
+
+    <div class="controls">
+      <button class="power" [class.on]="on()" [disabled]="busy()" (click)="togglePower()"
+              [attr.aria-pressed]="on()">
+        <lucide-icon [img]="icons.Power" [size]="20"></lucide-icon>
+        <span class="power-label">{{ on() ? 'Système actif' : 'Système éteint' }}</span>
+        <span class="power-hint">{{ on() ? 'le micro capture' : 'le micro est relâché' }}</span>
+      </button>
+
+      <button class="ctl" [class.active]="notifying()" [disabled]="busy() || !on()"
+              (click)="toggleNotify()" [attr.aria-pressed]="notifying()">
+        <lucide-icon [img]="notifying() ? icons.BellRing : icons.BellOff" [size]="18"></lucide-icon>
+        <span class="ctl-label">{{ notifying() ? 'Notifications actives' : 'Silencieux' }}</span>
+        <span class="ctl-hint">{{ notifying() ? 'push ntfy à chaque bruit' : 'enregistre sans prévenir' }}</span>
+      </button>
+
+      <button class="ctl live-btn" [class.active]="listening()"
+              [disabled]="!on() || !reachable()" (click)="toggleLive()">
+        <lucide-icon [img]="listening() ? icons.Square : icons.Headphones" [size]="18"></lucide-icon>
+        <span class="ctl-label">{{ listening() ? 'Arrêter l\'écoute' : 'Écouter en direct' }}</span>
+        <span class="ctl-hint">
+          {{ !on() ? 'allume le système d\'abord' : (listening() ? 'flux en cours' : 'entendre la pièce maintenant') }}
+        </span>
+      </button>
+    </div>
+
+    @if (liveError(); as err) {
+      <p class="live-error">{{ err }}</p>
+    }
+
+    @if (untilLabel(); as u) {
+      <div class="snooze-active">
+        <lucide-icon [img]="icons.Clock" [size]="14"></lucide-icon>
+        {{ u }}
+        <button class="link-btn" [disabled]="busy()" (click)="setMode('armed')">armer maintenant</button>
+      </div>
+    }
+
+    @if (on()) {
+      <div class="snooze">
+        <span class="snooze-label">Silence temporaire —</span>
+        @for (h of SNOOZE_HOURS; track h) {
+          <button class="chip" [disabled]="busy()" (click)="setMode('silent', h)">{{ h }} h</button>
+        }
+        <span class="snooze-note">réarmement automatique à l'échéance</span>
+      </div>
+    }
+  </section>
+
+  <!-- ── Niveau ───────────────────────────────────────────────────────── -->
+  <section class="sec">
+    <header class="sec-head">
+      <lucide-icon [img]="icons.Waves" [size]="16" strokeWidth="2" class="sec-icon"></lucide-icon>
+      <span class="sec-title">Niveau</span>
+      <span class="sec-sub">relatif au fond de la pièce, pas un niveau sonore absolu</span>
+    </header>
+
+    <div class="tiles">
+      <div class="tile">
+        <span class="tile-label">Fond de la pièce</span>
+        <span class="tile-value">{{ s.baseline !== null ? s.baseline.toFixed(1) : '—' }}<small>dBFS</small></span>
+        <span class="tile-note">médiane glissante sur 10 min</span>
+      </div>
+      <div class="tile">
+        <span class="tile-label">Niveau courant</span>
+        <span class="tile-value">{{ s.lastDb !== null ? s.lastDb.toFixed(1) : '—' }}<small>dBFS</small></span>
+        <span class="tile-note">
+          @if (headroom() !== null) {
+            {{ headroom()! >= 0 ? '+' : '' }}{{ headroom()!.toFixed(1) }} dB par rapport au fond
+          } @else { — }
+        </span>
+      </div>
+      <div class="tile">
+        <span class="tile-label">Déclenchements</span>
+        <span class="tile-value">{{ s.eventsToday }}</span>
+        <span class="tile-note">depuis le démarrage du service</span>
+      </div>
+    </div>
+
+    <p class="caveat">
+      Ces valeurs sont des <strong>dBFS</strong> — relatives au plein échelle numérique.
+      Sans micro calibré il n'existe pas de décibel absolu : « plus fort que d'habitude »
+      a un sens, « 62 dB » n'en a aucun.
+    </p>
+  </section>
+
+  <!-- ── Répondeur ────────────────────────────────────────────────────── -->
+  <section class="sec">
+    <header class="sec-head">
+      <lucide-icon [img]="icons.Disc" [size]="16" strokeWidth="2" class="sec-icon"></lucide-icon>
+      <span class="sec-title">Pistes</span>
+      <span class="sec-sub">conservées sur /mnt/perso, 90 jours</span>
+    </header>
+
+    @if (events().length === 0) {
+      <p class="empty">Rien entendu pour l'instant.</p>
+    } @else {
+      <div class="elist">
+        @for (e of events(); track e.ts) {
+          <article class="ecard">
+            <div class="emeta">
+              <span class="etime">
+                <strong>{{ fmtTime(e.ts) }}</strong>
+                <small>{{ fmtDate(e.ts) }}</small>
+              </span>
+              <span class="edur">{{ e.duration.toFixed(0) }}s</span>
+              <span class="epeak">
+                pic {{ e.peak.toFixed(0) }}
+                <small>(+{{ (e.peak - e.baseline).toFixed(0) }} dB)</small>
+              </span>
+              <span class="enotif">
+                @if (e.notified) {
+                  <lucide-icon [img]="icons.BellRing" [size]="13" title="notification envoyée"></lucide-icon>
+                } @else {
+                  <lucide-icon [img]="icons.BellOff" [size]="13" class="muted" title="enregistré sans notification"></lucide-icon>
+                }
+              </span>
+            </div>
+            <audio class="player" controls preload="none" [src]="audioUrl(e.day, e.file)"></audio>
+          </article>
+        }
+      </div>
+    }
+  </section>
+
+} @else {
+  <p class="empty">En attente de Tyto…</p>
+}

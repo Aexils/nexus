@@ -7,5 +7,6 @@ export const WS_EVENTS = {
   SIDELOOP_STATUS: 'sideloop:status', // état sideloop (apps re-signées, expiration, devices)
   NEXTCLOUD_STATUS: 'nextcloud:status', // santé Nextcloud (serverinfo : espace, fichiers, actifs)
   LINK_STATUS:      'link:status',      // santé connexion Internet (passerelle Hub + WAN, coupures)
+  TYTO_STATUS:      'tyto:status',     // écoute déclenchée (micro USB sur pve)
   LOG_ENTRY:      'log:entry',
 } as const;

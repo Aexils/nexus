@@ -11,7 +11,7 @@ import { NotifierService } from '../notifier/notifier.service';
 import { LogStoreService } from './log-store.service';
 import {
   HostMetrics, NodeMetrics, WorkloadMetric, WS_EVENTS, LogEntry, LogLevel, LogSource, VersionsReport,
-  SideloopStatus, NextcloudStatus, LinkStatus,
+  SideloopStatus, NextcloudStatus, LinkStatus, TytoStatus,
 } from '@nexus/shared-types';
 
 const LOG_BUFFER_MAX = 500;
@@ -32,6 +32,7 @@ export class NexusGateway
   private cachedSideloop:    SideloopStatus    | null = null;
   private cachedNextcloud:   NextcloudStatus   | null = null;
   private cachedLink:        LinkStatus        | null = null;
+  private cachedTyto:        TytoStatus        | null = null;
 
   @WebSocketServer()
   server: Server;
@@ -58,6 +59,7 @@ export class NexusGateway
     if (this.cachedSideloop)         client.emit(WS_EVENTS.SIDELOOP_STATUS, this.cachedSideloop);
     if (this.cachedNextcloud)        client.emit(WS_EVENTS.NEXTCLOUD_STATUS, this.cachedNextcloud);
     if (this.cachedLink)             client.emit(WS_EVENTS.LINK_STATUS, this.cachedLink);
+    if (this.cachedTyto)             client.emit(WS_EVENTS.TYTO_STATUS, this.cachedTyto);
   }
 
   handleDisconnect(client: Socket) {
@@ -99,6 +101,11 @@ export class NexusGateway
   emitLinkStatus(payload: LinkStatus): void {
     this.cachedLink = payload;
     this.server?.emit(WS_EVENTS.LINK_STATUS, payload);
+  }
+
+  emitTytoStatus(payload: TytoStatus): void {
+    this.cachedTyto = payload;
+    this.server?.emit(WS_EVENTS.TYTO_STATUS, payload);
   }
 
   // ── Logging ───────────────────────────────────────────────────────────────
