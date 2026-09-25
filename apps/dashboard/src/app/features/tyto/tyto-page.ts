@@ -4,11 +4,14 @@ import {
 import { HttpClient } from '@angular/common/http';
 import {
   LucideAngularModule, Ear, Radio, Disc, Power, BellOff, BellRing,
-  Clock, AlertTriangle, Waves, Headphones, Square,
+  Clock, AlertTriangle, Waves, Headphones, Square, SlidersHorizontal,
+  Trash2, RotateCcw,
 } from 'lucide-angular';
 import { NexusService } from '../../core/services/nexus.service';
 import { PageHeaderComponent } from '../../shared/page-header/page-header';
-import { TytoMode, TytoModeState } from '@nexus/shared-types';
+import {
+  TytoMode, TytoModeState, TytoSettings, TYTO_SETTINGS_BOUNDS,
+} from '@nexus/shared-types';
 
 @Component({
   selector: 'app-tyto-page',
@@ -23,9 +26,16 @@ export class TytoPage {
   readonly nexus = inject(NexusService);
 
   readonly icons = {
-    Ear, Radio, Disc, Power, BellOff, BellRing, Clock,
-    AlertTriangle, Waves, Headphones, Square,
+    Ear, Radio, Disc, Power, BellOff, BellRing, Clock, AlertTriangle,
+    Waves, Headphones, Square, SlidersHorizontal, Trash2, RotateCcw,
   };
+
+  /** Ordre d'affichage : le seuil d'abord, c'est celui qu'on tâtonne. */
+  readonly SETTING_KEYS: (keyof TytoSettings)[] =
+    ['deltaDb', 'hangoverS', 'maxEventS', 'prerollS'];
+  readonly bounds = TYTO_SETTINGS_BOUNDS;
+
+  readonly confirmPurge = signal(false);
 
   readonly status = this.nexus.tyto;
   readonly busy = signal(false);
@@ -42,6 +52,19 @@ export class TytoPage {
   readonly notifying = computed(() => this.mode() === 'armed');
   readonly reachable = computed(() => this.status()?.reachable ?? false);
   readonly events = computed(() => this.status()?.recent ?? []);
+  readonly settings = computed(() => this.status()?.settings ?? null);
+
+  /**
+   * Aide au réglage : l'écart du déclenchement le plus FAIBLE observé. Descendre
+   * le seuil sous cette valeur ne peut qu'ajouter du bruit ; le monter au-dessus
+   * fait disparaître ce déclenchement-là. C'est la donnée qui manque quand on
+   * choisit un seuil à l'aveugle.
+   */
+  readonly weakestTrigger = computed(() => {
+    const e = this.events();
+    if (!e.length) return null;
+    return Math.min(...e.map(x => x.peak - x.baseline));
+  });
 
   /** Écart au fond : la seule lecture honnête d'un dBFS non calibré. */
   readonly headroom = computed(() => {
@@ -95,6 +118,44 @@ export class TytoPage {
         next: () => this.busy.set(false),
         error: () => this.busy.set(false),
       });
+  }
+
+  // ── Réglages ─────────────────────────────────────────────────────────────
+
+  setSetting(key: keyof TytoSettings, value: number | string): void {
+    const v = Number(value);
+    if (!Number.isFinite(v)) return;
+    this.busy.set(true);
+    this.http.patch<TytoModeState>('/api/tyto/settings', { [key]: v })
+      .subscribe({ next: () => this.busy.set(false), error: () => this.busy.set(false) });
+  }
+
+  resetSettings(): void {
+    this.busy.set(true);
+    this.http.patch<TytoModeState>('/api/tyto/settings', { reset: true })
+      .subscribe({ next: () => this.busy.set(false), error: () => this.busy.set(false) });
+  }
+
+  // ── Suppression ──────────────────────────────────────────────────────────
+
+  deleteOne(day: string, file: string): void {
+    this.busy.set(true);
+    this.http.delete(`/api/tyto/audio/${day}/${encodeURIComponent(file)}`)
+      .subscribe({ next: () => this.busy.set(false), error: () => this.busy.set(false) });
+  }
+
+  /** Deux temps : le premier clic arme, le second exécute. Pas de dialogue natif
+      (ils bloquent la page et l'extension de capture). */
+  purge(): void {
+    if (!this.confirmPurge()) {
+      this.confirmPurge.set(true);
+      setTimeout(() => this.confirmPurge.set(false), 5000);
+      return;
+    }
+    this.confirmPurge.set(false);
+    this.busy.set(true);
+    this.http.delete('/api/tyto/recordings')
+      .subscribe({ next: () => this.busy.set(false), error: () => this.busy.set(false) });
   }
 
   // ── Écoute en direct ─────────────────────────────────────────────────────

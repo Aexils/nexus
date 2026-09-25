@@ -12,7 +12,37 @@ export interface TytoModeState {
   source: string;
   /** Unix ms — dernière modification. */
   changedAt: number;
+  /** Réglages de détection, servis au même sondage pour éviter un aller-retour. */
+  settings: TytoSettings;
 }
+
+/**
+ * Réglages de détection, modifiables à chaud depuis le dashboard.
+ * Tyto les tire au même sondage que le mode et les applique sans redémarrage.
+ * Les bornes sont appliquées côté serveur ET côté Tyto : un delta à 0
+ * enregistrerait en continu jusqu'à remplir le disque.
+ */
+export interface TytoSettings {
+  /** Écart au-dessus du fond qui déclenche (dB). 3–40. */
+  deltaDb:    number;
+  /** Silence requis pour clore un événement (s). 1–60. */
+  hangoverS:  number;
+  /** Plafond de durée d'un fichier (s). 10–900. */
+  maxEventS:  number;
+  /** Son gardé AVANT le déclenchement (s). 0–30. */
+  prerollS:   number;
+}
+
+export const TYTO_SETTINGS_BOUNDS: Record<keyof TytoSettings, { min: number; max: number; step: number; unit: string; label: string; hint: string }> = {
+  deltaDb:   { min: 3,  max: 40,  step: 1, unit: 'dB', label: 'Seuil de déclenchement',
+               hint: 'écart au-dessus du fond de la pièce' },
+  hangoverS: { min: 1,  max: 60,  step: 1, unit: 's',  label: 'Silence de fin',
+               hint: "temps calme avant de clore l'enregistrement" },
+  maxEventS: { min: 10, max: 900, step: 10, unit: 's', label: 'Durée maximale',
+               hint: 'plafond par fichier' },
+  prerollS:  { min: 0,  max: 30,  step: 1, unit: 's',  label: 'Pré-roll',
+               hint: 'son gardé avant le déclenchement' },
+};
 
 /** Un déclenchement, tel que Tyto le rapporte sur /events. */
 export interface TytoEvent {
@@ -40,6 +70,7 @@ export interface TytoStatus {
   baseline:    number | null;    // dBFS
   lastDb:      number | null;    // dBFS
   eventsToday: number;
+  settings:    TytoSettings;     // réglages effectivement appliqués par Tyto
   recent:      TytoEvent[];      // derniers déclenchements (récent → ancien)
   checkedAt:   number;           // Unix ms
 }

@@ -1,12 +1,12 @@
 import {
-  Body, Controller, Get, Param, Patch, Req, Res,
+  Body, Controller, Delete, Get, Param, Patch, Req, Res,
   BadRequestException, ServiceUnavailableException,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { Readable } from 'node:stream';
 import { TytoStoreService } from './tyto-store.service';
 import { TytoService } from './tyto.service';
-import { TytoMode, TytoModeState } from '@nexus/shared-types';
+import { TytoMode, TytoModeState, TytoSettings } from '@nexus/shared-types';
 
 const MODES: TytoMode[] = ['off', 'silent', 'armed'];
 const TYTO_URL = process.env['TYTO_URL'] ?? '';
@@ -57,9 +57,44 @@ export class TytoController {
     return state;
   }
 
+  /**
+   * Réglages de détection. Servis au même sondage que le mode (voir GET /mode)
+   * pour que Tyto n'ait qu'un aller-retour ; ce PATCH sert au dashboard.
+   * Les bornes sont appliquées dans le store — ici on ne fait que router.
+   */
+  @Patch('settings')
+  setSettings(@Body() body: Partial<TytoSettings> & { reset?: boolean }): TytoModeState {
+    const state = body?.reset
+      ? this.store.resetSettings()
+      : this.store.setSettings(body ?? {});
+    this.svc.refreshAfterModeChange();
+    return state;
+  }
+
   @Get('recordings')
   async recordings(): Promise<unknown> {
     const r = await this.fetchTyto('/recordings');
+    return r.json();
+  }
+
+  /** Supprime une piste (fichier + sa ligne d'événement, côté Tyto). */
+  @Delete('audio/:day/:file')
+  async deleteOne(@Param('day') day: string, @Param('file') file: string): Promise<unknown> {
+    if (!SAFE_DAY.test(day) || !SAFE_FILE.test(file)) {
+      throw new BadRequestException('nom invalide');
+    }
+    const r = await this.fetchTyto(`/audio/${day}/${file}`, undefined, 'DELETE');
+    return r.json();
+  }
+
+  /**
+   * Vide toutes les pistes. Destructif et sans retour : l'UI doit demander une
+   * confirmation explicite. Pensé pour l'après-rodage, quand on jette les faux
+   * positifs d'une nuit d'essai.
+   */
+  @Delete('recordings')
+  async deleteAll(): Promise<unknown> {
+    const r = await this.fetchTyto('/recordings', undefined, 'DELETE');
     return r.json();
   }
 
@@ -136,11 +171,11 @@ export class TytoController {
     stream.pipe(res);
   }
 
-  private async fetchTyto(path: string, headers?: Record<string, string>) {
+  private async fetchTyto(path: string, headers?: Record<string, string>, method = 'GET') {
     if (!TYTO_URL) throw new ServiceUnavailableException('TYTO_URL non configurée');
     try {
       return await fetch(`${TYTO_URL}${path}`, {
-        headers, signal: AbortSignal.timeout(15_000),
+        method, headers, signal: AbortSignal.timeout(15_000),
       });
     } catch (e) {
       throw new ServiceUnavailableException(`Tyto injoignable : ${(e as Error).message}`);

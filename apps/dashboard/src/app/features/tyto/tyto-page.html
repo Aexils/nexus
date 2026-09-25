@@ -92,6 +92,48 @@
     }
   </section>
 
+  <!-- ── Réglages ─────────────────────────────────────────────────────── -->
+  <section class="sec">
+    <header class="sec-head">
+      <lucide-icon [img]="icons.SlidersHorizontal" [size]="16" strokeWidth="2" class="sec-icon"></lucide-icon>
+      <span class="sec-title">Réglages</span>
+      <span class="sec-sub">appliqués à chaud, sans redémarrer le service</span>
+      <button class="link-btn sec-action" [disabled]="busy()" (click)="resetSettings()">
+        <lucide-icon [img]="icons.RotateCcw" [size]="13"></lucide-icon> valeurs par défaut
+      </button>
+    </header>
+
+    @if (settings(); as cfg) {
+      <div class="settings">
+        @for (k of SETTING_KEYS; track k) {
+          <div class="setting">
+            <label class="set-label" [for]="'set-' + k">
+              {{ bounds[k].label }}
+              <small>{{ bounds[k].hint }}</small>
+            </label>
+            <div class="set-row">
+              <input class="set-range" type="range" [id]="'set-' + k"
+                     [min]="bounds[k].min" [max]="bounds[k].max" [step]="bounds[k].step"
+                     [value]="cfg[k]" [disabled]="busy()"
+                     (change)="setSetting(k, $any($event.target).value)">
+              <span class="set-value">{{ cfg[k] }}<small>{{ bounds[k].unit }}</small></span>
+            </div>
+          </div>
+        }
+      </div>
+
+      @if (weakestTrigger(); as w) {
+        <p class="hint">
+          Le déclenchement le plus faible observé était à <strong>+{{ w.toFixed(0) }} dB</strong>
+          au-dessus du fond. Un seuil au-delà de cette valeur l'aurait manqué ;
+          en deçà, tu ne peux qu'attraper davantage de bruit ordinaire.
+        </p>
+      }
+    } @else {
+      <p class="empty">Réglages non encore remontés par Tyto.</p>
+    }
+  </section>
+
   <!-- ── Niveau ───────────────────────────────────────────────────────── -->
   <section class="sec">
     <header class="sec-head">
@@ -135,6 +177,13 @@
       <lucide-icon [img]="icons.Disc" [size]="16" strokeWidth="2" class="sec-icon"></lucide-icon>
       <span class="sec-title">Pistes</span>
       <span class="sec-sub">conservées sur /mnt/perso, 90 jours</span>
+      @if (events().length) {
+        <button class="link-btn sec-action danger" [class.armed]="confirmPurge()"
+                [disabled]="busy()" (click)="purge()">
+          <lucide-icon [img]="icons.Trash2" [size]="13"></lucide-icon>
+          {{ confirmPurge() ? 'confirmer la suppression de tout' : 'tout supprimer' }}
+        </button>
+      }
     </header>
 
     @if (events().length === 0) {
@@ -159,6 +208,11 @@
                 } @else {
                   <lucide-icon [img]="icons.BellOff" [size]="13" class="muted" title="enregistré sans notification"></lucide-icon>
                 }
+                <button class="del" [disabled]="busy()" (click)="deleteOne(e.day, e.file)"
+                        [attr.aria-label]="'Supprimer la piste de ' + fmtTime(e.ts)"
+                        title="Supprimer cette piste">
+                  <lucide-icon [img]="icons.Trash2" [size]="13"></lucide-icon>
+                </button>
               </span>
             </div>
             <audio class="player" controls preload="none" [src]="audioUrl(e.day, e.file)"></audio>

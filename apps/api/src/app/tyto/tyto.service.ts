@@ -2,7 +2,7 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Interval } from '@nestjs/schedule';
 import { NexusGateway } from '../gateway/nexus.gateway';
 import { TytoStoreService } from './tyto-store.service';
-import { TytoEvent, TytoStatus } from '@nexus/shared-types';
+import { TytoEvent, TytoStatus, TytoSettings } from '@nexus/shared-types';
 
 // Tyto tourne sur l'HÔTE pve, hors cluster : les pods joignent 10.10.10.1
 // nativement (même chemin que node_exporter sur :9100).
@@ -14,6 +14,8 @@ interface RawStatus {
   last_db: number | null;
   state: string;
   events_today: number;
+  /** Réglages RÉELLEMENT appliqués par Tyto — pas ceux qu'on lui a demandés. */
+  settings?: Partial<TytoSettings>;
 }
 interface RawEvent {
   ts: string; file: string; day: string;
@@ -106,6 +108,9 @@ export class TytoService implements OnModuleInit {
 
   private emit(reachable: boolean, s: RawStatus | null): void {
     const m = this.store.get();
+    // On affiche ce que TYTO applique, pas ce que la base contient : tant que le
+    // sondage n'a pas eu lieu, les deux diffèrent, et l'écart doit se voir.
+    const applied: TytoSettings = { ...m.settings, ...(s?.settings ?? {}) };
     const payload: TytoStatus = {
       reachable,
       mode: m.mode,
@@ -114,6 +119,7 @@ export class TytoService implements OnModuleInit {
       baseline: s?.baseline ?? null,
       lastDb: s?.last_db ?? null,
       eventsToday: s?.events_today ?? 0,
+      settings: applied,
       recent: this.recent,
       checkedAt: Date.now(),
     };
