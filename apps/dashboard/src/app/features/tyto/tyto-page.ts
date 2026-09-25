@@ -68,7 +68,6 @@ export class TytoPage {
       case 'warmup':          return 'calibration';
       case 'écoute':          return 'en écoute';
       case 'enregistrement':  return 'enregistre';
-      case 'kodi':            return 'en pause (télé)';
       default:                return s.state;
     }
   });
