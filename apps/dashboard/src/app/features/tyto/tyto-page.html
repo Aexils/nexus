@@ -122,6 +122,18 @@
         }
       </div>
 
+      @if (mixer(); as mx) {
+        <p class="hint">
+          Carte son : gain à <strong>{{ mx.gainPct }} %</strong>@if (mx.gainDb !== null) { ({{ mx.gainDb }} dB)},
+          correction automatique de gain <strong>{{ mx.agc ?? '?' }}</strong>.
+          @if (mx.agc === 'on') {
+            <br><span class="warn">L'AGC normalise le volume — il détruit exactement
+            l'information que la détection mesure. Tyto le recoupe à chaque ouverture
+            du micro ; s'il reste actif, le matériel l'impose.</span>
+          }
+        </p>
+      }
+
       @if (weakestTrigger(); as w) {
         <p class="hint">
           Le déclenchement le plus faible observé était à <strong>+{{ w.toFixed(0) }} dB</strong>

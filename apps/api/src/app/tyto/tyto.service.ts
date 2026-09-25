@@ -2,7 +2,7 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Interval } from '@nestjs/schedule';
 import { NexusGateway } from '../gateway/nexus.gateway';
 import { TytoStoreService } from './tyto-store.service';
-import { TytoEvent, TytoStatus, TytoSettings } from '@nexus/shared-types';
+import { TytoEvent, TytoStatus, TytoSettings, TytoMixer } from '@nexus/shared-types';
 
 // Tyto tourne sur l'HÔTE pve, hors cluster : les pods joignent 10.10.10.1
 // nativement (même chemin que node_exporter sur :9100).
@@ -16,6 +16,8 @@ interface RawStatus {
   events_today: number;
   /** Réglages RÉELLEMENT appliqués par Tyto — pas ceux qu'on lui a demandés. */
   settings?: Partial<TytoSettings>;
+  /** Ce que la carte son applique, relu par Tyto. */
+  mixer?: Partial<TytoMixer>;
 }
 interface RawEvent {
   ts: string; file: string; day: string;
@@ -120,6 +122,10 @@ export class TytoService implements OnModuleInit {
       lastDb: s?.last_db ?? null,
       eventsToday: s?.events_today ?? 0,
       settings: applied,
+      mixer: (s?.mixer && Object.keys(s.mixer).length
+        ? { gainPct: s.mixer.gainPct ?? null, gainDb: s.mixer.gainDb ?? null,
+            agc: s.mixer.agc ?? null }
+        : null),
       recent: this.recent,
       checkedAt: Date.now(),
     };

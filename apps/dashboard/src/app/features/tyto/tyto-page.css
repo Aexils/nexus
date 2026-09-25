@@ -167,6 +167,7 @@
   padding-left: .8rem; border-left: 2px solid var(--border2);
 }
 .hint strong { color: var(--text2); font-family: var(--font-mono); }
+.hint .warn { color: var(--yellow); }
 
 /* ── Tuiles de niveau ──────────────────────────────────────────────────── */
 .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: .7rem; }

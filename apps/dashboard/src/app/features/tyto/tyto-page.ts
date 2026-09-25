@@ -32,7 +32,7 @@ export class TytoPage {
 
   /** Ordre d'affichage : le seuil d'abord, c'est celui qu'on tâtonne. */
   readonly SETTING_KEYS: (keyof TytoSettings)[] =
-    ['deltaDb', 'hangoverS', 'maxEventS', 'prerollS'];
+    ['deltaDb', 'micGain', 'hangoverS', 'maxEventS', 'prerollS'];
   readonly bounds = TYTO_SETTINGS_BOUNDS;
 
   readonly confirmPurge = signal(false);
@@ -53,6 +53,7 @@ export class TytoPage {
   readonly reachable = computed(() => this.status()?.reachable ?? false);
   readonly events = computed(() => this.status()?.recent ?? []);
   readonly settings = computed(() => this.status()?.settings ?? null);
+  readonly mixer = computed(() => this.status()?.mixer ?? null);
 
   /**
    * Aide au réglage : l'écart du déclenchement le plus FAIBLE observé. Descendre

@@ -31,6 +31,21 @@ export interface TytoSettings {
   maxEventS:  number;
   /** Son gardé AVANT le déclenchement (s). 0–30. */
   prerollS:   number;
+  /**
+   * Gain de capture du micro, en % de l'échelle ALSA. 0–100.
+   * ⚠ Ne change PAS la sensibilité de détection : le seuil est un écart
+   * relatif, et le fond comme les pics montent ensemble. Il joue sur
+   * l'audibilité à la relecture et sur la marge avant saturation.
+   */
+  micGain:    number;
+}
+
+/** Ce que la carte son applique réellement, relu par Tyto. */
+export interface TytoMixer {
+  gainPct: number | null;
+  gainDb:  number | null;
+  /** 'on' | 'off' — un AGC actif détruit l'information que la détection mesure. */
+  agc:     string | null;
 }
 
 export const TYTO_SETTINGS_BOUNDS: Record<keyof TytoSettings, { min: number; max: number; step: number; unit: string; label: string; hint: string }> = {
@@ -42,6 +57,8 @@ export const TYTO_SETTINGS_BOUNDS: Record<keyof TytoSettings, { min: number; max
                hint: 'plafond par fichier' },
   prerollS:  { min: 0,  max: 30,  step: 1, unit: 's',  label: 'Pré-roll',
                hint: 'son gardé avant le déclenchement' },
+  micGain:   { min: 0,  max: 100, step: 5, unit: '%',  label: 'Gain du micro',
+               hint: "audibilité à la relecture, pas la sensibilité" },
 };
 
 /** Un déclenchement, tel que Tyto le rapporte sur /events. */
@@ -71,6 +88,7 @@ export interface TytoStatus {
   lastDb:      number | null;    // dBFS
   eventsToday: number;
   settings:    TytoSettings;     // réglages effectivement appliqués par Tyto
+  mixer:       TytoMixer | null; // ce que la carte son fait vraiment
   recent:      TytoEvent[];      // derniers déclenchements (récent → ancien)
   checkedAt:   number;           // Unix ms
 }

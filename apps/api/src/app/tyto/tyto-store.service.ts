@@ -17,7 +17,7 @@ const ROW_ID = 1;
 
 // Valeurs de départ = celles éprouvées à la mise en service (2026-09-25).
 const DEFAULTS: TytoSettings = {
-  deltaDb: 12, hangoverS: 8, maxEventS: 300, prerollS: 10,
+  deltaDb: 12, hangoverS: 8, maxEventS: 300, prerollS: 10, micGain: 50,
 };
 
 /**
