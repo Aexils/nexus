@@ -27,7 +27,7 @@ npx nx lint api
 
 # Run unit tests (Jest)
 npx nx test dashboard
-npx nx test api
+npx nx test api   # cible ajoutée avec ImportModule (jest.config.cts + tsconfig.spec.json)
 
 # Run a single test file
 npx nx test dashboard --testFile=apps/dashboard/src/app/features/dashboard/dashboard.spec.ts
@@ -72,6 +72,12 @@ libs/
   - CPU temp: `windows_thermalzone_temperature_celsius` (Windows, requires `--collectors.enabled ...,thermalzone`) or `/sys/class/thermal/*/temp` (Linux)
   - All GPU/temp sections are hidden in the UI when the collector is not enabled (graceful fallback)
 - **`AbsModule`** — `AbsService` polls Audiobookshelf API every 5 s.
+- **`ImportModule`** — import de relevés bancaires (Banque Nationale) et classement **100 % déterministe**, sans aucun appel LLM au runtime.
+  - Parseurs : `parsers/ofx.parser.ts` (OFX 1.0.2 **SGML**, balises feuilles non fermées — couvre aussi QFX et OFX 2.x XML) et `parsers/csv.parser.ts` (repli tolérant). L'OFX est le format à privilégier : son `FITID` rend la déduplication exacte.
+  - `classifier.ts` — pur, testable : `normalizeLabel`, `suggestPattern` (libellé ponctuel → motif réutilisable), `classify`, `dedupKey`. Le `contains` retombe sur une comparaison **sans espaces** quand la correspondance directe échoue, parce que les banques suppriment les apostrophes (`Harvey's` saisi à la main → motif `HARVEY S`, relevé → `HARVEYS`). Garde-fou : motif d'au moins 5 caractères une fois collé.
+  - Tables : `import_batches`, `staged_transactions` (tampon — **rien n'entre dans `expenses` sans validation explicite**), `merchant_rules`.
+  - Boucle d'apprentissage : une correction dans l'écran de révision avec « Retenir » écrit une règle, puis `reclassifyPending()` rattrape les lignes en attente. Mesuré sur les données réelles : 89 % de classement automatique au premier import après `POST /api/imports/rules/seed`, 100 % au second.
+  - REST : `/api/imports` (POST multipart = téléverser, GET = lots), `/api/imports/:id/transactions`, `/api/imports/:id/apply`, `/api/imports/rules{,/bulk,/seed}`, `/api/imports/unmatched`, `/api/imports/reclassify`, `/api/imports/health`.
 
 The API prefix is `/api` (set in `main.ts`). CORS allows `http://localhost:4200`.
 
@@ -83,6 +89,7 @@ Routes (lazy-loaded standalone components):
 - `/dashboard` → `Dashboard` — overview cards for Kodi and ABS
 - `/kodi` → `KodiPage` — full now-playing UI with controls
 - `/audiobookshelf` → `AbsPage` — active sessions list
+- `/import` → `ImportPage` — écran de révision d'un relevé : par ligne, destination (commune / perso Alexis / perso Marion / ne pas traiter), enseigne·catégorie·sous-catégorie, et case « Retenir » qui apprend la règle
 
 **`NexusService`** (`providedIn: 'root'`) owns all state as Angular signals:
 - `kodiStatus`, `absStatus`, `metrics` — updated from Socket.io events

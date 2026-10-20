@@ -18,6 +18,11 @@ export const appRoutes: Route[] = [
           import('./features/maison/maison-page').then(m => m.MaisonPage),
       },
       {
+        path: 'import',
+        loadComponent: () =>
+          import('./features/import/import-page').then(m => m.ImportPage),
+      },
+      {
         path: 'sideloop',
         loadComponent: () =>
           import('./features/sideloop/sideloop-page').then(m => m.SideloopPage),

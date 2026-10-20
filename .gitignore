@@ -28,6 +28,13 @@ node_modules
 .env
 .env.local
 
+# relevés bancaires bruts — ne doivent jamais partir sur GitHub
+.samples/
+*.ofx
+*.qfx
+*.QFX
+*.OFX
+
 # local seed DB (données perso — la vraie vit sur le PVC du cluster)
 nexus-expenses.db
 nexus-immigration.db

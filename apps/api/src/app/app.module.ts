@@ -13,6 +13,7 @@ import { EventsModule } from './events/events.module';
 import { JobsModule } from './jobs/jobs.module';
 import { VzdumpModule } from './vzdump/vzdump.module';
 import { TytoModule } from './tyto/tyto.module';
+import { ImportModule } from './import/import.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { TytoModule } from './tyto/tyto.module';
     JobsModule,
     VzdumpModule,
     TytoModule,
+    ImportModule,
   ],
 })
 export class AppModule {}

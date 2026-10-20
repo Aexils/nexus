@@ -1,0 +1,781 @@
+/* Page d'import bancaire — reprend les conventions de la page Maison
+   (form-card / field-input / paid-btn) et y ajoute le tableau de révision.
+   Les animations viennent de styles.scss (nxsFadeUp, nxsSlideUp…) : les
+   @keyframes ne sont PAS isolées par composant dans Angular, donc en
+   redéfinir localement écraserait celles des autres pages. */
+
+/* ── Bandeau d'autonomie dans l'en-tête ── */
+
+.auto-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text2);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+}
+
+.auto-badge.good {
+  color: var(--green);
+  background: color-mix(in srgb, var(--green) 12%, transparent);
+  border-color: color-mix(in srgb, var(--green) 30%, transparent);
+}
+
+/* ── Messages ── */
+
+.banner {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 13px;
+  margin-bottom: 16px;
+  cursor: pointer;
+  animation: nxsFadeUp 0.25s ease both;
+}
+
+.banner.ok {
+  color: var(--green);
+  background: color-mix(in srgb, var(--green) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--green) 28%, transparent);
+}
+
+.banner.err {
+  color: var(--red);
+  background: color-mix(in srgb, var(--red) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--red) 28%, transparent);
+}
+
+.banner.warn {
+  color: var(--yellow);
+  background: color-mix(in srgb, var(--yellow) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--yellow) 28%, transparent);
+  cursor: default;
+}
+
+/* ── Carte de téléversement ── */
+
+.form-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 24px 28px;
+  margin-bottom: 20px;
+  animation: nxsFadeUp 0.35s 0.05s ease both;
+}
+
+.form-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--text3);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 18px;
+}
+
+.upload-row {
+  display: flex;
+  gap: 16px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.field-group { display: flex; flex-direction: column; gap: 7px; }
+.field-group.grow { flex: 1; min-width: 240px; }
+
+.field-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text3);
+}
+
+.field-input {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.field-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.paid-toggle { display: flex; gap: 8px; }
+
+.paid-btn {
+  padding: 10px 20px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text3);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.paid-btn.active {
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.paid-btn.marion.active {
+  background: color-mix(in srgb, #f472b6 15%, transparent);
+  border-color: #f472b6;
+  color: #f472b6;
+}
+
+.hint {
+  margin-top: 14px;
+  font-size: 12px;
+  color: var(--text3);
+}
+
+/* ── Champ fichier ──
+   Le contrôle natif (« Choose File / No file chosen ») est le seul élément de
+   la page que le navigateur dessine lui-même : sans ça il tranche avec tout le
+   reste. On stylise son bouton interne via ::file-selector-button. */
+
+.field-input[type="file"] {
+  padding: 7px 10px;
+  cursor: pointer;
+  line-height: 1.6;
+  color: var(--text2);
+}
+
+.field-input[type="file"]::file-selector-button {
+  margin-right: 12px;
+  padding: 7px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color var(--t-fast), color var(--t-fast), background var(--t-fast);
+}
+
+.field-input[type="file"]::file-selector-button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+/* Les boutons viennent de styles.scss (.btn + .btn-primary / .btn-ghost).
+   Ne PAS les redéfinir ici : le système de design pose déjà
+   `color: var(--bg)` sur l'accent, seul choix lisible dans les 9 thèmes —
+   un `color: #fff` codé en dur donne du blanc sur blanc en thème zinc. */
+
+/* Variante de taille, propre à cette page : le bouton de validation finale. */
+.btn-lg { padding: 13px 28px; font-size: 15px; }
+
+/* ── Bandeau des lots ── */
+
+.batch-strip {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  margin-bottom: 20px;
+}
+
+.batch-chip {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  align-items: flex-start;
+  flex-shrink: 0;
+  padding: 11px 34px 11px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text2);
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s;
+}
+
+.batch-chip:hover { border-color: var(--accent); }
+.batch-chip.active { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 9%, var(--surface)); }
+.batch-chip.done { opacity: 0.55; }
+
+.batch-name { font-size: 13px; font-weight: 700; color: var(--text); }
+.batch-meta { font-size: 11px; color: var(--text3); }
+
+.batch-del {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  padding: 3px;
+  border-radius: 6px;
+  color: var(--text3);
+  transition: all 0.2s;
+}
+
+.batch-del:hover { color: var(--red); background: color-mix(in srgb, var(--red) 12%, transparent); }
+
+/* ── En-tête de la révision ── */
+
+.review-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.review-stats { display: flex; gap: 10px; flex-wrap: wrap; }
+
+.rstat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 16px;
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  min-width: 86px;
+}
+
+.rstat-val { font-size: 16px; font-weight: 800; color: var(--text); }
+.rstat-lbl { font-size: 10px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text3); }
+
+.rstat.ok .rstat-val { color: var(--green); }
+.rstat.warn .rstat-val { color: var(--yellow); }
+.rstat.warn.zero .rstat-val { color: var(--green); }
+.rstat.muted .rstat-val { color: var(--text3); }
+
+.review-actions { display: flex; gap: 9px; flex-wrap: wrap; }
+
+/* ── Tableau de révision ── */
+
+.table-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow-x: auto;
+  animation: nxsFadeUp 0.35s 0.1s ease both;
+}
+
+.review-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  min-width: 940px;
+}
+
+.review-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 13px 14px;
+  text-align: left;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text3);
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.review-table tbody td {
+  padding: 10px 14px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+  vertical-align: middle;
+}
+
+.review-table tbody tr:last-child td { border-bottom: none; }
+
+/* Un liseré à gauche dit d'un coup d'œil ce qui demande une décision. */
+.review-table tbody tr { border-left: 3px solid transparent; }
+.review-table tbody tr.auto { border-left-color: var(--green); }
+.review-table tbody tr.attention { border-left-color: var(--yellow); background: color-mix(in srgb, var(--yellow) 4%, transparent); }
+.review-table tbody tr.credit { border-left-color: var(--text3); }
+.review-table tbody tr.ignored { opacity: 0.45; }
+
+.col-date { width: 58px; color: var(--text3); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.col-amount { width: 110px; text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.col-amount.is-credit { color: var(--green); }
+.col-dest { width: 160px; }
+.col-class { min-width: 330px; }
+.col-learn { width: 68px; text-align: center; }
+
+.col-label .raw {
+  display: block;
+  color: var(--text);
+  word-break: break-word;
+}
+
+.tags { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 3px; }
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.new-tag    { color: var(--yellow); background: color-mix(in srgb, var(--yellow) 14%, transparent); }
+.dup-tag    { color: var(--red);    background: color-mix(in srgb, var(--red) 14%, transparent); }
+.credit-tag { color: var(--green);  background: color-mix(in srgb, var(--green) 14%, transparent); }
+
+/* ── Choix de destination ── */
+
+.dest-group { display: flex; gap: 4px; }
+
+.dest-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text3);
+  font-size: 12px;
+  font-weight: 800;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.dest-btn:hover { color: var(--text); }
+.dest-btn.maison.on { color: var(--accent); border-color: var(--accent); background: color-mix(in srgb, var(--accent) 16%, transparent); }
+.dest-btn.alexis.on { color: var(--kodi, #38bdf8); border-color: var(--kodi, #38bdf8); background: color-mix(in srgb, var(--kodi, #38bdf8) 16%, transparent); }
+.dest-btn.marion.on { color: #f472b6; border-color: #f472b6; background: color-mix(in srgb, #f472b6 16%, transparent); }
+.dest-btn.skip.on   { color: var(--text2); border-color: var(--text3); background: color-mix(in srgb, var(--text3) 16%, transparent); }
+
+/* ── Classement d'une ligne ── */
+
+.class-group { display: flex; gap: 6px; }
+
+.cell-input {
+  flex: 1;
+  min-width: 0;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 7px 9px;
+  font-size: 12px;
+  font-family: inherit;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.cell-input:focus { border-color: var(--accent); }
+.cell-input:disabled { opacity: 0.4; cursor: not-allowed; }
+.cell-input.missing { border-color: var(--yellow); }
+.cell-input option { background: var(--surface2); color: var(--text); }
+
+.muted-cell { color: var(--text3); }
+
+/* ── Case « retenir » ── */
+
+.learn-box { display: inline-flex; cursor: pointer; }
+.learn-box input { position: absolute; opacity: 0; width: 0; height: 0; }
+
+.learn-box span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  transition: all 0.15s;
+}
+
+.learn-box input:checked + span {
+  background: var(--green);
+  border-color: var(--green);
+}
+
+.learn-box input:checked + span::after {
+  content: '';
+  width: 5px;
+  height: 9px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg) translate(-1px, -1px);
+}
+
+.learn-box input:focus-visible + span {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+
+/* ── Pied ── */
+
+.review-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+
+.bulk { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+.bulk-lbl { font-size: 12px; color: var(--text3); }
+
+/* ── Vide ── */
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 56px 20px;
+  border-radius: 16px;
+  background: var(--surface);
+  border: 1px dashed var(--border);
+  color: var(--text3);
+  font-size: 14px;
+}
+
+@media (max-width: 768px) {
+  .form-card { padding: 20px; }
+  .review-head { flex-direction: column; align-items: stretch; }
+}
+
+/* ── Carte d'amorçage (visible tant qu'aucune règle n'existe) ── */
+
+.seed-card {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 22px 26px;
+  margin-bottom: 20px;
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--accent) 7%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
+  animation: nxsFadeUp 0.35s ease both;
+  flex-wrap: wrap;
+}
+
+.seed-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  flex-shrink: 0;
+  border-radius: 14px;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+.seed-text { flex: 1; min-width: 260px; }
+
+.seed-text h2 {
+  font-family: var(--font-display, inherit);
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 5px;
+}
+
+.seed-text p {
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--text2);
+  max-width: 62ch;
+}
+
+/* ── Panneau des règles ── */
+
+.rules-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  margin-bottom: 20px;
+  overflow: hidden;
+  animation: nxsFadeUp 0.35s 0.07s ease both;
+}
+
+.rules-head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 16px 22px;
+  border: none;
+  background: transparent;
+  color: var(--text2);
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.2s;
+}
+
+.rules-head:hover { background: color-mix(in srgb, var(--text) 3%, transparent); }
+
+.rules-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--text3);
+}
+
+.rules-count {
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+.rules-breakdown {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--text3);
+}
+
+.rules-body { padding: 0 22px 20px; }
+
+.rules-toolbar {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.search-wrap {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex: 1;
+  min-width: 200px;
+  padding: 0 12px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text3);
+}
+
+.search-input {
+  flex: 1;
+  padding: 9px 0;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+}
+
+/* ── Formulaire de règle ── */
+
+.rule-draft {
+  padding: 18px;
+  margin-bottom: 16px;
+  border-radius: 14px;
+  background: var(--surface2);
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+.draft-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 13px;
+}
+
+.draft-hint {
+  margin-top: 12px;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--text3);
+  max-width: 70ch;
+}
+
+.draft-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
+  margin-top: 14px;
+}
+
+/* ── Tableau des règles ── */
+
+.rules-table-wrap { overflow-x: auto; }
+
+.rules-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+  min-width: 720px;
+}
+
+.rules-table thead th {
+  padding: 9px 12px;
+  text-align: left;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text3);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.rules-table tbody td {
+  padding: 8px 12px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+  color: var(--text);
+}
+
+.rules-table tbody tr:last-child td { border-bottom: none; }
+.rules-table tbody tr:hover { background: color-mix(in srgb, var(--text) 3%, transparent); }
+.rules-table tbody tr.editing { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+
+.rules-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.rules-table .dim { color: var(--text2); }
+.rules-table .sub { color: var(--text3); }
+
+.pattern {
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-family: var(--font-mono, monospace);
+  font-size: 11.5px;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  white-space: nowrap;
+}
+
+.origin-tag {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text3);
+  background: color-mix(in srgb, var(--text3) 14%, transparent);
+}
+
+.origin-tag.learned {
+  color: var(--green);
+  background: color-mix(in srgb, var(--green) 14%, transparent);
+}
+
+.rules-table .actions { white-space: nowrap; }
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 25px;
+  height: 25px;
+  border-radius: 7px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text3);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.icon-btn:hover { color: var(--accent); border-color: var(--border); }
+.icon-btn.danger:hover { color: var(--red); border-color: color-mix(in srgb, var(--red) 35%, transparent); }
+
+.rules-empty {
+  padding: 26px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text3);
+}
+
+/* Case « retenir » + accès direct à l'éditeur de règle */
+.learn-cell { display: flex; align-items: center; justify-content: center; gap: 3px; }
+
+/* ── Coche tracée du bandeau de succès ──
+   Le cercle puis la coche se dessinent via stroke-dashoffset. Les longueurs
+   (63 ≈ 2πr pour r=10, 20 pour la coche) sont les périmètres des tracés. */
+
+.check-draw {
+  flex-shrink: 0;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.check-draw circle {
+  stroke-dasharray: 63;
+  stroke-dashoffset: 63;
+  animation: nxsDraw 0.4s var(--ease) both;
+}
+
+.check-draw path {
+  stroke-dasharray: 20;
+  stroke-dashoffset: 20;
+  /* Démarre quand le cercle est presque bouclé : l'enchaînement se lit. */
+  animation: nxsDraw 0.25s var(--ease) 0.28s both;
+}
+
+/* ── Soulèvement au survol ──
+   Réservé aux surfaces sur lesquelles on peut agir. Les cartes purement
+   informatives ne bougent pas : un élément qui réagit au survol suggère
+   qu'il est cliquable. */
+
+.batch-chip,
+.rstat {
+  transition: transform var(--t-fast), border-color var(--t-fast), box-shadow var(--t-fast);
+}
+
+.batch-chip:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Les lignes du tableau de révision réagissent aussi, mais sans déplacement :
+   un tableau dont les lignes bougent au survol devient illisible. */
+.review-table tbody tr {
+  transition: background var(--t-fast), border-left-color var(--t-fast);
+}
+
+.review-table tbody tr:hover {
+  background: color-mix(in srgb, var(--text) 3%, transparent);
+}
+
+.review-table tbody tr.attention:hover {
+  background: color-mix(in srgb, var(--yellow) 8%, transparent);
+}

@@ -1,0 +1,461 @@
+<!-- Enseignes connues, proposées en autocomplétion partout dans la page. -->
+<datalist id="enseignes-list">
+  @for (e of allEnseignes(); track e) {
+    <option [value]="e"></option>
+  }
+</datalist>
+
+<nxs-page-header
+  [icon]="icons.Upload"
+  title="Import" accent="bancaire"
+  subtitle="Relevé de la Banque Nationale → dépenses classées">
+  @if (health(); as h) {
+    <div class="auto-badge" [class.good]="h.autoRate >= 90" [title]="h.totalRules + ' règle(s) en base'">
+      <lucide-icon [img]="icons.Sparkles" [size]="14"></lucide-icon>
+      <span [nxsCountUp]="h.autoRate" countUpFormat="percent"></span> classé tout seul
+    </div>
+  }
+</nxs-page-header>
+
+<!-- ── Messages ── -->
+@if (notice()) {
+  <div class="banner ok" (click)="dismissNotice()">
+    <!-- Coche tracée plutôt qu'affichée : c'est le seul moment « récompense »
+         de la page, à la validation d'un lot. SVG en ligne parce qu'il faut
+         animer stroke-dashoffset, ce qu'une icône lucide ne permet pas. -->
+    <svg class="check-draw" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true">
+      <circle cx="12" cy="12" r="10" />
+      <path d="M7.5 12.5l3 3 6-6.5" />
+    </svg>
+    {{ notice() }}
+  </div>
+}
+@if (error()) {
+  <div class="banner err" (click)="dismissError()">
+    <lucide-icon [img]="icons.AlertTriangle" [size]="15"></lucide-icon>
+    {{ error() }}
+  </div>
+}
+
+<!-- ── Amorçage : tant qu'aucune règle n'existe, rien ne peut être reconnu ── -->
+@if (needsSeeding()) {
+  <div class="seed-card">
+    <div class="seed-icon">
+      <lucide-icon [img]="icons.Wand2" [size]="22"></lucide-icon>
+    </div>
+    <div class="seed-text">
+      <h2>Amorcer la reconnaissance</h2>
+      <p>
+        Aucune règle n'existe encore, donc rien ne sera reconnu automatiquement.
+        Nexus peut en fabriquer une par enseigne déjà saisie à la main dans vos
+        dépenses — c'est l'affaire d'un clic, et c'est à ne faire qu'une fois.
+      </p>
+    </div>
+    <button class="btn btn-primary" (click)="seedRules()" [disabled]="seeding()">
+      <lucide-icon [img]="icons.Sparkles" [size]="16"></lucide-icon>
+      @if (seeding()) { Amorçage… } @else { Amorcer depuis l'historique }
+    </button>
+  </div>
+}
+
+<!-- ── Téléversement ── -->
+<div class="form-card">
+  <div class="form-title">
+    <lucide-icon [img]="icons.FileText" [size]="15"></lucide-icon>
+    Nouveau relevé
+  </div>
+
+  <div class="upload-row">
+    <div class="field-group">
+      <label class="field-label" for="imp-owner">Compte de</label>
+      <div class="paid-toggle" id="imp-owner">
+        <button class="paid-btn" [class.active]="uploadOwner === 'alexis'" (click)="uploadOwner = 'alexis'">
+          Alexis
+        </button>
+        <button class="paid-btn marion" [class.active]="uploadOwner === 'marion'" (click)="uploadOwner = 'marion'">
+          Marion
+        </button>
+      </div>
+    </div>
+
+    <div class="field-group grow">
+      <label class="field-label" for="imp-file">Fichier (OFX de préférence, QFX ou CSV)</label>
+      <input class="field-input" id="imp-file" type="file"
+             accept=".ofx,.qfx,.csv" (change)="onFileSelected($event)">
+    </div>
+
+    <button class="btn btn-primary" (click)="upload()" [disabled]="!selectedFile || uploading()">
+      @if (uploading()) { Lecture… } @else { Importer }
+    </button>
+  </div>
+
+  <p class="hint">
+    L'OFX porte un identifiant par transaction : réimporter le même mois ne crée aucun doublon.
+  </p>
+</div>
+
+<!-- ── Règles de reconnaissance ── -->
+<div class="rules-card">
+  <button class="rules-head" (click)="showRules.set(!showRules())">
+    <lucide-icon [img]="showRules() ? icons.ChevronDown : icons.ChevronRight" [size]="16"></lucide-icon>
+    <lucide-icon [img]="icons.BookOpen" [size]="15"></lucide-icon>
+    <span class="rules-title">Règles de reconnaissance</span>
+    <span class="rules-count">{{ rules().length }}</span>
+    @if (health(); as h) {
+      <span class="rules-breakdown">
+        {{ h.rulesByOrigin.seed }} depuis l'historique · {{ h.rulesByOrigin.user }} apprises
+      </span>
+    }
+  </button>
+
+  @if (showRules()) {
+    <div class="rules-body">
+      <div class="rules-toolbar">
+        <div class="search-wrap">
+          <lucide-icon [img]="icons.Search" [size]="14"></lucide-icon>
+          <input class="search-input" type="text" placeholder="Chercher un motif, une enseigne…"
+                 [ngModel]="ruleQuery()" (ngModelChange)="ruleQuery.set($event)" name="ruleQuery">
+        </div>
+        <button class="btn btn-sm btn-ghost" (click)="startAddRule()">
+          <lucide-icon [img]="icons.Plus" [size]="14"></lucide-icon>
+          Nouvelle règle
+        </button>
+        @if (!needsSeeding()) {
+          <button class="btn btn-sm btn-ghost" (click)="seedRules()" [disabled]="seeding()"
+                  title="Rattraper les enseignes saisies à la main depuis le dernier amorçage">
+            <lucide-icon [img]="icons.Wand2" [size]="14"></lucide-icon>
+            @if (seeding()) { Amorçage… } @else { Rattraper l'historique }
+          </button>
+        }
+      </div>
+
+      <!-- Création / édition -->
+      @if (ruleDraftId() !== null) {
+        <div class="rule-draft">
+          <div class="draft-grid">
+            <div class="field-group">
+              <label class="field-label" for="d-pattern">Motif cherché dans le libellé</label>
+              <input class="field-input" id="d-pattern" type="text" [(ngModel)]="draftPattern"
+                     name="dPattern" placeholder="Ex. : BOUCHERIE LAVALLEE">
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="d-enseigne">Enseigne</label>
+              <input class="field-input" id="d-enseigne" type="text" list="enseignes-list"
+                     [(ngModel)]="draftEnseigne" name="dEnseigne" placeholder="Boucherie Lavallée">
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="d-cat">Catégorie</label>
+              <select class="field-input" id="d-cat" [(ngModel)]="draftCategory" name="dCat">
+                <option value="">Choisir…</option>
+                @for (c of categories(); track c) { <option [value]="c">{{ c }}</option> }
+              </select>
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="d-sub">Sous-catégorie</label>
+              <select class="field-input" id="d-sub" [(ngModel)]="draftSubcategory" name="dSub"
+                      [disabled]="!draftCategory">
+                <option value="">—</option>
+                @for (s of subcatsFor(draftCategory); track s) { <option [value]="s">{{ s }}</option> }
+              </select>
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="d-dest">Par défaut</label>
+              <select class="field-input" id="d-dest" [(ngModel)]="draftDestination" name="dDest">
+                <option value="maison">Dépense commune</option>
+                <option value="perso">Dépense perso</option>
+                <option value="ignore">Ne pas traiter</option>
+              </select>
+            </div>
+          </div>
+
+          <p class="draft-hint">
+            Le motif est comparé au libellé du relevé, majuscules et accents ignorés.
+            Gardez-le court — « BOUCHERIE LAVALLEE » plutôt que le libellé complet,
+            sinon il ne survivra pas à un changement de succursale.
+          </p>
+
+          <div class="draft-actions">
+            <button class="btn btn-sm btn-ghost" (click)="cancelRuleDraft()">Annuler</button>
+            <button class="btn btn-primary" (click)="saveRuleDraft()" [disabled]="savingRule()">
+              @if (savingRule()) { Enregistrement… } @else { Enregistrer la règle }
+            </button>
+          </div>
+        </div>
+      }
+
+      <!-- Liste -->
+      @if (!rules().length) {
+        <div class="rules-empty">Aucune règle pour l'instant.</div>
+      } @else {
+        <div class="rules-table-wrap">
+          <table class="rules-table">
+            <thead>
+              <tr>
+                <th>Motif</th>
+                <th>Enseigne</th>
+                <th>Catégorie</th>
+                <th>Par défaut</th>
+                <th class="num">Utilisée</th>
+                <th>Origine</th>
+                <th class="num"></th>
+              </tr>
+            </thead>
+            <tbody nxsAutoAnimate>
+              @for (r of filteredRules(); track r.id) {
+                <tr [class.editing]="ruleDraftId() === r.id">
+                  <td><code class="pattern">{{ r.pattern }}</code></td>
+                  <td>{{ r.enseigne }}</td>
+                  <td class="dim">
+                    {{ r.category }}@if (r.subcategory) { <span class="sub"> › {{ r.subcategory }}</span> }
+                  </td>
+                  <td class="dim">{{ destinationLabel(r.destination) }}</td>
+                  <td class="num dim">{{ r.hits || '—' }}</td>
+                  <td>
+                    <span class="origin-tag" [class.learned]="r.origin === 'user'">
+                      {{ originLabel(r.origin) }}
+                    </span>
+                  </td>
+                  <td class="num actions">
+                    <button class="icon-btn" (click)="startEditRule(r)" title="Modifier">
+                      <lucide-icon [img]="icons.Pencil" [size]="13"></lucide-icon>
+                    </button>
+                    <button class="icon-btn danger" (click)="deleteRule(r)" title="Supprimer">
+                      <lucide-icon [img]="icons.Trash2" [size]="13"></lucide-icon>
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        @if (ruleQuery() && !filteredRules().length) {
+          <div class="rules-empty">Aucune règle ne correspond à « {{ ruleQuery() }} ».</div>
+        }
+      }
+    </div>
+  }
+</div>
+
+<!-- ── Lots récents ── -->
+@if (batches().length) {
+  <div class="batch-strip" nxsAutoAnimate>
+    @for (b of batches(); track b.id) {
+      <button class="batch-chip"
+              [class.active]="batch()?.id === b.id"
+              [class.done]="b.pending === 0"
+              (click)="openBatch(b.id)">
+        <span class="batch-name">{{ b.filename }}</span>
+        <span class="batch-meta">
+          {{ b.accountOwner === 'alexis' ? 'Alexis' : 'Marion' }} ·
+          @if (b.pending) { {{ b.pending }} à valider } @else { validé }
+        </span>
+        @if (b.pending > 0) {
+          <span class="batch-del" (click)="deleteBatch(b.id, $event)" title="Annuler ce lot">
+            <lucide-icon [img]="icons.Trash2" [size]="13"></lucide-icon>
+          </span>
+        }
+      </button>
+    }
+  </div>
+}
+
+<!-- ── Révision ── -->
+@if (batch(); as b) {
+  @if (loading()) {
+    <div class="empty">Chargement…</div>
+  } @else if (!rows().length) {
+    <div class="empty">
+      <lucide-icon [img]="icons.CheckCircle" [size]="20"></lucide-icon>
+      Ce lot est entièrement validé.
+    </div>
+  } @else {
+
+    <!-- Résumé + actions -->
+    <div class="review-head">
+      <div class="review-stats">
+        <div class="rstat">
+          <span class="rstat-val" [nxsCountUp]="rows().length" countUpDecimals="0"></span>
+          <span class="rstat-lbl">lignes</span>
+        </div>
+        <div class="rstat ok">
+          <span class="rstat-val" [nxsCountUp]="autoCount()" countUpDecimals="0"></span>
+          <span class="rstat-lbl">reconnues</span>
+        </div>
+        <div class="rstat warn" [class.zero]="attentionCount() === 0">
+          <span class="rstat-val" [nxsCountUp]="attentionCount()" countUpDecimals="0"></span>
+          <span class="rstat-lbl">à vérifier</span>
+        </div>
+        <div class="rstat">
+          <span class="rstat-val" [nxsCountUp]="totalMaison()" countUpFormat="currency"></span>
+          <span class="rstat-lbl">commune</span>
+        </div>
+        <div class="rstat">
+          <span class="rstat-val" [nxsCountUp]="totalPerso()" countUpFormat="currency"></span>
+          <span class="rstat-lbl">perso</span>
+        </div>
+        <div class="rstat muted">
+          <span class="rstat-val" [nxsCountUp]="totalIgnored()" countUpFormat="currency"></span>
+          <span class="rstat-lbl">non traité</span>
+        </div>
+      </div>
+
+      <div class="review-actions">
+        <button class="btn btn-ghost" (click)="onlyAttention.set(!onlyAttention())"
+                [class.active]="onlyAttention()">
+          <lucide-icon [img]="icons.Filter" [size]="14"></lucide-icon>
+          @if (onlyAttention()) { Tout voir } @else { À vérifier seulement }
+        </button>
+        <button class="btn btn-ghost" (click)="reclassify()" title="Rejouer les règles sur ce lot">
+          <lucide-icon [img]="icons.RefreshCw" [size]="14"></lucide-icon>
+          Reclasser
+        </button>
+      </div>
+    </div>
+
+    @if (blockingRows().length) {
+      <div class="banner warn">
+        <lucide-icon [img]="icons.AlertTriangle" [size]="15"></lucide-icon>
+        {{ blockingRows().length }} ligne(s) retenue(s) sans catégorie — à compléter avant de valider.
+      </div>
+    }
+
+    <!-- Tableau -->
+    <div class="table-wrap">
+      <table class="review-table">
+        <thead>
+          <tr>
+            <th class="col-date">Date</th>
+            <th class="col-label">Libellé du relevé</th>
+            <th class="col-amount">Montant</th>
+            <th class="col-dest">Qui paie</th>
+            <th class="col-class">Enseigne · Catégorie · Sous-catégorie</th>
+            <th class="col-learn" title="Écrire une règle pour que ce commerce soit reconnu tout seul la prochaine fois">
+              Retenir
+            </th>
+          </tr>
+        </thead>
+        <tbody nxsAutoAnimate>
+          @for (r of visibleRows(); track r.id) {
+            <tr [class.attention]="needsAttention(r)"
+                [class.auto]="r.source === 'rule' && !needsAttention(r)"
+                [class.credit]="r.isCredit"
+                [class.ignored]="r.choice === 'ignore'">
+
+              <td class="col-date">{{ fmtDate(r.date) }}</td>
+
+              <td class="col-label">
+                <span class="raw">{{ r.rawLabel }}</span>
+                <span class="tags">
+                  @if (r.isCredit) {
+                    <span class="tag credit-tag">crédit</span>
+                  }
+                  @if (r.duplicateOfId !== null) {
+                    <span class="tag dup-tag" title="Une dépense du même jour et du même montant existe déjà">
+                      <lucide-icon [img]="icons.Copy" [size]="11"></lucide-icon>
+                      doublon probable
+                    </span>
+                  }
+                  @if (r.source === 'unmatched' && !r.isCredit) {
+                    <span class="tag new-tag">commerce inconnu</span>
+                  }
+                </span>
+              </td>
+
+              <td class="col-amount" [class.is-credit]="r.isCredit">
+                {{ r.isCredit ? '+' : '' }}{{ fmtAmount(r.amount) }}
+              </td>
+
+              <td class="col-dest">
+                <div class="dest-group">
+                  <button class="dest-btn maison" [class.on]="r.choice === 'maison'"
+                          (click)="setChoice(r, 'maison')" title="Dépense commune">
+                    <lucide-icon [img]="icons.Home" [size]="13"></lucide-icon>
+                  </button>
+                  <button class="dest-btn alexis" [class.on]="r.choice === 'alexis'"
+                          (click)="setChoice(r, 'alexis')" title="Perso Alexis">A</button>
+                  <button class="dest-btn marion" [class.on]="r.choice === 'marion'"
+                          (click)="setChoice(r, 'marion')" title="Perso Marion">M</button>
+                  <button class="dest-btn skip" [class.on]="r.choice === 'ignore'"
+                          (click)="setChoice(r, 'ignore')" title="Ne pas traiter">
+                    <lucide-icon [img]="icons.EyeOff" [size]="13"></lucide-icon>
+                  </button>
+                </div>
+              </td>
+
+              <td class="col-class">
+                @if (r.choice === 'ignore') {
+                  <span class="muted-cell">—</span>
+                } @else {
+                  <div class="class-group">
+                    <input class="cell-input" type="text" list="enseignes-list"
+                           [ngModel]="r.enseigne" (ngModelChange)="setEnseigne(r, $event)"
+                           [name]="'ens-' + r.id" placeholder="Enseigne">
+
+                    <select class="cell-input" [class.missing]="!r.category"
+                            [ngModel]="r.category" (ngModelChange)="setCategory(r, $event)"
+                            [name]="'cat-' + r.id">
+                      <option value="">Catégorie…</option>
+                      @for (c of categories(); track c) {
+                        <option [value]="c">{{ c }}</option>
+                      }
+                    </select>
+
+                    <select class="cell-input" [ngModel]="r.subcategory"
+                            (ngModelChange)="setSubcategory(r, $event)"
+                            [name]="'sub-' + r.id" [disabled]="!r.category">
+                      <option value="">Sous-cat.…</option>
+                      @for (s of subcatsFor(r.category); track s) {
+                        <option [value]="s">{{ s }}</option>
+                      }
+                    </select>
+                  </div>
+                }
+              </td>
+
+              <td class="col-learn">
+                @if (r.choice !== 'ignore') {
+                  <div class="learn-cell">
+                    <label class="learn-box"
+                           title="Écrire une règle à la validation, pour que ce commerce soit reconnu tout seul la prochaine fois">
+                      <input type="checkbox" [checked]="r.learn" (change)="toggleLearn(r)">
+                      <span></span>
+                    </label>
+                    @if (r.source === 'unmatched') {
+                      <button class="icon-btn" (click)="addRuleFromRow(r)"
+                              title="Écrire la règle maintenant, en choisissant le motif moi-même">
+                        <lucide-icon [img]="icons.Pencil" [size]="12"></lucide-icon>
+                      </button>
+                    }
+                  </div>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pied : actions de masse + validation -->
+    <div class="review-foot">
+      <div class="bulk">
+        <span class="bulk-lbl">Tout ce qui est affiché :</span>
+        <button class="btn btn-sm btn-ghost" (click)="setAllVisible('maison')">Commune</button>
+        <button class="btn btn-sm btn-ghost" (click)="setAllVisible('alexis')">Perso Alexis</button>
+        <button class="btn btn-sm btn-ghost" (click)="setAllVisible('marion')">Perso Marion</button>
+        <button class="btn btn-sm btn-ghost" (click)="setAllVisible('ignore')">Ne pas traiter</button>
+      </div>
+
+      <button class="btn btn-primary btn-lg" (click)="apply()"
+              [disabled]="applying() || blockingRows().length > 0">
+        <lucide-icon [img]="icons.CheckCircle" [size]="16"></lucide-icon>
+        @if (applying()) { Enregistrement… } @else { Valider les {{ rows().length }} lignes }
+      </button>
+    </div>
+  }
+} @else if (!batches().length) {
+  <div class="empty">
+    <lucide-icon [img]="icons.Upload" [size]="20"></lucide-icon>
+    Aucun import pour l'instant — téléversez un relevé pour commencer.
+  </div>
+}
