@@ -170,19 +170,19 @@
 <div class="stat-cards">
   <div class="stat-card total">
     <div class="stat-label">Total du mois</div>
-    <div class="stat-value">{{ fmt(totalMonth()) }}</div>
+    <div class="stat-value" [nxsCountUp]="totalMonth()" countUpFormat="currency"></div>
     <div class="stat-sub">{{ expenses().length }} dépense{{ expenses().length !== 1 ? 's' : '' }}</div>
   </div>
   <div class="stat-card alexis">
     <div class="stat-label">Alexis</div>
-    <div class="stat-value">{{ fmt(totalAlexis()) }}</div>
+    <div class="stat-value" [nxsCountUp]="totalAlexis()" countUpFormat="currency"></div>
     <div class="stat-sub">
       @if (totalMonth() > 0) { {{ (totalAlexis() / totalMonth() * 100).toFixed(0) }}% du total }
     </div>
   </div>
   <div class="stat-card marion">
     <div class="stat-label">Marion</div>
-    <div class="stat-value">{{ fmt(totalMarion()) }}</div>
+    <div class="stat-value" [nxsCountUp]="totalMarion()" countUpFormat="currency"></div>
     <div class="stat-sub">
       @if (totalMonth() > 0) { {{ (totalMarion() / totalMonth() * 100).toFixed(0) }}% du total }
     </div>
@@ -277,7 +277,7 @@
               <div class="donut-total">{{ fmt(activeDonutTotal()) }}</div>
               <div class="donut-sub" style="max-width:80px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ selectedDonutCat() }}</div>
             } @else {
-              <div class="donut-total">{{ fmt(totalMonth()) }}</div>
+              <div class="donut-total" [nxsCountUp]="totalMonth()" countUpFormat="currency"></div>
               <div class="donut-sub">{{ donutSlices().length }} catégorie{{ donutSlices().length > 1 ? 's' : '' }}</div>
             }
           </div>
@@ -362,7 +362,7 @@
             <th class="actions-col"></th>
           </tr>
         </thead>
-        <tbody>
+        <tbody nxsAutoAnimate>
           @for (e of sortedExpenses(); track e.id) {
             <tr>
               <td class="date-cell">{{ formatDate(e.date) }}</td>

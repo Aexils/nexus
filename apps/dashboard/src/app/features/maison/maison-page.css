@@ -8,7 +8,7 @@
   align-items: center;
   gap: 14px;
   margin-bottom: 24px;
-  animation: fadeUp 0.35s ease both;
+  animation: nxsFadeUp 0.35s ease both;
 }
 
 .brand { display: flex; align-items: center; gap: 16px; }
@@ -55,7 +55,7 @@
   border-radius: 18px;
   padding: 24px 28px;
   margin-bottom: 20px;
-  animation: fadeUp 0.35s 0.05s ease both;
+  animation: nxsFadeUp 0.35s 0.05s ease both;
 }
 
 .form-title {
@@ -208,7 +208,7 @@
   font-size: 13px;
   font-weight: 600;
   color: #10b981;
-  animation: fadeUp 0.25s ease both;
+  animation: nxsFadeUp 0.25s ease both;
 }
 
 .submit-btn {
@@ -244,7 +244,7 @@
   flex-wrap: wrap;
   gap: 12px;
   margin-bottom: 16px;
-  animation: fadeUp 0.35s 0.08s ease both;
+  animation: nxsFadeUp 0.35s 0.08s ease both;
 }
 
 .month-nav {
@@ -327,7 +327,7 @@
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 12px;
   margin-bottom: 24px;
-  animation: fadeUp 0.35s 0.1s ease both;
+  animation: nxsFadeUp 0.35s 0.1s ease both;
 }
 
 .stat-card {
@@ -388,7 +388,7 @@
   align-items: center;
   text-align: center;
   gap: 10px;
-  animation: fadeUp 0.4s 0.12s ease both;
+  animation: nxsFadeUp 0.4s 0.12s ease both;
   border: 1px solid transparent;
 }
 
@@ -475,7 +475,7 @@
   flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 20px;
-  animation: fadeUp 0.35s 0.15s ease both;
+  animation: nxsFadeUp 0.35s 0.15s ease both;
 }
 
 .pb-chip {
@@ -515,7 +515,7 @@
 /* ── Section ── */
 .section {
   margin-bottom: 28px;
-  animation: fadeUp 0.35s 0.12s ease both;
+  animation: nxsFadeUp 0.35s 0.12s ease both;
 }
 
 .section-header {
@@ -774,7 +774,7 @@
   align-items: center;
   justify-content: center;
   padding: 20px;
-  animation: fadeIn 0.18s ease both;
+  animation: nxsFadeIn 0.18s ease both;
 }
 
 .modal-box {
@@ -785,7 +785,7 @@
   width: 100%;
   max-width: 650px;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
-  animation: slideUp 0.22s cubic-bezier(0.4, 0, 0.2, 1) both;
+  animation: nxsSlideUp 0.22s cubic-bezier(0.4, 0, 0.2, 1) both;
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -886,18 +886,8 @@
   transform: translateY(-1px);
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(16px) scale(0.98); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
-}
-
 /* ── Donut chart ── */
-.donut-section { animation: fadeUp 0.35s 0.13s ease both; }
+.donut-section { animation: nxsFadeUp 0.35s 0.13s ease both; }
 
 .donut-card {
   background: var(--surface);
@@ -1038,7 +1028,7 @@
 }
 
 /* ── Comparaison mensuelle — line chart ── */
-.comp-section { animation: fadeUp 0.35s 0.15s ease both; }
+.comp-section { animation: nxsFadeUp 0.35s 0.15s ease both; }
 
 .chart-controls {
   display: flex;
@@ -1286,7 +1276,7 @@
   padding: 14px;
   box-shadow: 0 20px 56px rgba(0, 0, 0, 0.45);
   width: 228px;
-  animation: slideUp 0.2s cubic-bezier(0.4, 0, 0.2, 1) both;
+  animation: nxsSlideUp 0.2s cubic-bezier(0.4, 0, 0.2, 1) both;
 }
 
 /* Display */
@@ -1475,7 +1465,4 @@
 .mth-trend-new  { font-size: 11px; color: var(--accent); margin-left: 3px; vertical-align: middle; }
 
 /* ── Animations ── */
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(12px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
+

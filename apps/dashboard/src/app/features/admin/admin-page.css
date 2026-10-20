@@ -7,7 +7,7 @@
   justify-content: space-between;
   gap: 14px;
   margin-bottom: 24px;
-  animation: fadeUp 0.35s ease both;
+  animation: nxsFadeUp 0.35s ease both;
 }
 
 .brand { display: flex; align-items: center; gap: 16px; }
@@ -63,7 +63,7 @@
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 6px;
-  animation: fadeUp 0.35s 0.05s ease both;
+  animation: nxsFadeUp 0.35s 0.05s ease both;
 }
 
 .tab-btn {
@@ -112,7 +112,7 @@
   border-radius: 14px;
   overflow: hidden;
   overflow-x: auto;
-  animation: fadeUp 0.3s 0.08s ease both;
+  animation: nxsFadeUp 0.3s 0.08s ease both;
 }
 
 .empty {
@@ -265,7 +265,7 @@
 .expenses-bar {
   display: flex; align-items: center; gap: 12px;
   margin-bottom: 12px;
-  animation: fadeUp 0.3s 0.04s ease both;
+  animation: nxsFadeUp 0.3s 0.04s ease both;
 }
 
 .search-input {
@@ -325,7 +325,7 @@
 .db-layout {
   display: flex;
   gap: 16px;
-  animation: fadeUp 0.3s 0.08s ease both;
+  animation: nxsFadeUp 0.3s 0.08s ease both;
 }
 
 .db-table-list {
@@ -417,7 +417,4 @@
 }
 
 /* ── Animations ── */
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
+

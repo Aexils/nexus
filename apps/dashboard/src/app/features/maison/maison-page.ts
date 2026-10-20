@@ -16,6 +16,7 @@ import {
 } from 'lucide-angular';
 import { Expense, ExpenseMonthSummary, MonthlyBreakdown, MonthlyCategory } from '@nexus/shared-types';
 import { PageHeaderComponent } from '../../shared/page-header/page-header';
+import { AutoAnimateDirective, CountUpDirective } from '../../shared/motion';
 
 // ── Interfaces ────────────────────────────────────────────────────────────────
 
@@ -233,7 +234,10 @@ type SortDir = 'asc' | 'desc';
 @Component({
   selector: 'app-maison-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule, PageHeaderComponent],
+  imports: [
+    CommonModule, FormsModule, LucideAngularModule, PageHeaderComponent,
+    AutoAnimateDirective, CountUpDirective,
+  ],
   templateUrl: './maison-page.html',
   styleUrl: './maison-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

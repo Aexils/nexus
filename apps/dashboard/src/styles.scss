@@ -287,10 +287,93 @@ body {
   box-shadow: var(--shadow);
 }
 
+/* ════════════════════════════════════════════════════════════════════════════
+   MOUVEMENT
+   Source unique des animations. Avant, `fadeUp` était redéfini à l'identique
+   dans six feuilles de page ; tout passe désormais par ces keyframes et les
+   jetons --t-fast / --t / --ease ci-dessus.
+
+   Règle de conduite : on anime un CHANGEMENT D'ÉTAT (une ligne qui arrive, un
+   total qui bouge, une page qui change), jamais l'arrivée de contenu statique.
+   Nexus s'ouvre tous les jours — ce qui enchante au premier coup d'œil agace
+   au cinquantième.
+   ════════════════════════════════════════════════════════════════════════════ */
+
 /* Entrée de page douce */
 @keyframes nxsFadeUp {
   from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes nxsFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Une ligne qui se déplie à sa place, sans pousser brutalement ses voisines. */
+@keyframes nxsUnfold {
+  from { opacity: 0; transform: translateY(-4px) scaleY(0.96); }
+  to   { opacity: 1; transform: translateY(0) scaleY(1); }
+}
+
+/* Entrée d'un panneau / d'une modale : un peu plus ample que fadeUp. */
+@keyframes nxsSlideUp {
+  from { opacity: 0; transform: translateY(16px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Tracé d'une coche SVG — utilisé à la validation d'un lot d'import. */
+@keyframes nxsDraw {
+  to { stroke-dashoffset: 0; }
+}
+
+/* Pulsation de présence (points d'état). Volontairement lente. */
+@keyframes nxsPulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.45; }
+}
+
+.nxs-enter      { animation: nxsFadeUp var(--t) both; }
+.nxs-enter-fade { animation: nxsFadeIn var(--t-fast) both; }
+
+/* Décalage en cascade pour une poignée d'éléments frères. Au-delà de 6, le
+   dernier se ferait trop attendre : on laisse les suivants entrer ensemble. */
+.nxs-stagger > *:nth-child(1) { animation-delay: 0ms; }
+.nxs-stagger > *:nth-child(2) { animation-delay: 40ms; }
+.nxs-stagger > *:nth-child(3) { animation-delay: 80ms; }
+.nxs-stagger > *:nth-child(4) { animation-delay: 120ms; }
+.nxs-stagger > *:nth-child(5) { animation-delay: 160ms; }
+.nxs-stagger > *:nth-child(6) { animation-delay: 200ms; }
+
+/* ── Transitions de page (API native View Transitions) ──
+   Activées par withViewTransitions() dans app.config.ts. */
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-old(root) {
+    animation: nxsFadeIn var(--t-fast) reverse both;
+  }
+  ::view-transition-new(root) {
+    animation: nxsFadeUp var(--t) both;
+  }
+}
+
+/* ── Confort : on coupe tout pour qui le demande ──
+   Le système d'exploitation expose ce réglage (macOS : Accessibilité →
+   Affichage → Réduire les animations). On le respecte sans exception. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Pas de transition de page non plus : la bascule est instantanée. */
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none !important;
+  }
 }
 
 /* ════════════════════════════════════════════════════════════════════════════
@@ -329,6 +412,17 @@ body::after {
 .btn-sm { padding: 6px 12px; font-size: 12px; }
 .btn-xs { padding: 3px 10px; font-size: 11px; }
 
+/* État désactivé — il manquait au système de design, si bien qu'un bouton
+   inactif restait indiscernable d'un bouton cliquable. Déclaré après .btn
+   et avant les variantes, avec :disabled sur les effets de survol pour que
+   ceux-ci ne le rattrapent pas. */
+.btn:disabled,
+.btn[disabled] {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 .btn-ghost { background: transparent; border-color: var(--border2); color: var(--text2); }
 .btn-ghost:hover { border-color: var(--text2); color: var(--text); background: color-mix(in srgb, var(--text) 4%, transparent); }
 
@@ -337,6 +431,10 @@ body::after {
 
 .btn-danger  { background: transparent; border-color: rgba(255,69,96,.35); color: var(--red); }
 .btn-danger:hover  { background: rgba(255,69,96,.12); border-color: var(--red); }
+
+/* Aucun soulèvement ni halo sur un bouton inactif. */
+.btn:disabled:hover,
+.btn[disabled]:hover { transform: none; box-shadow: none; filter: none; }
 
 .btn-success { background: transparent; border-color: rgba(74,222,128,.3); color: var(--green); }
 .btn-success:hover { background: rgba(74,222,128,.1); border-color: var(--green); }
