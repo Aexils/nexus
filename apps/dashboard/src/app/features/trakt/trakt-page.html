@@ -1,0 +1,80 @@
+<nxs-page-header
+  title="Trakt" accent="kube-trakt"
+  subtitle="Suivi de visionnage auto-hébergé · Kodi et Jellyfin">
+  <div class="conn" [class.off]="!reachable()">
+    <span class="dot"></span>{{ reachable() ? 'connecté' : 'injoignable' }}
+  </div>
+</nxs-page-header>
+
+@if (status(); as st) {
+
+  @if (alerts().length > 0) {
+    <section class="alerts">
+      @for (a of alerts(); track a) {
+        <div class="alert">⚠ {{ a }}</div>
+      }
+    </section>
+  }
+
+  @if (st.counts; as c) {
+    <section class="account">
+      <div class="acc-item"><span class="acc-label">Épisodes vus</span><span class="acc-val">{{ c.episodes_watched }}</span></div>
+      <div class="acc-item"><span class="acc-label">Films vus</span><span class="acc-val">{{ c.movies_watched }}</span></div>
+      <div class="acc-item"><span class="acc-label">Séries suivies</span><span class="acc-val">{{ c.shows_followed }}</span></div>
+      <div class="acc-item"><span class="acc-label">Listes</span><span class="acc-val">{{ c.lists }}</span></div>
+      <div class="acc-item"><span class="acc-label">Dernier visionnage</span><span class="acc-val">{{ ago(st.last_watched_at) }}</span></div>
+      <div class="acc-item"><span class="acc-label">Dernière sauvegarde</span><span class="acc-val">{{ ago(st.last_backup) }}</span></div>
+      <div class="acc-item"><span class="acc-label">Catalogue TMDb</span><span class="acc-val">{{ ago(st.catalog?.at ?? null) }}</span></div>
+    </section>
+  }
+
+  @if (st.now_playing; as p) {
+    <section class="playing">
+      <span class="acc-label">En lecture</span>
+      <span class="playing-title">{{ p.title }}
+        @if (p.season !== null) { · S{{ p.season }}E{{ p.number }} }
+      </span>
+    </section>
+  }
+
+  <h2 class="section-title">Appareils</h2>
+  @if (error(); as e) { <div class="alert">⚠ {{ e }}</div> }
+  <div class="table">
+    @for (d of devices(); track d.device) {
+      <div class="row">
+        <span class="row-name">{{ d.device }}</span>
+        <span class="row-sub">vu {{ ago(d.last_seen) }}</span>
+        @if (isProtected(d)) {
+          <span class="row-sub">requis</span>
+        } @else if (confirming() === d.device) {
+          <span class="row-actions">
+            <button class="btn danger" (click)="revoke(d.device)">Confirmer</button>
+            <button class="btn" (click)="confirming.set(null)">Annuler</button>
+          </span>
+        } @else {
+          <button class="btn" (click)="confirming.set(d.device)">Révoquer</button>
+        }
+      </div>
+    } @empty {
+      <div class="row empty">Aucun appareil</div>
+    }
+  </div>
+
+  <h2 class="section-title">Routes demandées et absentes</h2>
+  <p class="hint">Ce que les addons ont demandé et que le serveur ne sait pas encore faire.</p>
+  <div class="table">
+    @for (m of missing(); track m.method + m.path) {
+      <div class="row">
+        <span class="row-name mono">{{ m.method }} {{ m.path }}</span>
+        <span class="row-sub">{{ m.count }} fois · {{ ago(m.last_seen) }}</span>
+      </div>
+    } @empty {
+      <div class="row empty">Rien à signaler</div>
+    }
+  </div>
+
+  <p class="attribution">Ce produit utilise l'API TMDb, sans être approuvé ni certifié par TMDb.</p>
+
+} @else {
+  <div class="row empty">En attente de données…</div>
+}

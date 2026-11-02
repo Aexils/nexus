@@ -28,6 +28,11 @@ export const appRoutes: Route[] = [
           import('./features/sideloop/sideloop-page').then(m => m.SideloopPage),
       },
       {
+        path: 'trakt',
+        loadComponent: () =>
+          import('./features/trakt/trakt-page').then(m => m.TraktPage),
+      },
+      {
         path: 'tyto',
         loadComponent: () =>
           import('./features/tyto/tyto-page').then(m => m.TytoPage),

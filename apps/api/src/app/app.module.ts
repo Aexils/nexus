@@ -14,6 +14,7 @@ import { JobsModule } from './jobs/jobs.module';
 import { VzdumpModule } from './vzdump/vzdump.module';
 import { TytoModule } from './tyto/tyto.module';
 import { ImportModule } from './import/import.module';
+import { TraktModule } from './trakt/trakt.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { ImportModule } from './import/import.module';
     VzdumpModule,
     TytoModule,
     ImportModule,
+    TraktModule,
   ],
 })
 export class AppModule {}

@@ -72,6 +72,7 @@ libs/
   - CPU temp: `windows_thermalzone_temperature_celsius` (Windows, requires `--collectors.enabled ...,thermalzone`) or `/sys/class/thermal/*/temp` (Linux)
   - All GPU/temp sections are hidden in the UI when the collector is not enabled (graceful fallback)
 - **`AbsModule`** — `AbsService` polls Audiobookshelf API every 5 s.
+- **`TraktModule`** — `TraktService` interroge kube-trakt (`KUBE_TRAKT_URL`, `KUBE_TRAKT_TOKEN`) toutes les 30 s : compteurs, appareils, routes manquantes, alertes de sauvegarde et de catalogue. `DELETE /api/trakt/devices/:device` révoque un appareil.
 - **`ImportModule`** — import de relevés bancaires (Banque Nationale) et classement **100 % déterministe**, sans aucun appel LLM au runtime.
   - Parseurs : `parsers/ofx.parser.ts` (OFX 1.0.2 **SGML**, balises feuilles non fermées — couvre aussi QFX et OFX 2.x XML) et `parsers/csv.parser.ts` (repli tolérant). L'OFX est le format à privilégier : son `FITID` rend la déduplication exacte.
   - `classifier.ts` — pur, testable : `normalizeLabel`, `suggestPattern` (libellé ponctuel → motif réutilisable), `classify`, `dedupKey`. Le `contains` retombe sur une comparaison **sans espaces** quand la correspondance directe échoue, parce que les banques suppriment les apostrophes (`Harvey's` saisi à la main → motif `HARVEY S`, relevé → `HARVEYS`). Garde-fou : motif d'au moins 5 caractères une fois collé.

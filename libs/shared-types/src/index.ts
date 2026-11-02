@@ -7,6 +7,7 @@ export * from './lib/abs-types';
 export * from './lib/psn-types';
 export * from './lib/sideloadly-types';
 export * from './lib/sideloop-types';
+export * from './lib/trakt-types';
 export * from './lib/urbackup-types';
 export * from './lib/user-types';
 export * from './lib/version-types';
