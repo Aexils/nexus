@@ -75,6 +75,36 @@ export interface TraktTitle {
   slug: string;
 }
 
+/** Élément d'une rangée telle que la télé l'affiche. */
+export interface TraktRowItem {
+  kind: 'episode' | TraktMediaKind;
+  label: string;
+  title: string;
+  showtitle?: string;
+  season?: number;
+  episode?: number;
+  plot: string;
+  runtime: number;
+  rating: number;
+  year: number;
+  genres: string[];
+  tmdb: number;
+  percent?: number;
+  art: { poster?: string; fanart?: string; landscape?: string; thumb?: string; clearlogo?: string };
+}
+
+/** Résultat de recherche ou d'aperçu : rien n'est encore enregistré. */
+export interface TraktPreview {
+  kind: TraktMediaKind;
+  tmdb: number;
+  title: string;
+  year: number | null;
+  rating: number;
+  plot: string;
+  poster: string | null;
+  backdrop: string | null;
+}
+
 export interface TraktStatus {
   reachable: boolean;
   generated_at: string;

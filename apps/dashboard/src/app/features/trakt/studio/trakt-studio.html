@@ -1,0 +1,256 @@
+<div class="studio">
+  <main class="tv">
+    <nav class="bar" aria-label="Navigation">
+      <a class="bar-link" routerLink="/dashboard">Retour à Nexus</a>
+      <p class="bar-status" role="status">
+        @if (failure(); as f) { <span class="is-bad">{{ f }}</span> }
+        @else if (message(); as m) { {{ m }} }
+      </p>
+      <a class="bar-link" routerLink="/trakt/service">État du service</a>
+    </nav>
+
+    <section class="hero" aria-label="Titre sélectionné">
+      @if (spotlight(); as s) {
+        @if (s.backdrop) { <img class="hero-image" [src]="s.backdrop" alt="" /> }
+        <div class="hero-text">
+          @if (s.logo) {
+            <img class="hero-logo" [src]="s.logo" [alt]="s.title" />
+          } @else {
+            <h1 class="hero-title">{{ s.title }}</h1>
+          }
+          @if (s.subtitle) { <p class="hero-subtitle">{{ s.subtitle }}</p> }
+          <p class="hero-facts">
+            @if (s.year) { <span>{{ s.year }}</span> }
+            @if (duration(s.runtime); as d) { <span>{{ d }}</span> }
+            @if (s.rating) { <span>{{ s.rating.toFixed(1) }} sur TMDb</span> }
+            @if (s.genres.length) { <span>{{ s.genres.slice(0, 3).join(', ') }}</span> }
+          </p>
+          <p class="hero-plot">{{ s.plot }}</p>
+        </div>
+      }
+    </section>
+
+    <div class="rows">
+      <section class="row" aria-label="Your Next Episodes">
+        <header class="row-head">
+          <h2 class="row-title">Your Next Episodes</h2>
+          <span class="row-note">Toujours en premier sur la télé</span>
+        </header>
+        <div class="tiles">
+          @for (item of next(); track item.tmdb + '-' + item.season + '-' + item.episode) {
+            <button type="button" class="tile" (mouseenter)="focusRow(item)" (focus)="focusRow(item)">
+              @if (tileImage(item); as src) { <img class="tile-image" [src]="src" alt="" loading="lazy" /> }
+              @if (item.percent) {
+                <span class="tile-progress" role="img" [attr.aria-label]="'Vu à ' + item.percent + ' %'"><span [style.width.%]="item.percent"></span></span>
+              }
+              <span class="tile-name">{{ item.showtitle }}</span>
+              <span class="tile-sub">S{{ item.season }} E{{ item.episode }}</span>
+            </button>
+          } @empty {
+            <p class="row-empty">Rien à reprendre pour le moment.</p>
+          }
+        </div>
+      </section>
+
+      <div class="home" id="home" cdkDropList [cdkDropListConnectedTo]="['library']" (cdkDropListDropped)="drop($event)">
+        @for (list of homeLists(); track list.ids.trakt; let i = $index, isFirst = $first, isLast = $last) {
+          <section class="row is-movable" cdkDrag [cdkDragData]="listFor(list)" [attr.aria-label]="list.name">
+            <div class="drop-line" *cdkDragPlaceholder></div>
+            <header class="row-head">
+              <span class="grip" cdkDragHandle title="Glisser pour déplacer" aria-hidden="true">
+                <svg viewBox="0 0 10 16" width="10" height="16"><circle cx="2" cy="2" r="1.4"/><circle cx="8" cy="2" r="1.4"/><circle cx="2" cy="8" r="1.4"/><circle cx="8" cy="8" r="1.4"/><circle cx="2" cy="14" r="1.4"/><circle cx="8" cy="14" r="1.4"/></svg>
+              </span>
+              <h2 class="row-title">{{ list.name }}</h2>
+              <span class="row-actions">
+                <button type="button" class="ghost" [disabled]="isFirst" (click)="move(i, -1)">Monter</button>
+                <button type="button" class="ghost" [disabled]="isLast" (click)="move(i, 1)">Descendre</button>
+                <button type="button" class="ghost" (click)="open(list)">Voir la liste</button>
+                <button type="button" class="ghost" (click)="removeFromHome(list)">Retirer de la télé</button>
+              </span>
+            </header>
+            <div class="tiles">
+              @for (item of itemsOf(list).slice(0, 20); track item.kind + item.tmdb) {
+                <button type="button" class="tile" (mouseenter)="focusRow(item)" (focus)="focusRow(item)" (click)="open(list)">
+                  @if (tileImage(item); as src) { <img class="tile-image" [src]="src" alt="" loading="lazy" /> }
+                  <span class="tile-name">{{ item.title }}</span>
+                  <span class="tile-sub">{{ item.genres.slice(0, 2).join(', ') || item.year }}</span>
+                </button>
+              } @empty {
+                <p class="row-empty">{{ isFilling(list) ? 'Le cluster prépare cette liste…' : 'Cette liste est vide.' }}</p>
+              }
+            </div>
+          </section>
+        } @empty {
+          <div class="home-empty">Glisse une liste ici pour l'ajouter à l'accueil de la télé.</div>
+        }
+      </div>
+
+      <p class="rows-end">Les rangées de Bingie (tendances, populaires, classiques) suivent sur la télé. Tu pourras les organiser ici plus tard.</p>
+    </div>
+  </main>
+
+  <aside class="library" aria-label="Bibliothèque de listes">
+    <label class="search">
+      <span class="visually-hidden">Chercher une liste, un film ou une série</span>
+      <input type="search" placeholder="Chercher une liste, un film, une série" [value]="query()" (input)="onQuery($any($event.target).value)" />
+    </label>
+
+    @if (results(); as found) {
+      <div class="pane" id="search-results">
+        @if (libraryLists().length) {
+          <h3 class="pane-title">Tes listes</h3>
+          @for (list of libraryLists(); track list.ids.trakt) {
+            <button type="button" class="result" (click)="open(list)">
+              <span class="result-text"><strong>{{ list.name }}</strong><span>{{ list.item_count }} titres</span></span>
+            </button>
+          }
+        }
+        <h3 class="pane-title">Films et séries</h3>
+        @if (detail(); as open) {
+          @if (!open.source) { <p class="pane-note">Ajout dans {{ open.name }}.</p> }
+        } @else {
+          <p class="pane-note">Ouvre une de tes listes pour y ajouter un titre.</p>
+        }
+        @for (title of found; track title.kind + title.tmdb) {
+          <article class="result" (mouseenter)="focusPreview(title)">
+            @if (title.poster) { <img class="result-poster" [src]="title.poster" alt="" loading="lazy" /> } @else { <span class="result-poster"></span> }
+            <span class="result-text">
+              <strong>{{ title.title }}</strong>
+              <span>{{ title.kind === 'movie' ? 'Film' : 'Série' }}{{ title.year ? ', ' + title.year : '' }}{{ title.rating ? ', ' + title.rating.toFixed(1) + ' sur TMDb' : '' }}</span>
+              <span class="result-plot">{{ title.plot }}</span>
+            </span>
+            @if (detail(); as open) {
+              @if (!open.source) {
+                @if (isInDetail(title)) { <span class="added">Ajouté</span> }
+                @else { <button type="button" class="small" (click)="addToDetail(title)">Ajouter</button> }
+              }
+            }
+          </article>
+        } @empty {
+          <p class="pane-note">{{ searching() ? 'Recherche en cours…' : 'Aucun titre trouvé.' }}</p>
+        }
+      </div>
+    } @else {
+      <div class="tabs" role="tablist">
+        <button type="button" role="tab" [attr.aria-selected]="tab() === 'mine'" [class.is-on]="tab() === 'mine'" (click)="tab.set('mine')">Mes listes</button>
+        <button type="button" role="tab" [attr.aria-selected]="tab() === 'discover'" [class.is-on]="tab() === 'discover'" (click)="tab.set('discover')">Découvrir</button>
+      </div>
+
+      <div class="pane" id="library" cdkDropList cdkDropListSortingDisabled [cdkDropListConnectedTo]="['home']">
+        @if (tab() === 'mine') {
+          @for (list of lists(); track list.ids.trakt) {
+            <article class="card" cdkDrag [cdkDragData]="listFor(list)" [class.is-placed]="isOnHome(list)">
+              <button type="button" class="card-open" (click)="open(list)">
+                <span class="posters">
+                  @for (item of itemsOf(list).slice(0, 4); track item.kind + item.tmdb) {
+                    @if (item.art.poster; as src) { <img [src]="src" alt="" loading="lazy" /> }
+                  }
+                </span>
+                <span class="card-name">{{ list.name }}</span>
+                <span class="card-meta">{{ list.item_count }} titres, {{ describe(list) }}</span>
+              </button>
+              @if (isOnHome(list)) {
+                <span class="added">Sur la télé</span>
+              } @else {
+                <button type="button" class="small" (click)="place(listFor(list))">Mettre sur la télé</button>
+              }
+            </article>
+          } @empty {
+            <p class="pane-note">Aucune liste pour l'instant. Ouvre Découvrir ou crée la tienne.</p>
+          }
+          <form class="new-list" (submit)="$event.preventDefault(); createList()">
+            <label>
+              <span class="visually-hidden">Nom de la nouvelle liste</span>
+              <input type="text" maxlength="80" placeholder="Nom d'une nouvelle liste" [value]="newListName()" (input)="newListName.set($any($event.target).value)" />
+            </label>
+            <button type="submit" class="small" [disabled]="!newListName().trim()">Créer</button>
+          </form>
+        } @else {
+          <article class="card card-top10" cdkDrag [cdkDragData]="top10">
+            <span class="card-name">Top 10 on Netflix</span>
+            <span class="card-meta">Le classement officiel de la semaine au Canada</span>
+            <button type="button" class="small" (click)="place(top10)">Mettre sur la télé</button>
+          </article>
+
+          <h3 class="pane-title">Plateforme</h3>
+          <div class="chips">
+            @for (p of providers; track p.id) {
+              <button type="button" class="chip" [class.is-on]="provider() === p.id" (click)="choose(p.id, theme())">{{ p.name }}</button>
+            }
+          </div>
+          <h3 class="pane-title">Thème</h3>
+          <div class="chips">
+            @for (t of themes; track t.value) {
+              <button type="button" class="chip" [class.is-on]="theme() === t.value" (click)="choose(provider(), t.value)">{{ t.fr }}</button>
+            }
+          </div>
+
+          <article class="card" cdkDrag [cdkDragData]="suggestion()">
+            <span class="card-name">{{ $any(suggestion()).name }}</span>
+            <span class="card-meta">
+              @if (preview(); as items) { {{ items.length }} titres disponibles par abonnement au Canada }
+              @else { Chargement des titres… }
+            </span>
+            <button type="button" class="small" (click)="place(suggestion())">Mettre sur la télé</button>
+          </article>
+          <div class="preview-grid">
+            @for (item of preview() ?? []; track item.kind + item.tmdb) {
+              <figure class="preview" tabindex="0" (mouseenter)="focusPreview(item)" (focus)="focusPreview(item)">
+                @if (item.poster) { <img [src]="item.poster" [alt]="item.title" loading="lazy" /> }
+                <figcaption>{{ item.title }}</figcaption>
+              </figure>
+            }
+          </div>
+          <p class="pane-note">Sélection par thème dans le catalogue TMDb : ce ne sont pas les collections choisies par les éditeurs de la plateforme.</p>
+        }
+      </div>
+    }
+    <p class="attribution">Ce produit utilise l'API TMDb, sans être approuvé ni certifié par TMDb.</p>
+  </aside>
+
+  @if (detail(); as list) {
+    <section class="detail" role="dialog" aria-modal="false" [attr.aria-label]="list.name">
+      <header class="detail-head">
+        <div>
+          <h2 class="detail-title">{{ list.name }}</h2>
+          <p class="detail-meta">{{ list.item_count }} titres, {{ describe(list) }}</p>
+          @if (list.source_status?.at) { <p class="detail-meta">Dernière mise à jour sur le cluster {{ list.source_status?.at?.slice(0, 16)?.replace('T', ' à ') }}</p> }
+          @if (list.source_status?.error; as err) { <p class="detail-meta is-bad">Mise à jour en erreur : {{ err }}. Les derniers titres connus restent affichés.</p> }
+          @if (list.source_status?.unmatched?.length) { <p class="detail-meta">Introuvables sur TMDb : {{ list.source_status?.unmatched?.join(', ') }}</p> }
+        </div>
+        <button type="button" class="ghost" (click)="close()">Fermer</button>
+      </header>
+      <div class="detail-actions">
+        @if (isOnHome(list)) {
+          <button type="button" class="small" (click)="removeFromHome(list)">Retirer de la télé</button>
+        } @else {
+          <button type="button" class="small" (click)="place(listFor(list))">Mettre sur la télé</button>
+        }
+        @if (confirmingDelete()) {
+          <button type="button" class="small is-danger" (click)="deleteDetail()">Confirmer la suppression</button>
+          <button type="button" class="ghost" (click)="confirmingDelete.set(false)">Annuler</button>
+        } @else {
+          <button type="button" class="ghost" (click)="confirmingDelete.set(true)">Supprimer la liste</button>
+        }
+      </div>
+      @if (!list.source) { <p class="detail-meta">Pour ajouter un titre, cherche-le dans le champ à droite.</p> }
+      @else { <p class="detail-meta">Son contenu est choisi automatiquement : elle ne se modifie pas titre par titre.</p> }
+      <ol class="detail-items">
+        @for (item of detailItems(); track item.kind + item.tmdb; let n = $index) {
+          <li class="detail-item" (mouseenter)="focusRow(item)">
+            @if (item.art.poster) { <img [src]="item.art.poster" alt="" loading="lazy" /> } @else { <span class="detail-noposter"></span> }
+            <div class="detail-text">
+              <strong>{{ item.title }}</strong>
+              <span>{{ item.kind === 'movie' ? 'Film' : 'Série' }}{{ item.year ? ', ' + item.year : '' }}{{ item.rating ? ', ' + item.rating.toFixed(1) + ' sur TMDb' : '' }}{{ duration(item.runtime) ? ', ' + duration(item.runtime) : '' }}</span>
+              @if (item.genres.length) { <span>{{ item.genres.join(', ') }}</span> }
+              <p>{{ item.plot }}</p>
+            </div>
+            @if (!list.source) { <button type="button" class="ghost" (click)="removeFromDetail(item)">Retirer</button> }
+          </li>
+        } @empty {
+          <li class="pane-note">{{ isFilling(list) ? 'Le cluster prépare cette liste…' : 'Cette liste est vide.' }}</li>
+        }
+      </ol>
+    </section>
+  }
+</div>

@@ -11,7 +11,7 @@ import {
   Put,
   Query,
 } from '@nestjs/common';
-import { TraktList, TraktMediaKind, TraktNewList, TraktTitle } from '@nexus/shared-types';
+import { TraktList, TraktMediaKind, TraktNewList, TraktPreview, TraktRowItem, TraktTitle } from '@nexus/shared-types';
 import { TraktService } from './trakt.service';
 
 function mediaKind(kind: string): TraktMediaKind {
@@ -78,6 +78,34 @@ export class TraktController {
   @Put('home')
   setHome(@Body('lists') lists: number[]): Promise<{ lists: number[]; slots: number }> {
     return this.trakt.setHomeLists(lists);
+  }
+
+  @Get('rows/:name')
+  row(@Param('name') name: string): Promise<TraktRowItem[]> {
+    return this.trakt.row(name);
+  }
+
+  @Get('sources/preview')
+  previewSource(
+    @Query('provider', ParseIntPipe) provider: number,
+    @Query('theme') theme = '',
+    @Query('kinds') kinds = '',
+  ): Promise<TraktPreview[]> {
+    return this.trakt.previewSource(provider, theme, kinds);
+  }
+
+  @Get('titles')
+  titles(@Query('q') query = ''): Promise<TraktPreview[]> {
+    return query.trim() ? this.trakt.searchTitles(query.trim()) : Promise.resolve([]);
+  }
+
+  @Post('lists/:id/titles')
+  @HttpCode(204)
+  addTitle(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() title: { kind: string; tmdb: number; title: string; year: number | null },
+  ): Promise<void> {
+    return this.trakt.addTitle(id, { ...title, kind: mediaKind(title.kind) });
   }
 
   @Get('search')

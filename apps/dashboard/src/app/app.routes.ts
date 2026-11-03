@@ -3,6 +3,13 @@ import { LayoutComponent } from './layout/layout';
 
 export const appRoutes: Route[] = [
   {
+    // Plein écran, hors de la mise en page : c'est la télé qu'on édite.
+    path: 'trakt',
+    pathMatch: 'full',
+    loadComponent: () =>
+      import('./features/trakt/studio/trakt-studio').then(m => m.TraktStudio),
+  },
+  {
     path: '',
     component: LayoutComponent,
     children: [
@@ -28,7 +35,7 @@ export const appRoutes: Route[] = [
           import('./features/sideloop/sideloop-page').then(m => m.SideloopPage),
       },
       {
-        path: 'trakt',
+        path: 'trakt/service',
         loadComponent: () =>
           import('./features/trakt/trakt-page').then(m => m.TraktPage),
       },

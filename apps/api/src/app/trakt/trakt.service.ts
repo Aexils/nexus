@@ -8,7 +8,15 @@ import {
 } from '@nestjs/common';
 import { Interval } from '@nestjs/schedule';
 import { NexusGateway } from '../gateway/nexus.gateway';
-import { TraktList, TraktMediaKind, TraktNewList, TraktStatus, TraktTitle } from '@nexus/shared-types';
+import {
+  TraktList,
+  TraktMediaKind,
+  TraktNewList,
+  TraktPreview,
+  TraktRowItem,
+  TraktStatus,
+  TraktTitle,
+} from '@nexus/shared-types';
 import { traktAlerts } from './trakt-alerts';
 
 // Service ClusterIP `kube-trakt` : port HTTP interne, le certificat public ne couvrant que api.trakt.tv.
@@ -125,6 +133,28 @@ export class TraktService implements OnModuleInit {
 
   setHomeLists(lists: number[]): Promise<{ lists: number[]; slots: number }> {
     return this.json('PUT', '/admin/home', { lists });
+  }
+
+  async row(name: string): Promise<TraktRowItem[]> {
+    if (!/^[a-z0-9_]+$/.test(name)) throw new NotFoundException(`Rangée inconnue : ${name}`);
+    const row = await this.json<{ items: TraktRowItem[] }>('GET', `/rows/${name}`);
+    return row.items;
+  }
+
+  previewSource(provider: number, theme: string, kinds: string): Promise<TraktPreview[]> {
+    const query = new URLSearchParams({ provider: String(provider), theme, kinds });
+    return this.json('GET', `/admin/sources/preview?${query}`);
+  }
+
+  searchTitles(query: string): Promise<TraktPreview[]> {
+    return this.json('GET', `/admin/search?q=${encodeURIComponent(query)}`);
+  }
+
+  async addTitle(id: number, title: { kind: TraktMediaKind; tmdb: number; title: string; year: number | null }): Promise<void> {
+    const entry = { title: title.title, year: title.year, ids: { tmdb: title.tmdb } };
+    await this.request('POST', `/users/me/lists/${id}/items`, {
+      [title.kind === 'movie' ? 'movies' : 'shows']: [entry],
+    });
   }
 
   // --- Séries ---
