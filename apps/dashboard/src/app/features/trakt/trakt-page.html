@@ -41,7 +41,7 @@
   @if (error(); as e) { <div class="alert">⚠ {{ e }}</div> }
 
   <h2 class="section-title">Listes</h2>
-  <p class="hint">Visibles dans Kodi comme des listes Trakt. Une liste automatique se met à jour toutes les 24 h.</p>
+  <p class="hint">Visibles dans Kodi comme des listes Trakt. Sur le cluster, les listes par plateforme se recalculent 4 fois par jour, le Top 10 Netflix une fois.</p>
   <div class="table">
     @for (l of lists(); track l.ids.trakt) {
       <div class="row">
