@@ -24,6 +24,7 @@
       <div class="acc-item"><span class="acc-label">Listes</span><span class="acc-val">{{ c.lists }}</span></div>
       <div class="acc-item"><span class="acc-label">Dernier visionnage</span><span class="acc-val">{{ ago(st.last_watched_at) }}</span></div>
       <div class="acc-item"><span class="acc-label">Dernière sauvegarde</span><span class="acc-val">{{ ago(st.last_backup) }}</span></div>
+      <div class="acc-item"><span class="acc-label">Synchro Jellyfin</span><span class="acc-val">{{ jellyfin() ? ago(jellyfin()?.at ?? null) : 'inactive' }}</span></div>
       <div class="acc-item"><span class="acc-label">Catalogue TMDb</span><span class="acc-val">{{ ago(st.catalog?.at ?? null) }}</span></div>
     </section>
   }
@@ -37,8 +38,147 @@
     </section>
   }
 
-  <h2 class="section-title">Appareils</h2>
   @if (error(); as e) { <div class="alert">⚠ {{ e }}</div> }
+
+  <h2 class="section-title">Listes</h2>
+  <p class="hint">Visibles dans Kodi comme des listes Trakt. Une liste automatique se met à jour toutes les 24 h.</p>
+  <div class="table">
+    @for (l of lists(); track l.ids.trakt) {
+      <div class="row">
+        <span class="row-name">{{ l.name }}</span>
+        <span class="row-sub">{{ sourceLabel(l) }} · {{ l.item_count }} titres
+          @if (l.source && !l.source_status) { · en préparation }
+          @if (l.source_status?.error; as err) { · <span class="bad">erreur : {{ err }}</span> }
+          @if (l.source_status?.unmatched?.length; as n) { · {{ n }} non trouvé{{ n > 1 ? 's' : '' }} }
+        </span>
+        @if (confirmingList() === l.ids.trakt) {
+          <span class="row-actions">
+            <button class="btn danger" (click)="deleteList(l)">Confirmer</button>
+            <button class="btn" (click)="confirmingList.set(null)">Annuler</button>
+          </span>
+        } @else {
+          <span class="row-actions">
+            <button class="btn" (click)="toggleList(l)">{{ openList()?.ids?.trakt === l.ids.trakt ? 'Fermer' : 'Ouvrir' }}</button>
+            <button class="btn" (click)="confirmingList.set(l.ids.trakt)">Supprimer</button>
+          </span>
+        }
+      </div>
+      @if (openList()?.ids?.trakt === l.ids.trakt) {
+        <div class="items">
+          @for (t of items(); track t.kind + t.tmdb) {
+            <div class="item">
+              <span class="row-name">{{ t.title }} @if (t.year) { <span class="row-sub">({{ t.year }})</span> }</span>
+              <span class="row-sub">{{ t.kind === 'movie' ? 'Film' : 'Série' }}</span>
+              @if (!l.source) { <button class="btn" (click)="removeFromOpenList(t)">Retirer</button> }
+            </div>
+          } @empty {
+            <div class="item row-sub">
+              {{ l.source ? 'Le contenu arrive au prochain passage du catalogue (5 min au plus).' : 'Liste vide : ajoute des titres avec la recherche plus bas.' }}
+            </div>
+          }
+          @if (l.source_status?.unmatched?.length) {
+            <div class="item row-sub">Non trouvés : {{ l.source_status?.unmatched?.join(', ') }}</div>
+          }
+        </div>
+      }
+    } @empty {
+      <div class="row empty">Aucune liste</div>
+    }
+  </div>
+
+  <form class="form" (submit)="$event.preventDefault(); createList()">
+    <label class="field">Nom
+      <input class="input" type="text" maxlength="80" [value]="newName()" (input)="newName.set($any($event.target).value)" />
+    </label>
+    <label class="field">Contenu
+      <select class="input" [value]="newType()" (change)="newType.set($any($event.target).value)">
+        <option value="manual">Choisi à la main</option>
+        <option value="provider">Catalogue d'une plateforme</option>
+        <option value="netflix_top10">Top 10 officiel Netflix</option>
+      </select>
+    </label>
+    @if (newType() === 'provider') {
+      <label class="field">Plateforme
+        <select class="input" (change)="newProvider.set(+$any($event.target).value)">
+          @for (p of providers; track p.id) { <option [value]="p.id" [selected]="p.id === newProvider()">{{ p.name }}</option> }
+        </select>
+      </label>
+      <label class="field">Thème
+        <select class="input" (change)="newTheme.set($any($event.target).value)">
+          <option value="">Tout le catalogue populaire</option>
+          @for (t of themes; track t.value) { <option [value]="t.value" [selected]="t.value === newTheme()">{{ t.label }}</option> }
+        </select>
+      </label>
+    }
+    @if (newType() !== 'manual') {
+      <label class="field">Titres
+        <select class="input" (change)="newKinds.set($any($event.target).value)">
+          <option value="both">Films et séries</option>
+          <option value="movie">Films</option>
+          <option value="show">Séries</option>
+        </select>
+      </label>
+    }
+    <button class="btn primary" type="submit" [disabled]="!newName().trim()">Créer la liste</button>
+  </form>
+  <p class="hint">Les listes par plateforme viennent du catalogue TMDb pour le Canada. Ce ne sont pas les collections choisies par les éditeurs de Netflix, qui n'ont pas de flux public.</p>
+
+  <h2 class="section-title">Chercher un titre</h2>
+  <form class="form" (submit)="$event.preventDefault(); search()">
+    <label class="field grow">Film ou série
+      <input class="input" type="search" [value]="query()" (input)="query.set($any($event.target).value)" />
+    </label>
+    <button class="btn" type="submit" [disabled]="!query().trim()">Chercher</button>
+  </form>
+  @if (results(); as found) {
+    <div class="table">
+      @for (t of found; track t.kind + t.tmdb) {
+        <div class="row">
+          <span class="row-name">{{ t.title }} @if (t.year) { <span class="row-sub">({{ t.year }})</span> }</span>
+          <span class="row-sub">{{ t.kind === 'movie' ? 'Film' : 'Série' }}</span>
+          <span class="row-actions">
+            @if (canEditOpenList()) {
+              <button class="btn" (click)="addToOpenList(t)">Ajouter à {{ openList()?.name }}</button>
+            }
+            @if (t.kind === 'show') {
+              <button class="btn" (click)="setLoop(t.slug, !isLoop(t.slug))">{{ isLoop(t.slug) ? 'Arrêter la boucle' : 'En boucle' }}</button>
+              <button class="btn" (click)="setHidden(t.tmdb, !isHidden(t.tmdb))">{{ isHidden(t.tmdb) ? 'Réafficher' : 'Masquer' }}</button>
+            }
+          </span>
+        </div>
+      } @empty {
+        <div class="row empty">Aucun résultat</div>
+      }
+    </div>
+  }
+
+  <h2 class="section-title">Séries en boucle</h2>
+  <p class="hint">Le prochain épisode suit le dernier vu et repart du début à la fin de la série.</p>
+  <div class="table">
+    @for (s of loopShows(); track s.slug) {
+      <div class="row">
+        <span class="row-name">{{ s.title }}</span>
+        <button class="btn" (click)="setLoop(s.slug, false)">Arrêter</button>
+      </div>
+    } @empty {
+      <div class="row empty">Aucune série</div>
+    }
+  </div>
+
+  <h2 class="section-title">Séries masquées</h2>
+  <p class="hint">Absentes de « next episodes ».</p>
+  <div class="table">
+    @for (s of hidden(); track s.tmdb) {
+      <div class="row">
+        <span class="row-name">{{ s.title }}</span>
+        <button class="btn" (click)="setHidden(s.tmdb, false)">Réafficher</button>
+      </div>
+    } @empty {
+      <div class="row empty">Aucune série</div>
+    }
+  </div>
+
+  <h2 class="section-title">Appareils</h2>
   <div class="table">
     @for (d of devices(); track d.device) {
       <div class="row">

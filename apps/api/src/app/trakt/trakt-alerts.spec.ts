@@ -11,6 +11,8 @@ function status(overrides: Partial<TraktStatus> = {}): Omit<TraktStatus, 'alerts
     last_watched_at: null,
     last_backup: '2026-11-02T08:30:00.000Z',
     catalog: { at: '2026-11-02T11:58:00.000Z', error: null },
+    jellyfin: null,
+    loop_shows: [],
     now_playing: null,
     devices: [],
     missing_routes: [],
@@ -21,6 +23,10 @@ function status(overrides: Partial<TraktStatus> = {}): Omit<TraktStatus, 'alerts
 describe('traktAlerts', () => {
   it('ne signale rien quand tout est récent', () => {
     expect(traktAlerts(status(), NOW)).toEqual([]);
+  });
+
+  it('signale une synchro Jellyfin en erreur', () => {
+    expect(traktAlerts(status({ jellyfin: { error: 'HTTP 401' } }), NOW)).toEqual(['Synchro Jellyfin en erreur : HTTP 401']);
   });
 
   it('tolère une nuit manquée, puis alerte', () => {

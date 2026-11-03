@@ -17,5 +17,8 @@ export function traktAlerts(status: Omit<TraktStatus, 'alerts'>, now = Date.now(
   } else if (!status.catalog || now - Date.parse(status.catalog.at) > CATALOG_MAX_AGE_MS) {
     alerts.push('Catalogue TMDb à l\'arrêt : aucun passage depuis 30 min');
   }
+  if (status.jellyfin?.error) {
+    alerts.push(`Synchro Jellyfin en erreur : ${status.jellyfin.error}`);
+  }
   return alerts;
 }
