@@ -139,6 +139,17 @@ export interface TraktSnapshotItem {
   art: TraktRowItem['art'];
 }
 
+/** Entrée du menu de gauche de la télé. */
+export interface TraktNavEntry {
+  key: string;
+  builtin: boolean;
+  name: string;
+  icon: string;
+  window: string;
+  has_rows: boolean;
+  hidden: boolean;
+}
+
 export interface TraktProviderLogo {
   name: string;
   logo: string;

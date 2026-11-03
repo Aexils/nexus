@@ -16,6 +16,7 @@ import {
   TraktCustomScreen,
   TraktCustomScreens,
   TraktList,
+  TraktNavEntry,
   TraktNewList,
   TraktPreview,
   TraktProviderLogo,
@@ -140,6 +141,10 @@ export class TraktStudio implements OnInit, OnDestroy {
   readonly maxBuiltinRows = signal(15);
   readonly nextEntry: Droppable = { kind: 'next' };
   readonly screen = signal<string>('home');
+  readonly nav = signal<TraktNavEntry[]>([]);
+  readonly navVisible = computed(() => this.nav().filter(e => !e.hidden));
+  readonly navHidden = computed(() => this.nav().filter(e => e.hidden));
+  readonly editingEntry = signal<TraktNavEntry | null>(null);
   readonly customScreens = signal<TraktCustomScreen[]>([]);
   readonly maxScreens = signal(6);
   readonly maxRows = signal(10);
@@ -239,16 +244,18 @@ export class TraktStudio implements OnInit, OnDestroy {
 
   private async refresh(): Promise<void> {
     try {
-      const [lists, custom, snapshots] = await Promise.all([
+      const [lists, custom, snapshots, nav] = await Promise.all([
         firstValueFrom(this.http.get<TraktList[]>('/api/trakt/lists')),
         firstValueFrom(this.http.get<TraktCustomScreens>('/api/trakt/custom-screens')),
         firstValueFrom(this.http.get<Record<string, TraktSnapshotItem[]>>('/api/trakt/row-snapshots')),
+        firstValueFrom(this.http.get<TraktNavEntry[]>('/api/trakt/nav')),
       ]);
       this.lists.set(lists);
       // Un enregistrement en cours garde son affichage : le serveur n'a pas encore la nouvelle version.
       if (!this.saving) {
         this.customScreens.set(custom.screens);
         this.builtinScreens.set(custom.builtin);
+        this.nav.set(nav);
       }
       this.maxScreens.set(custom.max_screens);
       this.maxRows.set(custom.max_rows);
@@ -481,6 +488,7 @@ export class TraktStudio implements OnInit, OnDestroy {
   // --- Écrans du rail ---
 
   openNewScreen(): void {
+    this.editingEntry.set(null);
     if (this.customScreens().length >= this.maxScreens()) {
       this.failure.set(`La télé accepte ${this.maxScreens()} écrans créés au maximum. Supprimes-en un pour faire de la place.`);
       return;
@@ -491,11 +499,55 @@ export class TraktStudio implements OnInit, OnDestroy {
   }
 
   openEditScreen(): void {
-    const screen = this.customScreen();
-    if (!screen) return;
-    this.draftName.set(screen.name);
-    this.draftIcon.set(screen.icon);
+    const entry = this.nav().find(e => e.key === this.screen());
+    if (entry) this.editEntry(entry);
+  }
+
+  editEntry(entry: TraktNavEntry): void {
+    this.editingEntry.set(entry);
+    this.draftName.set(entry.name);
+    this.draftIcon.set(entry.icon);
     this.openEditor('edit');
+  }
+
+  /** Un clic ouvre l'écran ; une entrée sans rangées, comme la recherche, ouvre son réglage. */
+  selectEntry(entry: TraktNavEntry): void {
+    if (entry.has_rows) void this.goTo(entry.key);
+    else this.editEntry(entry);
+  }
+
+  private async saveNav(entries: TraktNavEntry[], message: string): Promise<void> {
+    const previous = this.nav();
+    this.nav.set(entries);
+    this.saving = true;
+    try {
+      const saved = await firstValueFrom(
+        this.http.put<TraktNavEntry[]>('/api/trakt/nav', {
+          entries: entries.map(e => ({
+            key: e.key,
+            hidden: e.hidden,
+            name: e.builtin ? e.name : '',
+            icon: e.builtin ? e.icon : '',
+          })),
+        }),
+      );
+      this.nav.set(saved);
+      this.say(message);
+    } catch {
+      this.nav.set(previous);
+      this.failure.set("Le menu n'a pas été enregistré. Réessaie dans un instant.");
+    } finally {
+      this.saving = false;
+    }
+  }
+
+  async setHidden(entry: TraktNavEntry, hidden: boolean): Promise<void> {
+    this.editing.set(null);
+    await this.saveNav(
+      this.nav().map(e => (e.key === entry.key ? { ...e, hidden } : e)),
+      hidden ? `${entry.name} retiré du menu de la télé.` : `${entry.name} de retour dans le menu de la télé.`,
+    );
+    if (hidden && this.screen() === entry.key) await this.goTo('home');
   }
 
   private openEditor(mode: 'new' | 'edit'): void {
@@ -565,8 +617,13 @@ export class TraktStudio implements OnInit, OnDestroy {
         await this.goTo(created.id);
         this.say(`${name} ajouté au menu de la télé. Glisse des rangées pour le remplir.`);
       } else {
-        const id = this.customScreen()?.id;
-        await firstValueFrom(this.http.put(`/api/trakt/custom-screens/${id}`, body));
+        const entry = this.editingEntry();
+        if (entry && !entry.builtin) {
+          await firstValueFrom(this.http.put(`/api/trakt/custom-screens/${entry.key}`, body));
+        } else if (entry) {
+          const entries = this.nav().map(e => (e.key === entry.key ? { ...e, name, icon: this.draftIcon() } : e));
+          await this.saveNav(entries, `${name} mis à jour.`);
+        }
         this.editing.set(null);
         await this.refresh();
         this.say(`${name} mis à jour.`);
@@ -577,32 +634,24 @@ export class TraktStudio implements OnInit, OnDestroy {
   }
 
   async deleteScreen(): Promise<void> {
-    const screen = this.customScreen();
-    if (!screen) return;
+    const entry = this.editingEntry();
+    if (!entry || entry.builtin) return;
     try {
-      await firstValueFrom(this.http.delete(`/api/trakt/custom-screens/${screen.id}`));
+      await firstValueFrom(this.http.delete(`/api/trakt/custom-screens/${entry.key}`));
       this.editing.set(null);
-      await this.goTo('home');
+      if (this.screen() === entry.key) await this.goTo('home');
       await this.refresh();
-      this.say(`${screen.name} retiré du menu de la télé. Tes listes sont conservées.`);
+      this.say(`${entry.name} retiré du menu de la télé. Tes listes sont conservées.`);
     } catch {
-      this.failure.set(`${screen.name} n'a pas pu être supprimé.`);
+      this.failure.set(`${entry.name} n'a pas pu être supprimé.`);
     }
   }
 
   async dropScreen(event: CdkDragDrop<unknown, unknown, unknown>): Promise<void> {
     if (event.previousIndex === event.currentIndex) return;
-    const previous = this.customScreens();
-    const screens = [...previous];
-    moveItemInArray(screens, event.previousIndex, event.currentIndex);
-    this.customScreens.set(screens);
-    try {
-      await firstValueFrom(this.http.put('/api/trakt/custom-screens/order', { ids: screens.map(s => s.id) }));
-      this.say('Nouvel ordre du menu envoyé à la télé.');
-    } catch {
-      this.customScreens.set(previous);
-      this.failure.set("L'ordre du menu n'a pas été enregistré.");
-    }
+    const visible = [...this.navVisible()];
+    moveItemInArray(visible, event.previousIndex, event.currentIndex);
+    await this.saveNav([...visible, ...this.navHidden()], 'Nouvel ordre du menu envoyé à la télé.');
   }
 
   // --- Bibliothèque ---

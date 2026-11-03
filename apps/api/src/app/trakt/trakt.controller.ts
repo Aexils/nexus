@@ -18,6 +18,7 @@ import {
   TraktCustomScreens,
   TraktList,
   TraktMediaKind,
+  TraktNavEntry,
   TraktNewList,
   TraktPreview,
   TraktProviderLogo,
@@ -123,6 +124,16 @@ export class TraktController {
   @Get('row-snapshots')
   rowSnapshots(): Promise<Record<string, TraktSnapshotItem[]>> {
     return this.trakt.rowSnapshots();
+  }
+
+  @Get('nav')
+  nav(): Promise<TraktNavEntry[]> {
+    return this.trakt.nav();
+  }
+
+  @Put('nav')
+  saveNav(@Body('entries') entries: { key: string; hidden: boolean; name: string; icon: string }[]): Promise<TraktNavEntry[]> {
+    return this.trakt.saveNav(entries);
   }
 
   @Get('provider-logos')

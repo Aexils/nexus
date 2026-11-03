@@ -40,8 +40,11 @@ button:disabled { cursor: default; opacity: .4; }
 .rail-item.is-on::after { content: ''; width: 1.6rem; height: 3px; background: var(--red); }
 .rail-name { font-size: .68rem; line-height: 1.1; text-align: center; overflow-wrap: anywhere; }
 .rail { overflow-y: auto; scrollbar-width: none; }
-.rail-custom { display: flex; flex-direction: column; gap: 1.1rem; }
-.rail-custom:empty { display: none; }
+.rail-list { display: flex; flex-direction: column; gap: 1rem; }
+.rail-entry { cursor: grab; }
+.rail-hidden { display: flex; flex-direction: column; gap: .3rem; padding: .5rem .2rem 0; border-top: 1px solid var(--line); }
+.rail-return { color: var(--ink-faint); font-size: .65rem; line-height: 1.15; text-align: center; overflow-wrap: anywhere; }
+.rail-return:hover { color: var(--ink); }
 .rail-logo { width: 1.6rem; height: 1.6rem; object-fit: contain; border-radius: 3px; }
 .rail-letter { display: grid; place-items: center; width: 1.6rem; height: 1.6rem; border-radius: 3px; background: var(--panel-raised); font-weight: 700; }
 .rail-drop { height: 3px; background: var(--red); }

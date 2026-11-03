@@ -13,6 +13,7 @@ import {
   TraktCustomScreens,
   TraktList,
   TraktMediaKind,
+  TraktNavEntry,
   TraktNewList,
   TraktPreview,
   TraktProviderLogo,
@@ -185,6 +186,14 @@ export class TraktService implements OnModuleInit {
 
   rowSnapshots(): Promise<Record<string, TraktSnapshotItem[]>> {
     return this.json('GET', '/admin/row-snapshots');
+  }
+
+  nav(): Promise<TraktNavEntry[]> {
+    return this.json('GET', '/admin/nav');
+  }
+
+  saveNav(entries: { key: string; hidden: boolean; name: string; icon: string }[]): Promise<TraktNavEntry[]> {
+    return this.json('PUT', '/admin/nav', { entries });
   }
 
   providerLogos(): Promise<TraktProviderLogo[]> {
