@@ -188,6 +188,7 @@ button:disabled { cursor: default; opacity: .4; }
   .row-empty, .home-empty, .rows-end, .drop-line { margin-inline: 1rem; }
   .row-actions { opacity: 1; flex-wrap: wrap; }
   .grip { margin-left: 0; }
+  .row-note { display: none; }
   .tile { flex-basis: 11.5rem; }
   .hero { min-height: 34vh; }
   .hero-image { inset: 0; width: 100%; opacity: .55; }

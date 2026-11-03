@@ -44,6 +44,11 @@
           </p>
           <p class="hero-plot">{{ s.plot }}</p>
         </div>
+      } @else {
+        <div class="hero-text">
+          <h1 class="hero-title">{{ screenInfo().name }}</h1>
+          <p class="hero-plot">Choisis une liste à droite et glisse-la sous ce titre.</p>
+        </div>
       }
     </section>
 
