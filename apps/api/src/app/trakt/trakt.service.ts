@@ -18,6 +18,7 @@ import {
   TraktPreview,
   TraktProviderLogo,
   TraktRowItem,
+  TraktSettings,
   TraktSnapshotItem,
   TraktStatus,
   TraktTitle,
@@ -194,6 +195,15 @@ export class TraktService implements OnModuleInit {
 
   saveNav(entries: { key: string; hidden: boolean; name: string; icon: string }[]): Promise<TraktNavEntry[]> {
     return this.json('PUT', '/admin/nav', { entries });
+  }
+
+  settings(): Promise<TraktSettings> {
+    return this.json('GET', '/admin/settings');
+  }
+
+  async changeSetting(command: { source: string; id: string; value: unknown }): Promise<void> {
+    await this.request('POST', '/admin/settings/commands', command);
+    this.gateway.addLog('info', 'trakt', `Réglage demandé : ${command.id}`);
   }
 
   providerLogos(): Promise<TraktProviderLogo[]> {

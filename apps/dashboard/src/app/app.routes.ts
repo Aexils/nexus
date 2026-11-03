@@ -10,6 +10,11 @@ export const appRoutes: Route[] = [
       import('./features/trakt/studio/trakt-studio').then(m => m.TraktStudio),
   },
   {
+    path: 'trakt/reglages',
+    loadComponent: () =>
+      import('./features/trakt/settings/trakt-settings').then(m => m.TraktSettingsPage),
+  },
+  {
     path: '',
     component: LayoutComponent,
     children: [

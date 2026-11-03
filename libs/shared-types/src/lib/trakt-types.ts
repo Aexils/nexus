@@ -155,6 +155,36 @@ export interface TraktProviderLogo {
   logo: string;
 }
 
+/** Réglage de Kodi, tel que le rpi5 l'expose. */
+export interface KodiSetting {
+  id: string;
+  section: string;
+  category: string;
+  label: string;
+  help: string;
+  type: string;
+  value: unknown;
+  default: unknown;
+  options?: { label: string; value: unknown }[] | null;
+  minimum?: number | null;
+  maximum?: number | null;
+  step?: number | null;
+  editable: boolean;
+}
+
+export interface SkinSetting {
+  kind: 'bool' | 'color';
+  setting: string;
+  label: string;
+  group: string;
+  value: boolean | string;
+}
+
+export interface TraktSettings {
+  kodi?: KodiSetting[];
+  skin?: { id: string; name: string; items: SkinSetting[] }[];
+}
+
 export interface TraktStatus {
   reachable: boolean;
   generated_at: string;

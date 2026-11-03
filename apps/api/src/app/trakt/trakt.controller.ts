@@ -23,6 +23,7 @@ import {
   TraktPreview,
   TraktProviderLogo,
   TraktRowItem,
+  TraktSettings,
   TraktSnapshotItem,
   TraktTitle,
 } from '@nexus/shared-types';
@@ -134,6 +135,17 @@ export class TraktController {
   @Put('nav')
   saveNav(@Body('entries') entries: { key: string; hidden: boolean; name: string; icon: string }[]): Promise<TraktNavEntry[]> {
     return this.trakt.saveNav(entries);
+  }
+
+  @Get('settings')
+  settings(): Promise<TraktSettings> {
+    return this.trakt.settings();
+  }
+
+  @Post('settings')
+  @HttpCode(204)
+  changeSetting(@Body() command: { source: string; id: string; value: unknown }): Promise<void> {
+    return this.trakt.changeSetting(command);
   }
 
   @Get('provider-logos')

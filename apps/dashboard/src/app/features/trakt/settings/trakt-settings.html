@@ -1,0 +1,74 @@
+<div class="page">
+  <nav class="side" aria-label="Sections des réglages">
+    <a class="back" routerLink="/trakt">Retour à l'écran de la télé</a>
+    <h2>Skin</h2>
+    @for (name of skinSections(); track name) {
+      <button type="button" class="link" [class.is-on]="!searching() && !onlyChanged() && section() === 'skin:' + name" (click)="section.set('skin:' + name); onlyChanged.set(false); query.set('')">{{ name }}</button>
+    }
+    <h2>Kodi</h2>
+    @for (name of kodiSections(); track name) {
+      <button type="button" class="link" [class.is-on]="!searching() && !onlyChanged() && section() === 'kodi:' + name" (click)="section.set('kodi:' + name); onlyChanged.set(false); query.set('')">{{ name }}</button>
+    }
+    <h2>LibreELEC</h2>
+    <p class="side-note">Sur la télé : Réglages, puis LibreELEC. La version Nexus arrive ensuite.</p>
+  </nav>
+
+  <main class="main">
+    <header class="top">
+      <label class="search">
+        <span class="visually-hidden">Chercher un réglage</span>
+        <input type="search" placeholder="Chercher un réglage" [value]="query()" (input)="query.set($any($event.target).value)" />
+      </label>
+      <label class="toggle">
+        <input type="checkbox" [checked]="onlyChanged()" (change)="onlyChanged.set($any($event.target).checked)" />
+        Modifiés seulement
+      </label>
+    </header>
+    @if (failure(); as f) { <p class="bad" role="status">{{ f }}</p> }
+
+    @if (!data()) {
+      <p class="note">Chargement des réglages envoyés par la télé…</p>
+    } @else if (!rows().length) {
+      <p class="note">La télé n'a pas encore envoyé ses réglages. Ils arrivent quand Kodi est allumé.</p>
+    }
+
+    @for (group of groups(); track group.title) {
+      <section class="group">
+        <h3>{{ group.title }}</h3>
+        @for (row of group.rows; track row.source + row.key) {
+          <div class="row" [class.is-off]="!row.editable">
+            <div class="text">
+              <label class="label" [attr.for]="row.source + row.key">{{ row.label }}</label>
+              @if (row.help) { <p class="help">{{ row.help }}</p> }
+              @if (isWaiting(row)) { <p class="wait">Envoi à la télé…</p> }
+            </div>
+            <div class="control">
+              @if (!row.editable) {
+                <span class="value">{{ row.type === 'action' ? 'Sur la télé' : currentValue(row) }}</span>
+              } @else if (row.type === 'boolean') {
+                <button type="button" role="switch" class="switch" [id]="row.source + row.key" [class.is-on]="currentValue(row) === true" [attr.aria-checked]="currentValue(row) === true" (click)="change(row, currentValue(row) !== true)"><span></span></button>
+              } @else if (row.type === 'color') {
+                <input type="color" class="color" [id]="row.source + row.key" [value]="colorOf(row)" (change)="changeColor(row, $any($event.target).value)" />
+              } @else if (row.options?.length) {
+                <select class="input" [id]="row.source + row.key" (change)="change(row, row.options![+$any($event.target).value].value)">
+                  @for (o of row.options; track $index) { <option [value]="$index" [selected]="$index === optionIndex(row)">{{ o.label }}</option> }
+                </select>
+              } @else if (row.type === 'integer' || row.type === 'number') {
+                <input type="number" class="input short" [id]="row.source + row.key" [min]="row.minimum" [max]="row.maximum" [value]="currentValue(row)" (change)="changeNumber(row, $any($event.target).value)" />
+              } @else if (row.type === 'string') {
+                <input type="text" class="input" [id]="row.source + row.key" [value]="currentValue(row)" (change)="change(row, $any($event.target).value)" />
+              } @else {
+                <span class="value">Liste, à modifier sur la télé</span>
+              }
+              @if (row.editable && isChanged(row) && row.type !== 'list') {
+                <button type="button" class="reset" (click)="change(row, row.default)">Valeur par défaut</button>
+              }
+            </div>
+          </div>
+        }
+      </section>
+    } @empty {
+      @if (rows().length) { <p class="note">Aucun réglage ne correspond.</p> }
+    }
+  </main>
+</div>
