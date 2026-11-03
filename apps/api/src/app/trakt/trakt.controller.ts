@@ -10,8 +10,20 @@ import {
   Post,
   Put,
   Query,
+  Res,
 } from '@nestjs/common';
-import { TraktList, TraktMediaKind, TraktNewList, TraktPreview, TraktRowItem, TraktTitle } from '@nexus/shared-types';
+import type { Response } from 'express';
+import {
+  TraktCustomScreen,
+  TraktCustomScreens,
+  TraktList,
+  TraktMediaKind,
+  TraktNewList,
+  TraktPreview,
+  TraktProviderLogo,
+  TraktRowItem,
+  TraktTitle,
+} from '@nexus/shared-types';
 import { TraktService } from './trakt.service';
 
 function mediaKind(kind: string): TraktMediaKind {
@@ -78,6 +90,49 @@ export class TraktController {
   @Put('screens/:screen')
   setScreen(@Param('screen') screen: string, @Body('lists') lists: number[]): Promise<{ lists: number[]; slots: number }> {
     return this.trakt.setScreenLists(screen, lists);
+  }
+
+  @Get('custom-screens')
+  customScreens(): Promise<TraktCustomScreens> {
+    return this.trakt.customScreens();
+  }
+
+  @Post('custom-screens')
+  createScreen(@Body() screen: { name: string; icon: string }): Promise<TraktCustomScreen> {
+    return this.trakt.createScreen(screen);
+  }
+
+  @Put('custom-screens/order')
+  @HttpCode(204)
+  orderScreens(@Body('ids') ids: string[]): Promise<void> {
+    return this.trakt.orderScreens(ids);
+  }
+
+  @Put('custom-screens/:id')
+  updateScreen(@Param('id') id: string, @Body() change: Partial<TraktCustomScreen>): Promise<TraktCustomScreen> {
+    return this.trakt.updateScreen(id, change);
+  }
+
+  @Delete('custom-screens/:id')
+  @HttpCode(204)
+  deleteScreen(@Param('id') id: string): Promise<void> {
+    return this.trakt.deleteScreen(id);
+  }
+
+  @Get('provider-logos')
+  providerLogos(): Promise<TraktProviderLogo[]> {
+    return this.trakt.providerLogos();
+  }
+
+  @Post('icons')
+  uploadIcon(@Body('png') png: string): Promise<{ url: string }> {
+    return this.trakt.uploadIcon(Buffer.from(png ?? '', 'base64'));
+  }
+
+  @Get('assets/:name')
+  async asset(@Param('name') name: string, @Res() res: Response): Promise<void> {
+    const png = await this.trakt.asset(name);
+    res.set({ 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=31536000' }).send(png);
   }
 
   @Get('rows/:name')

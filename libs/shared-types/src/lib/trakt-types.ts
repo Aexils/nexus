@@ -105,6 +105,30 @@ export interface TraktPreview {
   backdrop: string | null;
 }
 
+/** Rangée d'un écran créé depuis Nexus. */
+export type TraktScreenRow =
+  | { kind: 'next' }
+  | { kind: 'list'; list: number }
+  | { kind: 'addon'; title: string; path: string };
+
+export interface TraktCustomScreen {
+  id: string;
+  name: string;
+  icon: string;
+  rows: TraktScreenRow[];
+}
+
+export interface TraktCustomScreens {
+  screens: TraktCustomScreen[];
+  max_screens: number;
+  max_rows: number;
+}
+
+export interface TraktProviderLogo {
+  name: string;
+  logo: string;
+}
+
 export interface TraktStatus {
   reachable: boolean;
   generated_at: string;

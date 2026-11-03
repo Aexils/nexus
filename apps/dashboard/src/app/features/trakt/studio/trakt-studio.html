@@ -14,6 +14,23 @@
         <span class="rail-name">{{ s.name }}</span>
       </button>
     }
+    <div class="rail-custom" cdkDropList cdkDropListLockAxis="y" (cdkDropListDropped)="dropScreen($event)">
+      @for (s of customScreens(); track s.id) {
+        <button type="button" class="rail-item" cdkDrag [class.is-on]="screen() === s.id" [attr.aria-current]="screen() === s.id ? 'page' : null" [attr.aria-label]="s.name" [title]="s.name" (click)="goTo(s.id)">
+          <div class="rail-drop" *cdkDragPlaceholder></div>
+          @if (s.icon) {
+            <img class="rail-logo" [src]="iconForBrowser(s.icon)" alt="" />
+          } @else {
+            <span class="rail-letter" aria-hidden="true">{{ s.name.charAt(0) }}</span>
+          }
+          <span class="rail-name">{{ s.name }}</span>
+        </button>
+      }
+    </div>
+    <button type="button" class="rail-item rail-add" aria-label="Créer un écran" title="Créer un écran" (click)="openNewScreen()">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      <span class="rail-name">Nouvel écran</span>
+    </button>
   </nav>
 
   <main class="tv">
@@ -23,6 +40,7 @@
         @if (failure(); as f) { <span class="is-bad">{{ f }}</span> }
         @else if (message(); as m) { {{ m }} }
       </p>
+      @if (customScreen()) { <button type="button" class="bar-link" (click)="openEditScreen()">Modifier cet écran</button> }
       <a class="bar-link" routerLink="/trakt/service">État du service</a>
     </nav>
 
@@ -77,39 +95,46 @@
       }
 
       <div class="home" id="home" cdkDropList [cdkDropListConnectedTo]="['library']" (cdkDropListDropped)="drop($event)">
-        @for (list of homeLists(); track list.ids.trakt; let i = $index, isFirst = $first, isLast = $last) {
-          <section class="row is-movable" cdkDrag [cdkDragData]="listFor(list)" [attr.aria-label]="list.name">
+        @for (entry of entries(); track entryKey(entry); let i = $index, isFirst = $first, isLast = $last) {
+          <section class="row is-movable" cdkDrag [cdkDragData]="entryDroppable(entry)" [attr.aria-label]="entryTitle(entry)">
             <div class="drop-line" *cdkDragPlaceholder></div>
             <header class="row-head">
               <span class="grip" cdkDragHandle title="Glisser pour déplacer" aria-hidden="true">
                 <svg viewBox="0 0 10 16" width="10" height="16"><circle cx="2" cy="2" r="1.4"/><circle cx="8" cy="2" r="1.4"/><circle cx="2" cy="8" r="1.4"/><circle cx="8" cy="8" r="1.4"/><circle cx="2" cy="14" r="1.4"/><circle cx="8" cy="14" r="1.4"/></svg>
               </span>
-              <h2 class="row-title">{{ list.name }}</h2>
+              <h2 class="row-title">{{ entryTitle(entry) }}</h2>
               <span class="row-actions">
                 <button type="button" class="ghost" [disabled]="isFirst" (click)="move(i, -1)">Monter</button>
                 <button type="button" class="ghost" [disabled]="isLast" (click)="move(i, 1)">Descendre</button>
-                <button type="button" class="ghost" (click)="open(list)">Voir la liste</button>
-                <button type="button" class="ghost" (click)="removeFromHome(list)">Retirer de {{ screenInfo().name }}</button>
+                @if (entry.kind === 'list') { <button type="button" class="ghost" (click)="open(entry.list)">Voir la liste</button> }
+                <button type="button" class="ghost" (click)="removeEntry(entry)">Retirer de {{ screenInfo().name }}</button>
               </span>
             </header>
             <div class="tiles">
-              @for (item of itemsOf(list).slice(0, 20); track item.kind + item.tmdb) {
-                <button type="button" class="tile" (mouseenter)="focusRow(item)" (focus)="focusRow(item)" (click)="open(list)">
-                  @if (tileImage(item); as src) { <img class="tile-image" [src]="src" alt="" loading="lazy" /> }
-                  <span class="tile-name">{{ item.title }}</span>
-                  <span class="tile-sub">{{ item.genres.slice(0, 2).join(', ') || item.year }}</span>
-                </button>
-              } @empty {
-                <p class="row-empty">{{ isFilling(list) ? 'Le cluster prépare cette liste…' : 'Cette liste est vide.' }}</p>
+              @if (entry.kind === 'addon') {
+                <p class="row-empty">Le contenu vient de l'addon et s'affiche directement sur la télé.</p>
+              } @else {
+                @for (item of entryItems(entry).slice(0, 20); track item.kind + item.tmdb + '-' + (item.season ?? '') + '-' + (item.episode ?? '')) {
+                  <button type="button" class="tile" (mouseenter)="focusRow(item)" (focus)="focusRow(item)" (click)="entry.kind === 'list' && open(entry.list)">
+                    @if (tileImage(item); as src) { <img class="tile-image" [src]="src" alt="" loading="lazy" /> }
+                    @if (item.percent) {
+                      <span class="tile-progress" role="img" [attr.aria-label]="'Vu à ' + item.percent + ' %'"><span [style.width.%]="item.percent"></span></span>
+                    }
+                    <span class="tile-name">{{ item.showtitle ?? item.title }}</span>
+                    <span class="tile-sub">{{ item.kind === 'episode' ? 'S' + item.season + ' E' + item.episode : (item.genres.slice(0, 2).join(', ') || item.year) }}</span>
+                  </button>
+                } @empty {
+                  <p class="row-empty">{{ entry.kind === 'list' && isFilling(entry.list) ? 'Le cluster prépare cette liste…' : 'Cette rangée est vide.' }}</p>
+                }
               }
             </div>
           </section>
         } @empty {
-          <div class="home-empty">Glisse une liste ici pour l'ajouter à {{ screenInfo().name }}.</div>
+          <div class="home-empty">Glisse une rangée ici pour l'ajouter à {{ screenInfo().name }}.</div>
         }
       </div>
 
-      <p class="rows-end">{{ screenInfo().after }} Tu pourras les organiser ici plus tard.</p>
+      @if (screenInfo().after) { <p class="rows-end">{{ screenInfo().after }} Tu pourras les organiser ici plus tard.</p> }
     </div>
   </main>
 
@@ -158,6 +183,7 @@
       <div class="tabs" role="tablist">
         <button type="button" role="tab" [attr.aria-selected]="tab() === 'mine'" [class.is-on]="tab() === 'mine'" (click)="tab.set('mine')">Mes listes</button>
         <button type="button" role="tab" [attr.aria-selected]="tab() === 'discover'" [class.is-on]="tab() === 'discover'" (click)="tab.set('discover')">Découvrir</button>
+        <button type="button" role="tab" [attr.aria-selected]="tab() === 'apps'" [class.is-on]="tab() === 'apps'" (click)="tab.set('apps')">Applications</button>
       </div>
 
       <div class="pane" id="library" cdkDropList cdkDropListSortingDisabled [cdkDropListConnectedTo]="['home']">
@@ -190,6 +216,22 @@
             </label>
             <button type="submit" class="small" [disabled]="!newListName().trim()">Créer</button>
           </form>
+        } @else if (tab() === 'apps') {
+          <p class="pane-note">Ces rangées se placent sur les écrans que tu crées.</p>
+          <article class="card" cdkDrag [cdkDragData]="nextEntry">
+            <div class="drop-line" *cdkDragPlaceholder></div>
+            <span class="card-name">Your Next Episodes</span>
+            <span class="card-meta">Tes reprises et tes prochains épisodes</span>
+            <button type="button" class="small" (click)="place(nextEntry)">Ajouter à {{ screenInfo().name }}</button>
+          </article>
+          @for (row of addonRows; track row.path) {
+            <article class="card" cdkDrag [cdkDragData]="addonFor(row)">
+              <div class="drop-line" *cdkDragPlaceholder></div>
+              <span class="card-name">{{ row.title }}</span>
+              <span class="card-meta">{{ row.provider }}</span>
+              <button type="button" class="small" (click)="place(addonFor(row))">Ajouter à {{ screenInfo().name }}</button>
+            </article>
+          }
         } @else {
           <article class="card card-top10" cdkDrag [cdkDragData]="top10">
             <div class="drop-line" *cdkDragPlaceholder></div>
@@ -234,6 +276,74 @@
     }
     <p class="attribution">Ce produit utilise l'API TMDb, sans être approuvé ni certifié par TMDb.</p>
   </aside>
+
+  @if (editing(); as mode) {
+    <div class="scrim" (click)="editing.set(null)"></div>
+    <section class="editor" role="dialog" aria-modal="true" [attr.aria-label]="mode === 'new' ? 'Créer un écran' : 'Modifier cet écran'">
+      <h2 class="detail-title">{{ mode === 'new' ? 'Créer un écran' : 'Modifier cet écran' }}</h2>
+      <div class="editor-head">
+        <span class="editor-logo">
+          @if (draftIcon()) { <img [src]="iconForBrowser(draftIcon())" alt="" /> }
+          @else { <span class="rail-letter" aria-hidden="true">{{ draftName().charAt(0) || '?' }}</span> }
+        </span>
+        <label class="editor-name">
+          <span class="visually-hidden">Nom de l'écran</span>
+          <input type="text" maxlength="40" placeholder="Nom de l'écran" [value]="draftName()" (input)="draftName.set($any($event.target).value)" />
+        </label>
+      </div>
+
+      <div class="tabs" role="tablist">
+        <button type="button" role="tab" [class.is-on]="logoTab() === 'brands'" (click)="logoTab.set('brands')">Marques</button>
+        <button type="button" role="tab" [class.is-on]="logoTab() === 'platforms'" (click)="logoTab.set('platforms')">Plateformes</button>
+        <button type="button" role="tab" [class.is-on]="logoTab() === 'general'" (click)="logoTab.set('general')">Icônes</button>
+        <button type="button" role="tab" [class.is-on]="logoTab() === 'mine'" (click)="logoTab.set('mine')">Mon image</button>
+      </div>
+      @if (logoTab() === 'brands' || logoTab() === 'platforms') {
+        <label class="logo-search">
+          <span class="visually-hidden">Chercher un logo</span>
+          <input type="search" placeholder="Chercher un logo" [value]="logoQuery()" (input)="logoQuery.set($any($event.target).value)" />
+        </label>
+      }
+      <div class="logo-grid">
+        @switch (logoTab()) {
+          @case ('brands') {
+            @for (b of brandResults(); track b.slug) {
+              <button type="button" class="logo" [title]="b.title" (click)="chooseBrand(b)"><img class="is-mono" [src]="brandUrl(b.slug)" alt="" loading="lazy" /><span>{{ b.title }}</span></button>
+            } @empty { <p class="pane-note">{{ brands().length ? 'Aucun logo trouvé.' : 'Chargement de la librairie…' }}</p> }
+          }
+          @case ('platforms') {
+            @for (p of platformResults(); track p.name) {
+              <button type="button" class="logo" [title]="p.name" (click)="choosePlatform(p)"><img [src]="p.logo" alt="" loading="lazy" /><span>{{ p.name }}</span></button>
+            } @empty { <p class="pane-note">{{ platforms().length ? 'Aucun logo trouvé.' : 'Chargement des plateformes…' }}</p> }
+          }
+          @case ('general') {
+            @for (g of generalIcons; track g.name) {
+              <button type="button" class="logo" [title]="g.name" (click)="chooseGeneral(g.name)"><img [src]="generalSvgUrl(g.name)" alt="" /><span>{{ g.name }}</span></button>
+            }
+          }
+          @case ('mine') {
+            <label class="upload">
+              Choisir une image PNG ou JPEG
+              <input type="file" accept="image/png,image/jpeg,image/webp" (change)="chooseFile($any($event.target).files?.[0])" />
+            </label>
+          }
+        }
+      </div>
+      <p class="pane-note">Logos de marques par Simple Icons et TMDb, pour ton usage personnel.</p>
+
+      <div class="detail-actions">
+        <button type="button" class="small" [disabled]="!draftName().trim()" (click)="saveScreen()">{{ mode === 'new' ? 'Créer l\'écran' : 'Enregistrer' }}</button>
+        <button type="button" class="ghost" (click)="editing.set(null)">Annuler</button>
+        @if (mode === 'edit') {
+          @if (confirmingScreenDelete()) {
+            <button type="button" class="small is-danger" (click)="deleteScreen()">Confirmer la suppression</button>
+          } @else {
+            <button type="button" class="ghost" (click)="confirmingScreenDelete.set(true)">Supprimer cet écran</button>
+          }
+        }
+      </div>
+    </section>
+  }
 
   @if (detail(); as list) {
     <section class="detail" role="dialog" aria-modal="false" [attr.aria-label]="list.name">

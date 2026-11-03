@@ -24,6 +24,7 @@
 }
 
 button, input { font: inherit; color: inherit; }
+button.bar-link { white-space: nowrap; }
 button { cursor: pointer; background: none; border: 0; padding: 0; }
 button:disabled { cursor: default; opacity: .4; }
 :focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
@@ -37,7 +38,14 @@ button:disabled { cursor: default; opacity: .4; }
 .rail-item:hover, .rail-item.is-on { color: var(--ink); }
 .rail-item.is-on svg { filter: drop-shadow(0 0 0 var(--ink)); }
 .rail-item.is-on::after { content: ''; width: 1.6rem; height: 3px; background: var(--red); }
-.rail-name { font-size: .68rem; line-height: 1.1; text-align: center; }
+.rail-name { font-size: .68rem; line-height: 1.1; text-align: center; overflow-wrap: anywhere; }
+.rail { overflow-y: auto; scrollbar-width: none; }
+.rail-custom { display: flex; flex-direction: column; gap: 1.1rem; }
+.rail-custom:empty { display: none; }
+.rail-logo { width: 1.6rem; height: 1.6rem; object-fit: contain; border-radius: 3px; }
+.rail-letter { display: grid; place-items: center; width: 1.6rem; height: 1.6rem; border-radius: 3px; background: var(--panel-raised); font-weight: 700; }
+.rail-drop { height: 3px; background: var(--red); }
+.rail-add { color: var(--ink-faint); }
 
 /* ---- La télé ---- */
 .tv { overflow-y: auto; overflow-x: clip; position: relative; }
@@ -161,6 +169,30 @@ button:disabled { cursor: default; opacity: .4; }
 .new-list label { flex: 1; min-width: 0; }
 .attribution { margin: 0; padding: .5rem 1rem .75rem; color: var(--ink-faint); font-size: .7rem; line-height: 1.35; }
 
+/* ---- Création d'un écran ---- */
+.scrim { position: absolute; inset: 0; z-index: 5; background: rgba(0, 0, 0, .62); }
+.editor {
+  position: absolute; z-index: 6; top: 50%; left: 50%; width: min(38rem, calc(100vw - 2rem)); max-height: calc(100dvh - 3rem);
+  transform: translate(-50%, -50%); display: flex; flex-direction: column; gap: .75rem; padding: 1.25rem;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 8px; animation: editor-in 200ms var(--ease-out);
+}
+@keyframes editor-in { from { opacity: 0; transform: translate(-50%, -49%) scale(.98); } }
+.editor-head { display: flex; align-items: center; gap: .75rem; }
+.editor-logo { flex: 0 0 3.25rem; height: 3.25rem; display: grid; place-items: center; background: var(--tv-black); border-radius: 6px; }
+.editor-logo img { width: 2.25rem; height: 2.25rem; object-fit: contain; }
+.editor-name { flex: 1; min-width: 0; }
+.editor-name input, .logo-search input {
+  width: 100%; padding: .6rem .7rem; background: var(--panel-raised); border: 1px solid var(--line); border-radius: 4px;
+}
+.editor-name input::placeholder, .logo-search input::placeholder { color: var(--ink-faint); }
+.logo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(5.25rem, 1fr)); gap: .4rem; min-height: 12rem; max-height: 22rem; overflow-y: auto; align-content: start; }
+.logo { display: flex; flex-direction: column; align-items: center; gap: .3rem; padding: .55rem .25rem; border-radius: 6px; min-width: 0; }
+.logo:hover { background: var(--panel-raised); }
+.logo img { width: 2.25rem; height: 2.25rem; object-fit: contain; border-radius: 4px; }
+.logo img.is-mono { filter: invert(1); }
+.logo span { width: 100%; text-align: center; font-size: .72rem; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.upload { grid-column: 1 / -1; display: grid; place-items: center; gap: .5rem; padding: 2rem 1rem; border: 1px dashed var(--line); border-radius: 6px; color: var(--ink-soft); cursor: pointer; text-align: center; }
+
 /* ---- La fiche d'une liste ---- */
 .detail {
   position: absolute; top: 0; bottom: 0; right: 360px; width: min(30rem, calc(100vw - 360px - 4.5rem)); z-index: 4;
@@ -196,6 +228,6 @@ button:disabled { cursor: default; opacity: .4; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .detail { animation: none; }
+  .detail, .editor { animation: none; }
   .cdk-drag-animating, .home.cdk-drop-list-dragging .row { transition: none; }
 }

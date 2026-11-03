@@ -12,7 +12,28 @@ import { RouterLink } from '@angular/router';
 import { CdkDrag, CdkDragDrop, CdkDragHandle, CdkDragPlaceholder, CdkDropList, moveItemInArray } from '@angular/cdk/drag-drop';
 import { firstValueFrom } from 'rxjs';
 
-import { TraktList, TraktNewList, TraktPreview, TraktRowItem } from '@nexus/shared-types';
+import {
+  TraktCustomScreen,
+  TraktCustomScreens,
+  TraktList,
+  TraktNewList,
+  TraktPreview,
+  TraktProviderLogo,
+  TraktRowItem,
+  TraktScreenRow,
+} from '@nexus/shared-types';
+import {
+  BrandIcon,
+  GENERAL_ICONS,
+  SUGGESTED_BRANDS,
+  brandSvg,
+  brandUrl,
+  fileToPng,
+  generalSvg,
+  iconForBrowser,
+  loadBrands,
+  svgToPng,
+} from './logos';
 
 // Identifiants TMDb, mêmes valeurs que PROVIDERS côté kube-trakt.
 const PROVIDERS = [
@@ -45,7 +66,13 @@ const SCREENS = [
   { id: 'movies', name: 'Movies', hasNextEpisodes: false, after: 'Les rangées de films de Bingie suivent sur la télé.' },
 ] as const;
 
-type ScreenId = (typeof SCREENS)[number]['id'];
+// Rangées d'addons déjà utilisées sur la télé.
+const ADDON_ROWS = [
+  { title: 'My Subscriptions', provider: 'YouTube', path: 'plugin://plugin.video.youtube/special/my_subscriptions?category_label=My+Subscriptions' },
+  { title: 'Recommendations', provider: 'YouTube', path: 'plugin://plugin.video.youtube/special/recommendations?category_label=Recommendations' },
+];
+
+const BRAND_RESULTS = 48;
 
 const NEXT_EPISODES = 'next_episodes';
 const REFRESH_MS = 5000;
@@ -55,7 +82,15 @@ const MESSAGE_MS = 6000;
 /** Ce qu'on peut glisser sur la télé : une liste existante ou une liste à créer. */
 type Droppable =
   | { kind: 'list'; list: TraktList }
-  | { kind: 'suggestion'; name: string; source: NonNullable<TraktNewList['source']> };
+  | { kind: 'suggestion'; name: string; source: NonNullable<TraktNewList['source']> }
+  | { kind: 'next' }
+  | { kind: 'addon'; title: string; path: string };
+
+/** Une rangée telle qu'elle apparaît sur l'écran affiché. */
+type Entry =
+  | { kind: 'list'; list: TraktList }
+  | { kind: 'next' }
+  | { kind: 'addon'; title: string; path: string };
 
 /** Ce que montre la grande image en haut, quelle que soit l'origine du titre. */
 interface Spotlight {
@@ -113,8 +148,44 @@ export class TraktStudio implements OnInit, OnDestroy {
   private messageTimer?: ReturnType<typeof setTimeout>;
 
   readonly screens = SCREENS;
-  readonly screen = signal<ScreenId>('home');
-  readonly screenInfo = computed(() => SCREENS.find(s => s.id === this.screen()) ?? SCREENS[0]);
+  readonly addonRows = ADDON_ROWS;
+  readonly nextEntry: Droppable = { kind: 'next' };
+  readonly screen = signal<string>('home');
+  readonly customScreens = signal<TraktCustomScreen[]>([]);
+  readonly maxScreens = signal(6);
+  readonly maxRows = signal(10);
+  readonly customScreen = computed(() => this.customScreens().find(s => s.id === this.screen()) ?? null);
+  readonly screenInfo = computed(() => {
+    const custom = this.customScreen();
+    if (custom) return { id: custom.id, name: custom.name, hasNextEpisodes: false, after: '' };
+    return SCREENS.find(s => s.id === this.screen()) ?? SCREENS[0];
+  });
+  readonly iconForBrowser = iconForBrowser;
+
+  // Fenêtre de création et de modification d'un écran.
+  readonly editing = signal<'new' | 'edit' | null>(null);
+  readonly draftName = signal('');
+  readonly draftIcon = signal('');
+  readonly logoTab = signal<'brands' | 'platforms' | 'general' | 'mine'>('brands');
+  readonly logoQuery = signal('');
+  readonly brands = signal<BrandIcon[]>([]);
+  readonly platforms = signal<TraktProviderLogo[]>([]);
+  readonly confirmingScreenDelete = signal(false);
+  readonly generalIcons = GENERAL_ICONS;
+  readonly brandUrl = brandUrl;
+  readonly generalSvgUrl = (name: string) => {
+    const icon = GENERAL_ICONS.find(i => i.name === name);
+    return icon ? `data:image/svg+xml;utf8,${encodeURIComponent(generalSvg(icon.data))}` : '';
+  };
+  readonly brandResults = computed(() => {
+    const wanted = this.logoQuery().trim().toLocaleLowerCase();
+    if (wanted) return this.brands().filter(b => b.title.toLocaleLowerCase().includes(wanted)).slice(0, BRAND_RESULTS);
+    return SUGGESTED_BRANDS.map(t => this.brands().find(b => b.title === t)).filter((b): b is BrandIcon => !!b);
+  });
+  readonly platformResults = computed(() => {
+    const wanted = this.logoQuery().trim().toLocaleLowerCase();
+    return this.platforms().filter(p => !wanted || p.name.toLocaleLowerCase().includes(wanted)).slice(0, BRAND_RESULTS);
+  });
   readonly providers = PROVIDERS;
   readonly themes = THEMES;
 
@@ -124,7 +195,7 @@ export class TraktStudio implements OnInit, OnDestroy {
   readonly rows = signal<Record<string, TraktRowItem[]>>({});
   readonly spotlight = signal<Spotlight | null>(null);
 
-  readonly tab = signal<'mine' | 'discover'>('mine');
+  readonly tab = signal<'mine' | 'discover' | 'apps'>('mine');
   readonly query = signal('');
   readonly results = signal<TraktPreview[] | null>(null);
   readonly searching = signal(false);
@@ -145,6 +216,16 @@ export class TraktStudio implements OnInit, OnDestroy {
       .map(id => this.lists().find(l => l.ids.trakt === id))
       .filter((l): l is TraktList => !!l),
   );
+  readonly entries = computed<Entry[]>(() => {
+    const custom = this.customScreen();
+    if (!custom) return this.homeLists().map(list => ({ kind: 'list', list }));
+    return custom.rows.flatMap((row): Entry[] => {
+      if (row.kind !== 'list') return [row];
+      const list = this.lists().find(l => l.ids.trakt === row.list);
+      return list ? [{ kind: 'list', list }] : [];
+    });
+  });
+  readonly rowLimit = computed(() => (this.customScreen() ? this.maxRows() : this.homeSlots()));
   readonly libraryLists = computed(() => {
     const wanted = this.query().trim().toLocaleLowerCase();
     return this.lists().filter(l => !wanted || l.name.toLocaleLowerCase().includes(wanted));
@@ -180,14 +261,21 @@ export class TraktStudio implements OnInit, OnDestroy {
   private async refresh(): Promise<void> {
     try {
       const screen = this.screen();
-      const [lists, home] = await Promise.all([
+      const isBuiltin = SCREENS.some(s => s.id === screen);
+      const [lists, home, custom] = await Promise.all([
         firstValueFrom(this.http.get<TraktList[]>('/api/trakt/lists')),
-        firstValueFrom(this.http.get<{ lists: number[]; slots: number }>(`/api/trakt/screens/${screen}`)),
+        isBuiltin
+          ? firstValueFrom(this.http.get<{ lists: number[]; slots: number }>(`/api/trakt/screens/${screen}`))
+          : Promise.resolve(null),
+        firstValueFrom(this.http.get<TraktCustomScreens>('/api/trakt/custom-screens')),
       ]);
       this.lists.set(lists);
+      this.customScreens.set(custom.screens);
+      this.maxScreens.set(custom.max_screens);
+      this.maxRows.set(custom.max_rows);
       // Une réponse pour l'écran qu'on vient de quitter ne doit pas remplacer le nouveau.
-      if (screen === this.screen()) this.homeIds.set(home.lists);
-      this.homeSlots.set(home.slots);
+      if (home && screen === this.screen()) this.homeIds.set(home.lists);
+      if (home) this.homeSlots.set(home.slots);
       const open = this.detail();
       if (open) this.detail.set(lists.find(l => l.ids.trakt === open.ids.trakt) ?? null);
       await this.loadRows(lists);
@@ -216,11 +304,11 @@ export class TraktStudio implements OnInit, OnDestroy {
   /** La bannière montre le premier titre de l'écran, comme la télé à l'ouverture. */
   private showFirstTitle(): void {
     const first = this.screenInfo().hasNextEpisodes ? this.next()[0] : undefined;
-    const item = first ?? this.homeLists().map(l => this.itemsOf(l)[0]).find(Boolean);
+    const item = first ?? this.entries().map(e => this.entryItems(e)[0]).find(Boolean);
     this.spotlight.set(item ? fromRow(item) : null);
   }
 
-  async goTo(screen: ScreenId): Promise<void> {
+  async goTo(screen: string): Promise<void> {
     if (screen === this.screen()) return;
     this.screen.set(screen);
     this.homeIds.set([]);
@@ -228,6 +316,26 @@ export class TraktStudio implements OnInit, OnDestroy {
     this.message.set(null);
     await this.refresh();
     this.showFirstTitle();
+  }
+
+  entryItems(entry: Entry): TraktRowItem[] {
+    if (entry.kind === 'next') return this.next();
+    return entry.kind === 'list' ? this.itemsOf(entry.list) : [];
+  }
+
+  entryTitle(entry: Entry): string {
+    if (entry.kind === 'next') return 'Your Next Episodes';
+    return entry.kind === 'list' ? entry.list.name : entry.title;
+  }
+
+  entryKey(entry: Entry): string {
+    if (entry.kind === 'next') return 'next';
+    return entry.kind === 'list' ? `list-${entry.list.ids.trakt}` : `addon-${entry.path}`;
+  }
+
+  /** Rend à Droppable ce qu'on déplace, pour que le glisser garde son type. */
+  entryDroppable(entry: Entry): Droppable {
+    return entry;
   }
 
   itemsOf(list: TraktList): TraktRowItem[] {
@@ -267,7 +375,26 @@ export class TraktStudio implements OnInit, OnDestroy {
   // --- Accueil ---
 
   isOnHome(list: TraktList): boolean {
-    return this.homeIds().includes(list.ids.trakt);
+    return this.entries().some(e => e.kind === 'list' && e.list.ids.trakt === list.ids.trakt);
+  }
+
+  /** Enregistre les rangées de l'écran affiché, avec retour immédiat à l'écran. */
+  private async saveEntries(entries: Entry[], message: string): Promise<void> {
+    const custom = this.customScreen();
+    if (!custom) {
+      await this.saveHome(entries.flatMap(e => (e.kind === 'list' ? [e.list.ids.trakt] : [])), message);
+      return;
+    }
+    const rows: TraktScreenRow[] = entries.map(e => (e.kind === 'list' ? { kind: 'list', list: e.list.ids.trakt } : e));
+    const previous = this.customScreens();
+    this.customScreens.set(previous.map(s => (s.id === custom.id ? { ...s, rows } : s)));
+    try {
+      await firstValueFrom(this.http.put(`/api/trakt/custom-screens/${custom.id}`, { rows }));
+      this.say(message);
+    } catch {
+      this.customScreens.set(previous);
+      this.failure.set("Le changement n'a pas été enregistré. Réessaie dans un instant.");
+    }
   }
 
   private async saveHome(ids: number[], message: string): Promise<void> {
@@ -292,32 +419,44 @@ export class TraktStudio implements OnInit, OnDestroy {
   async drop(event: CdkDragDrop<unknown, unknown, unknown>): Promise<void> {
     if (event.previousContainer === event.container) {
       if (event.previousIndex === event.currentIndex) return;
-      const ids = [...this.homeIds()];
-      moveItemInArray(ids, event.previousIndex, event.currentIndex);
-      await this.saveHome(ids, 'Nouvel ordre envoyé à la télé.');
+      const entries = [...this.entries()];
+      moveItemInArray(entries, event.previousIndex, event.currentIndex);
+      await this.saveEntries(entries, 'Nouvel ordre envoyé à la télé.');
       return;
     }
     await this.place(event.item.data as Droppable, event.currentIndex);
   }
 
-  /** Place une liste sur la télé, en la créant d'abord si c'est une suggestion. */
-  async place(entry: Droppable, index = this.homeIds().length): Promise<void> {
-    if (entry.kind === 'list' && this.isOnHome(entry.list)) {
-      this.say(`${entry.list.name} est déjà sur ${this.screenInfo().name}.`);
+  private already(entry: Droppable): boolean {
+    if (entry.kind === 'list') return this.isOnHome(entry.list);
+    if (entry.kind === 'next') return this.entries().some(e => e.kind === 'next');
+    if (entry.kind === 'addon') return this.entries().some(e => e.kind === 'addon' && e.path === entry.path);
+    return false;
+  }
+
+  /** Place une rangée sur l'écran affiché, en créant d'abord la liste si c'est une suggestion. */
+  async place(entry: Droppable, index = this.entries().length): Promise<void> {
+    const screen = this.screenInfo().name;
+    if (entry.kind !== 'list' && entry.kind !== 'suggestion' && !this.customScreen()) {
+      this.failure.set(`${screen} n'accepte que des listes. Crée un écran pour y mettre cette rangée.`);
       return;
     }
-    if (this.homeIds().length >= this.homeSlots()) {
-      this.failure.set(`${this.screenInfo().name} affiche ${this.homeSlots()} listes au maximum. Retires-en une pour faire de la place.`);
+    if (this.already(entry)) {
+      this.say(`Cette rangée est déjà sur ${screen}.`);
+      return;
+    }
+    if (this.entries().length >= this.rowLimit()) {
+      this.failure.set(`${screen} affiche ${this.rowLimit()} rangées au maximum. Retires-en une pour faire de la place.`);
       return;
     }
     try {
-      const list = entry.kind === 'list' ? entry.list : await this.createFrom(entry);
-      const ids = [...this.homeIds()];
-      ids.splice(index, 0, list.ids.trakt);
-      await this.saveHome(ids, `${list.name} arrive sur ${this.screenInfo().name} dans quelques secondes.`);
+      const placed: Entry = entry.kind === 'suggestion' ? { kind: 'list', list: await this.createFrom(entry) } : entry;
+      const entries = [...this.entries()];
+      entries.splice(index, 0, placed);
+      await this.saveEntries(entries, `${this.entryTitle(placed)} arrive sur ${screen} dans quelques secondes.`);
       await this.refresh();
     } catch {
-      this.failure.set("La liste n'a pas pu être ajoutée. Réessaie dans un instant.");
+      this.failure.set("La rangée n'a pas pu être ajoutée. Réessaie dans un instant.");
     }
   }
 
@@ -327,19 +466,151 @@ export class TraktStudio implements OnInit, OnDestroy {
     return firstValueFrom(this.http.post<TraktList>('/api/trakt/lists', { name: entry.name, source: entry.source }));
   }
 
-  async removeFromHome(list: TraktList): Promise<void> {
-    await this.saveHome(
-      this.homeIds().filter(id => id !== list.ids.trakt),
-      `${list.name} retirée de ${this.screenInfo().name}.`,
+  async removeEntry(entry: Entry): Promise<void> {
+    const key = this.entryKey(entry);
+    await this.saveEntries(
+      this.entries().filter(e => this.entryKey(e) !== key),
+      `${this.entryTitle(entry)} retirée de ${this.screenInfo().name}.`,
     );
+  }
+
+  async removeFromHome(list: TraktList): Promise<void> {
+    await this.removeEntry({ kind: 'list', list });
   }
 
   async move(index: number, delta: number): Promise<void> {
     const target = index + delta;
-    if (target < 0 || target >= this.homeIds().length) return;
-    const ids = [...this.homeIds()];
-    moveItemInArray(ids, index, target);
-    await this.saveHome(ids, 'Nouvel ordre envoyé à la télé.');
+    if (target < 0 || target >= this.entries().length) return;
+    const entries = [...this.entries()];
+    moveItemInArray(entries, index, target);
+    await this.saveEntries(entries, 'Nouvel ordre envoyé à la télé.');
+  }
+
+  // --- Écrans du rail ---
+
+  openNewScreen(): void {
+    if (this.customScreens().length >= this.maxScreens()) {
+      this.failure.set(`La télé accepte ${this.maxScreens()} écrans créés au maximum. Supprimes-en un pour faire de la place.`);
+      return;
+    }
+    this.draftName.set('');
+    this.draftIcon.set('');
+    this.openEditor('new');
+  }
+
+  openEditScreen(): void {
+    const screen = this.customScreen();
+    if (!screen) return;
+    this.draftName.set(screen.name);
+    this.draftIcon.set(screen.icon);
+    this.openEditor('edit');
+  }
+
+  private openEditor(mode: 'new' | 'edit'): void {
+    this.logoQuery.set('');
+    this.logoTab.set('brands');
+    this.confirmingScreenDelete.set(false);
+    this.editing.set(mode);
+    void this.loadLogos();
+  }
+
+  private async loadLogos(): Promise<void> {
+    try {
+      if (!this.brands().length) this.brands.set(await loadBrands());
+      if (!this.platforms().length) {
+        this.platforms.set(await firstValueFrom(this.http.get<TraktProviderLogo[]>('/api/trakt/provider-logos')));
+      }
+    } catch {
+      this.failure.set('La librairie de logos ne répond pas. Tu peux importer ton image.');
+    }
+  }
+
+  private async upload(png: string): Promise<void> {
+    const { url } = await firstValueFrom(this.http.post<{ url: string }>('/api/trakt/icons', { png }));
+    this.draftIcon.set(url);
+  }
+
+  async chooseBrand(brand: BrandIcon): Promise<void> {
+    try {
+      await this.upload(await svgToPng(await brandSvg(brand.slug)));
+    } catch {
+      this.failure.set(`Le logo ${brand.title} n'a pas pu être préparé.`);
+    }
+  }
+
+  async chooseGeneral(name: string): Promise<void> {
+    const icon = GENERAL_ICONS.find(i => i.name === name);
+    if (!icon) return;
+    try {
+      await this.upload(await svgToPng(generalSvg(icon.data)));
+    } catch {
+      this.failure.set("L'icône n'a pas pu être préparée.");
+    }
+  }
+
+  choosePlatform(logo: TraktProviderLogo): void {
+    this.draftIcon.set(logo.logo);
+  }
+
+  async chooseFile(file: File | undefined): Promise<void> {
+    if (!file) return;
+    try {
+      await this.upload(await fileToPng(file));
+    } catch {
+      this.failure.set("Cette image n'a pas pu être lue. Essaie un PNG ou un JPEG.");
+    }
+  }
+
+  async saveScreen(): Promise<void> {
+    const name = this.draftName().trim();
+    if (!name) return;
+    const body = { name, icon: this.draftIcon() };
+    try {
+      if (this.editing() === 'new') {
+        const created = await firstValueFrom(this.http.post<TraktCustomScreen>('/api/trakt/custom-screens', body));
+        this.editing.set(null);
+        await this.refresh();
+        await this.goTo(created.id);
+        this.say(`${name} ajouté au menu de la télé. Glisse des rangées pour le remplir.`);
+      } else {
+        const id = this.customScreen()?.id;
+        await firstValueFrom(this.http.put(`/api/trakt/custom-screens/${id}`, body));
+        this.editing.set(null);
+        await this.refresh();
+        this.say(`${name} mis à jour.`);
+      }
+    } catch {
+      this.failure.set("L'écran n'a pas pu être enregistré.");
+    }
+  }
+
+  async deleteScreen(): Promise<void> {
+    const screen = this.customScreen();
+    if (!screen) return;
+    try {
+      await firstValueFrom(this.http.delete(`/api/trakt/custom-screens/${screen.id}`));
+      this.editing.set(null);
+      await this.goTo('home');
+      await this.refresh();
+      this.say(`${screen.name} retiré du menu de la télé. Tes listes sont conservées.`);
+    } catch {
+      this.failure.set(`${screen.name} n'a pas pu être supprimé.`);
+    }
+  }
+
+  async dropScreen(event: CdkDragDrop<unknown, unknown, unknown>): Promise<void> {
+    if (event.previousIndex === event.currentIndex) return;
+    const previous = this.customScreens();
+    const screens = [...previous];
+    moveItemInArray(screens, event.previousIndex, event.currentIndex);
+    this.customScreens.set(screens);
+    try {
+      await firstValueFrom(this.http.put('/api/trakt/custom-screens/order', { ids: screens.map(s => s.id) }));
+      this.say('Nouvel ordre du menu envoyé à la télé.');
+    } catch {
+      this.customScreens.set(previous);
+      this.failure.set("L'ordre du menu n'a pas été enregistré.");
+    }
   }
 
   // --- Bibliothèque ---
@@ -353,6 +624,10 @@ export class TraktStudio implements OnInit, OnDestroy {
     const provider = PROVIDERS.find(p => p.id === source.provider)?.name ?? 'la plateforme';
     const theme = THEMES.find(t => t.value === source.theme);
     return theme?.value ? `sur ${provider}, thème ${theme.fr}` : `parmi les plus populaires sur ${provider}`;
+  }
+
+  addonFor(row: { title: string; path: string }): Droppable {
+    return { kind: 'addon', title: row.title, path: row.path };
   }
 
   listFor(list: TraktList): Droppable {

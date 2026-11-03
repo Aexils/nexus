@@ -9,10 +9,13 @@ import {
 import { Interval } from '@nestjs/schedule';
 import { NexusGateway } from '../gateway/nexus.gateway';
 import {
+  TraktCustomScreen,
+  TraktCustomScreens,
   TraktList,
   TraktMediaKind,
   TraktNewList,
   TraktPreview,
+  TraktProviderLogo,
   TraktRowItem,
   TraktStatus,
   TraktTitle,
@@ -155,6 +158,56 @@ export class TraktService implements OnModuleInit {
     await this.request('POST', `/users/me/lists/${id}/items`, {
       [title.kind === 'movie' ? 'movies' : 'shows']: [entry],
     });
+  }
+
+  // --- Écrans créés depuis Nexus ---
+
+  customScreens(): Promise<TraktCustomScreens> {
+    return this.json('GET', '/admin/screens');
+  }
+
+  createScreen(screen: { name: string; icon: string }): Promise<TraktCustomScreen> {
+    return this.json('POST', '/admin/screens', screen);
+  }
+
+  updateScreen(id: string, change: Partial<TraktCustomScreen>): Promise<TraktCustomScreen> {
+    return this.json('PUT', `/admin/screens/${encodeURIComponent(id)}`, change);
+  }
+
+  async deleteScreen(id: string): Promise<void> {
+    await this.request('DELETE', `/admin/screens/${encodeURIComponent(id)}`);
+  }
+
+  async orderScreens(ids: string[]): Promise<void> {
+    await this.request('PUT', '/admin/screens/order', { ids });
+  }
+
+  providerLogos(): Promise<TraktProviderLogo[]> {
+    return this.json('GET', '/admin/providers');
+  }
+
+  async uploadIcon(png: Buffer): Promise<{ url: string }> {
+    let res: Response;
+    try {
+      res = await fetch(`${BASE_URL}/admin/icons`, {
+        method: 'POST',
+        headers: { ...this.headers(), 'Content-Type': 'image/png' },
+        body: new Uint8Array(png),
+        signal: AbortSignal.timeout(20_000),
+      });
+    } catch {
+      throw new ServiceUnavailableException('kube-trakt injoignable');
+    }
+    if (res.status === 400) throw new BadRequestException('Image refusée');
+    if (!res.ok) throw new ServiceUnavailableException(`kube-trakt a répondu ${res.status}`);
+    return (await res.json()) as { url: string };
+  }
+
+  async asset(name: string): Promise<Buffer> {
+    if (!/^[0-9a-f]{24}\.png$/.test(name)) throw new NotFoundException();
+    const res = await fetch(`${BASE_URL}/assets/${name}`, { signal: AbortSignal.timeout(20_000) });
+    if (!res.ok) throw new NotFoundException();
+    return Buffer.from(await res.arrayBuffer());
   }
 
   // --- Séries ---
