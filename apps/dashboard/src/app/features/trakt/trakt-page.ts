@@ -79,6 +79,49 @@ export class TraktPage implements OnInit {
   ngOnInit(): void {
     void this.loadLists();
     void this.loadHidden();
+    void this.loadHome();
+  }
+
+  // --- Accueil de Kodi ---
+
+  readonly homeIds = signal<number[]>([]);
+  readonly homeSlots = signal(5);
+  readonly homeLists = computed(() =>
+    this.homeIds()
+      .map(id => this.lists().find(l => l.ids.trakt === id))
+      .filter((l): l is TraktList => !!l),
+  );
+
+  private async loadHome(): Promise<void> {
+    await this.attempt('Accueil indisponible', async () => {
+      const home = await firstValueFrom(this.http.get<{ lists: number[]; slots: number }>('/api/trakt/home'));
+      this.homeIds.set(home.lists);
+      this.homeSlots.set(home.slots);
+    });
+  }
+
+  private async saveHome(ids: number[]): Promise<void> {
+    await this.attempt('Accueil impossible à modifier', async () => {
+      const home = await firstValueFrom(this.http.put<{ lists: number[]; slots: number }>('/api/trakt/home', { lists: ids }));
+      this.homeIds.set(home.lists);
+    });
+  }
+
+  isOnHome(id: number): boolean {
+    return this.homeIds().includes(id);
+  }
+
+  async toggleHome(id: number): Promise<void> {
+    const ids = this.homeIds();
+    await this.saveHome(ids.includes(id) ? ids.filter(i => i !== id) : [...ids, id]);
+  }
+
+  async moveHome(index: number, delta: number): Promise<void> {
+    const ids = [...this.homeIds()];
+    const target = index + delta;
+    if (target < 0 || target >= ids.length) return;
+    [ids[index], ids[target]] = [ids[target], ids[index]];
+    await this.saveHome(ids);
   }
 
   // --- Listes ---
@@ -123,7 +166,7 @@ export class TraktPage implements OnInit {
       await firstValueFrom(this.http.delete(`/api/trakt/lists/${list.ids.trakt}`));
       this.confirmingList.set(null);
       if (this.openList()?.ids.trakt === list.ids.trakt) this.openList.set(null);
-      await this.loadLists();
+      await Promise.all([this.loadLists(), this.loadHome()]);
     });
   }
 

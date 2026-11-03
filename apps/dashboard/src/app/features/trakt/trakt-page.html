@@ -40,6 +40,24 @@
 
   @if (error(); as e) { <div class="alert">⚠ {{ e }}</div> }
 
+  <h2 class="section-title">Accueil de Kodi</h2>
+  <p class="hint">Rangées affichées sous « Your Next Episodes », {{ homeSlots() }} au maximum. Un changement arrive sur la télé en moins d'une minute.</p>
+  <div class="table">
+    @for (l of homeLists(); track l.ids.trakt; let i = $index, first = $first, last = $last) {
+      <div class="row">
+        <span class="row-name">{{ i + 1 }}. {{ l.name }}</span>
+        <span class="row-sub">{{ l.item_count }} titres</span>
+        <span class="row-actions">
+          <button class="btn" [disabled]="first" aria-label="Monter" (click)="moveHome(i, -1)">↑</button>
+          <button class="btn" [disabled]="last" aria-label="Descendre" (click)="moveHome(i, 1)">↓</button>
+          <button class="btn" (click)="toggleHome(l.ids.trakt)">Retirer</button>
+        </span>
+      </div>
+    } @empty {
+      <div class="row empty">Aucune liste sur l'accueil : choisis-en une ci-dessous.</div>
+    }
+  </div>
+
   <h2 class="section-title">Listes</h2>
   <p class="hint">Visibles dans Kodi comme des listes Trakt. Sur le cluster, les listes par plateforme se recalculent 4 fois par jour, le Top 10 Netflix une fois.</p>
   <div class="table">
@@ -58,6 +76,7 @@
           </span>
         } @else {
           <span class="row-actions">
+            <button class="btn" [disabled]="!isOnHome(l.ids.trakt) && homeIds().length >= homeSlots()" (click)="toggleHome(l.ids.trakt)">{{ isOnHome(l.ids.trakt) ? 'Sur l\'accueil ✓' : 'Mettre sur l\'accueil' }}</button>
             <button class="btn" (click)="toggleList(l)">{{ openList()?.ids?.trakt === l.ids.trakt ? 'Fermer' : 'Ouvrir' }}</button>
             <button class="btn" (click)="confirmingList.set(l.ids.trakt)">Supprimer</button>
           </span>

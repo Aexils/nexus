@@ -119,6 +119,14 @@ export class TraktService implements OnModuleInit {
     await this.request('POST', `/users/me/lists/${id}/items/remove`, idsBody(kind, tmdb));
   }
 
+  homeLists(): Promise<{ lists: number[]; slots: number }> {
+    return this.json('GET', '/admin/home');
+  }
+
+  setHomeLists(lists: number[]): Promise<{ lists: number[]; slots: number }> {
+    return this.json('PUT', '/admin/home', { lists });
+  }
+
   // --- Séries ---
 
   async search(query: string): Promise<TraktTitle[]> {

@@ -70,6 +70,16 @@ export class TraktController {
     return this.trakt.removeListItem(id, mediaKind(kind), tmdb);
   }
 
+  @Get('home')
+  home(): Promise<{ lists: number[]; slots: number }> {
+    return this.trakt.homeLists();
+  }
+
+  @Put('home')
+  setHome(@Body('lists') lists: number[]): Promise<{ lists: number[]; slots: number }> {
+    return this.trakt.setHomeLists(lists);
+  }
+
   @Get('search')
   search(@Query('q') query = ''): Promise<TraktTitle[]> {
     return query.trim() ? this.trakt.search(query.trim()) : Promise.resolve([]);
