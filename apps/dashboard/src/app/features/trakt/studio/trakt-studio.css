@@ -10,6 +10,10 @@
   --red: #e50914;
   --bad: #ff7b81;
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  /* Au-dessus de la grille décorative que Nexus pose sur le fond de toutes ses pages. */
+  position: fixed;
+  inset: 0;
+  z-index: 10;
   display: block;
   color: var(--ink);
   background: var(--tv-black);
@@ -35,7 +39,7 @@ button:disabled { cursor: default; opacity: .4; }
 }
 .bar-link { color: var(--ink-soft); font-size: .85rem; text-decoration: none; white-space: nowrap; }
 .bar-link:hover { color: var(--ink); }
-.bar-status { flex: 1; min-width: 0; margin: 0; text-align: center; font-size: .85rem; color: var(--ink-soft); }
+.bar-status { flex: 1; min-width: 0; margin: 0; font-size: .85rem; color: var(--ink); }
 .is-bad { color: var(--bad); }
 
 .hero { position: relative; min-height: 46vh; margin-top: -3rem; display: flex; align-items: flex-end; padding: 4rem 2.5rem 1.25rem; }
@@ -92,6 +96,7 @@ button:disabled { cursor: default; opacity: .4; }
 }
 .home.cdk-drop-list-dragging .home-empty, .home.cdk-drop-list-receiving .home-empty { border-color: var(--red); color: var(--ink); }
 .drop-line { height: 3px; margin: .5rem 2.5rem; background: var(--red); }
+.pane .drop-line { margin: 0; }
 .rows-end { margin: 1.25rem 2.5rem 0; max-width: 42rem; color: var(--ink-faint); font-size: .85rem; line-height: 1.45; }
 
 /* Pendant le glisser, la carte qui suit le curseur */

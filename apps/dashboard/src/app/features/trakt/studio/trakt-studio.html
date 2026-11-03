@@ -140,6 +140,7 @@
         @if (tab() === 'mine') {
           @for (list of lists(); track list.ids.trakt) {
             <article class="card" cdkDrag [cdkDragData]="listFor(list)" [class.is-placed]="isOnHome(list)">
+              <div class="drop-line" *cdkDragPlaceholder></div>
               <button type="button" class="card-open" (click)="open(list)">
                 <span class="posters">
                   @for (item of itemsOf(list).slice(0, 4); track item.kind + item.tmdb) {
@@ -147,7 +148,7 @@
                   }
                 </span>
                 <span class="card-name">{{ list.name }}</span>
-                <span class="card-meta">{{ list.item_count }} titres, {{ describe(list) }}</span>
+                <span class="card-meta">{{ list.item_count }} titres {{ describe(list) }}</span>
               </button>
               @if (isOnHome(list)) {
                 <span class="added">Sur la télé</span>
@@ -167,6 +168,7 @@
           </form>
         } @else {
           <article class="card card-top10" cdkDrag [cdkDragData]="top10">
+            <div class="drop-line" *cdkDragPlaceholder></div>
             <span class="card-name">Top 10 on Netflix</span>
             <span class="card-meta">Le classement officiel de la semaine au Canada</span>
             <button type="button" class="small" (click)="place(top10)">Mettre sur la télé</button>
@@ -186,6 +188,7 @@
           </div>
 
           <article class="card" cdkDrag [cdkDragData]="suggestion()">
+            <div class="drop-line" *cdkDragPlaceholder></div>
             <span class="card-name">{{ $any(suggestion()).name }}</span>
             <span class="card-meta">
               @if (preview(); as items) { {{ items.length }} titres disponibles par abonnement au Canada }
@@ -213,7 +216,7 @@
       <header class="detail-head">
         <div>
           <h2 class="detail-title">{{ list.name }}</h2>
-          <p class="detail-meta">{{ list.item_count }} titres, {{ describe(list) }}</p>
+          <p class="detail-meta">{{ list.item_count }} titres {{ describe(list) }}</p>
           @if (list.source_status?.at) { <p class="detail-meta">Dernière mise à jour sur le cluster {{ list.source_status?.at?.slice(0, 16)?.replace('T', ' à ') }}</p> }
           @if (list.source_status?.error; as err) { <p class="detail-meta is-bad">Mise à jour en erreur : {{ err }}. Les derniers titres connus restent affichés.</p> }
           @if (list.source_status?.unmatched?.length) { <p class="detail-meta">Introuvables sur TMDb : {{ list.source_status?.unmatched?.join(', ') }}</p> }

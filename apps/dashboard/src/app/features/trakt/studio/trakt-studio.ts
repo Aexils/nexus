@@ -40,6 +40,7 @@ const THEMES = [
 const NEXT_EPISODES = 'next_episodes';
 const REFRESH_MS = 5000;
 const SEARCH_DELAY_MS = 300;
+const MESSAGE_MS = 6000;
 
 /** Ce qu'on peut glisser sur la télé : une liste existante ou une liste à créer. */
 type Droppable =
@@ -99,6 +100,7 @@ export class TraktStudio implements OnInit, OnDestroy {
   private readonly http = inject(HttpClient);
   private refreshTimer?: ReturnType<typeof setInterval>;
   private searchTimer?: ReturnType<typeof setTimeout>;
+  private messageTimer?: ReturnType<typeof setTimeout>;
 
   readonly providers = PROVIDERS;
   readonly themes = THEMES;
@@ -157,6 +159,7 @@ export class TraktStudio implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     clearInterval(this.refreshTimer);
     clearTimeout(this.searchTimer);
+    clearTimeout(this.messageTimer);
   }
 
   // --- Données ---
@@ -246,6 +249,8 @@ export class TraktStudio implements OnInit, OnDestroy {
   private say(message: string): void {
     this.failure.set(null);
     this.message.set(message);
+    clearTimeout(this.messageTimer);
+    this.messageTimer = setTimeout(() => this.message.set(null), MESSAGE_MS);
   }
 
   async drop(event: CdkDragDrop<unknown, unknown, unknown>): Promise<void> {
@@ -303,13 +308,14 @@ export class TraktStudio implements OnInit, OnDestroy {
 
   // --- Bibliothèque ---
 
+  /** Suit le nombre de titres : « 7 titres choisis à la main ». */
   describe(list: TraktList): string {
     const source = list.source;
-    if (!source) return 'Choisie à la main';
-    if (source.type === 'netflix_top10') return 'Classement Netflix, mis à jour chaque semaine';
-    const provider = PROVIDERS.find(p => p.id === source.provider)?.name ?? 'Plateforme';
+    if (!source) return 'choisis à la main';
+    if (source.type === 'netflix_top10') return 'du classement Netflix de la semaine';
+    const provider = PROVIDERS.find(p => p.id === source.provider)?.name ?? 'la plateforme';
     const theme = THEMES.find(t => t.value === source.theme)?.fr;
-    return theme ? `${provider}, thème ${theme.toLowerCase()}` : `${provider}, le plus populaire`;
+    return theme ? `sur ${provider}, thème ${theme}` : `parmi les plus populaires sur ${provider}`;
   }
 
   listFor(list: TraktList): Droppable {
