@@ -127,12 +127,12 @@ export class TraktService implements OnModuleInit {
     await this.request('POST', `/users/me/lists/${id}/items/remove`, idsBody(kind, tmdb));
   }
 
-  homeLists(): Promise<{ lists: number[]; slots: number }> {
-    return this.json('GET', '/admin/home');
+  screenLists(screen: string): Promise<{ lists: number[]; slots: number }> {
+    return this.json('GET', `/admin/home?screen=${encodeURIComponent(screen)}`);
   }
 
-  setHomeLists(lists: number[]): Promise<{ lists: number[]; slots: number }> {
-    return this.json('PUT', '/admin/home', { lists });
+  setScreenLists(screen: string, lists: number[]): Promise<{ lists: number[]; slots: number }> {
+    return this.json('PUT', `/admin/home?screen=${encodeURIComponent(screen)}`, { lists });
   }
 
   async row(name: string): Promise<TraktRowItem[]> {

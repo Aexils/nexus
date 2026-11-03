@@ -37,6 +37,16 @@ const THEMES = [
   { value: 'superhero', label: 'Superheroes', fr: 'Super-héros' },
 ];
 
+/** Écrans de Bingie : mêmes noms et même ordre que sur la télé. */
+const SCREENS = [
+  { id: 'home', name: 'Home', hasNextEpisodes: true, after: 'Les rangées de Bingie (tendances, populaires, classiques) suivent sur la télé.' },
+  { id: 'new', name: 'New & Popular', hasNextEpisodes: false, after: 'Les rangées de nouveautés de Bingie suivent sur la télé.' },
+  { id: 'shows', name: 'Shows', hasNextEpisodes: false, after: 'Les rangées de séries de Bingie suivent sur la télé.' },
+  { id: 'movies', name: 'Movies', hasNextEpisodes: false, after: 'Les rangées de films de Bingie suivent sur la télé.' },
+] as const;
+
+type ScreenId = (typeof SCREENS)[number]['id'];
+
 const NEXT_EPISODES = 'next_episodes';
 const REFRESH_MS = 5000;
 const SEARCH_DELAY_MS = 300;
@@ -102,6 +112,9 @@ export class TraktStudio implements OnInit, OnDestroy {
   private searchTimer?: ReturnType<typeof setTimeout>;
   private messageTimer?: ReturnType<typeof setTimeout>;
 
+  readonly screens = SCREENS;
+  readonly screen = signal<ScreenId>('home');
+  readonly screenInfo = computed(() => SCREENS.find(s => s.id === this.screen()) ?? SCREENS[0]);
   readonly providers = PROVIDERS;
   readonly themes = THEMES;
 
@@ -166,12 +179,14 @@ export class TraktStudio implements OnInit, OnDestroy {
 
   private async refresh(): Promise<void> {
     try {
+      const screen = this.screen();
       const [lists, home] = await Promise.all([
         firstValueFrom(this.http.get<TraktList[]>('/api/trakt/lists')),
-        firstValueFrom(this.http.get<{ lists: number[]; slots: number }>('/api/trakt/home')),
+        firstValueFrom(this.http.get<{ lists: number[]; slots: number }>(`/api/trakt/screens/${screen}`)),
       ]);
       this.lists.set(lists);
-      this.homeIds.set(home.lists);
+      // Une réponse pour l'écran qu'on vient de quitter ne doit pas remplacer le nouveau.
+      if (screen === this.screen()) this.homeIds.set(home.lists);
       this.homeSlots.set(home.slots);
       const open = this.detail();
       if (open) this.detail.set(lists.find(l => l.ids.trakt === open.ids.trakt) ?? null);
@@ -195,7 +210,24 @@ export class TraktStudio implements OnInit, OnDestroy {
       }),
     );
     this.rows.set(Object.fromEntries(loaded));
-    if (!this.spotlight() && this.next().length) this.spotlight.set(fromRow(this.next()[0]));
+    if (!this.spotlight()) this.showFirstTitle();
+  }
+
+  /** La bannière montre le premier titre de l'écran, comme la télé à l'ouverture. */
+  private showFirstTitle(): void {
+    const first = this.screenInfo().hasNextEpisodes ? this.next()[0] : undefined;
+    const item = first ?? this.homeLists().map(l => this.itemsOf(l)[0]).find(Boolean);
+    this.spotlight.set(item ? fromRow(item) : null);
+  }
+
+  async goTo(screen: ScreenId): Promise<void> {
+    if (screen === this.screen()) return;
+    this.screen.set(screen);
+    this.homeIds.set([]);
+    this.spotlight.set(null);
+    this.message.set(null);
+    await this.refresh();
+    this.showFirstTitle();
   }
 
   itemsOf(list: TraktList): TraktRowItem[] {
@@ -204,6 +236,10 @@ export class TraktStudio implements OnInit, OnDestroy {
 
   isFilling(list: TraktList): boolean {
     return !!list.source && !list.source_status && !this.itemsOf(list).length;
+  }
+
+  focusSearch(input: HTMLInputElement): void {
+    input.focus();
   }
 
   // --- Spotlight ---
@@ -238,7 +274,7 @@ export class TraktStudio implements OnInit, OnDestroy {
     const previous = this.homeIds();
     this.homeIds.set(ids);
     try {
-      await firstValueFrom(this.http.put('/api/trakt/home', { lists: ids }));
+      await firstValueFrom(this.http.put(`/api/trakt/screens/${this.screen()}`, { lists: ids }));
       this.say(message);
     } catch {
       this.homeIds.set(previous);
@@ -267,18 +303,18 @@ export class TraktStudio implements OnInit, OnDestroy {
   /** Place une liste sur la télé, en la créant d'abord si c'est une suggestion. */
   async place(entry: Droppable, index = this.homeIds().length): Promise<void> {
     if (entry.kind === 'list' && this.isOnHome(entry.list)) {
-      this.say(`${entry.list.name} est déjà sur la télé.`);
+      this.say(`${entry.list.name} est déjà sur ${this.screenInfo().name}.`);
       return;
     }
     if (this.homeIds().length >= this.homeSlots()) {
-      this.failure.set(`La télé affiche ${this.homeSlots()} listes au maximum. Retires-en une pour faire de la place.`);
+      this.failure.set(`${this.screenInfo().name} affiche ${this.homeSlots()} listes au maximum. Retires-en une pour faire de la place.`);
       return;
     }
     try {
       const list = entry.kind === 'list' ? entry.list : await this.createFrom(entry);
       const ids = [...this.homeIds()];
       ids.splice(index, 0, list.ids.trakt);
-      await this.saveHome(ids, `${list.name} arrive sur la télé dans quelques secondes.`);
+      await this.saveHome(ids, `${list.name} arrive sur ${this.screenInfo().name} dans quelques secondes.`);
       await this.refresh();
     } catch {
       this.failure.set("La liste n'a pas pu être ajoutée. Réessaie dans un instant.");
@@ -294,7 +330,7 @@ export class TraktStudio implements OnInit, OnDestroy {
   async removeFromHome(list: TraktList): Promise<void> {
     await this.saveHome(
       this.homeIds().filter(id => id !== list.ids.trakt),
-      `${list.name} retirée de la télé.`,
+      `${list.name} retirée de ${this.screenInfo().name}.`,
     );
   }
 
@@ -309,13 +345,14 @@ export class TraktStudio implements OnInit, OnDestroy {
   // --- Bibliothèque ---
 
   /** Suit le nombre de titres : « 7 titres choisis à la main ». */
+  /** Suit le nombre de titres : « 7 titres choisis à la main ». */
   describe(list: TraktList): string {
     const source = list.source;
     if (!source) return 'choisis à la main';
     if (source.type === 'netflix_top10') return 'du classement Netflix de la semaine';
     const provider = PROVIDERS.find(p => p.id === source.provider)?.name ?? 'la plateforme';
-    const theme = THEMES.find(t => t.value === source.theme)?.fr;
-    return theme ? `sur ${provider}, thème ${theme}` : `parmi les plus populaires sur ${provider}`;
+    const theme = THEMES.find(t => t.value === source.theme);
+    return theme?.value ? `sur ${provider}, thème ${theme.fr}` : `parmi les plus populaires sur ${provider}`;
   }
 
   listFor(list: TraktList): Droppable {

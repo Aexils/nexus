@@ -28,7 +28,16 @@ button { cursor: pointer; background: none; border: 0; padding: 0; }
 button:disabled { cursor: default; opacity: .4; }
 :focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 
-.studio { display: grid; grid-template-columns: minmax(0, 1fr) 360px; height: 100vh; height: 100dvh; overflow: clip; position: relative; }
+.studio { display: grid; grid-template-columns: 4.5rem minmax(0, 1fr) 360px; height: 100vh; height: 100dvh; overflow: clip; position: relative; }
+
+/* ---- Les écrans, comme le menu de gauche de Bingie ---- */
+.rail { display: flex; flex-direction: column; justify-content: center; align-items: stretch; gap: 1.1rem; background: var(--tv-black); z-index: 5; }
+.rail-item { position: relative; display: flex; flex-direction: column; align-items: center; gap: .3rem; padding: .35rem .15rem; color: var(--ink-soft); }
+.rail-item svg { width: 1.6rem; height: 1.6rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.rail-item:hover, .rail-item.is-on { color: var(--ink); }
+.rail-item.is-on svg { filter: drop-shadow(0 0 0 var(--ink)); }
+.rail-item.is-on::after { content: ''; width: 1.6rem; height: 3px; background: var(--red); }
+.rail-name { font-size: .68rem; line-height: 1.1; text-align: center; }
 
 /* ---- La télé ---- */
 .tv { overflow-y: auto; overflow-x: clip; position: relative; }
@@ -154,7 +163,7 @@ button:disabled { cursor: default; opacity: .4; }
 
 /* ---- La fiche d'une liste ---- */
 .detail {
-  position: absolute; top: 0; bottom: 0; right: 360px; width: min(30rem, calc(100vw - 360px)); z-index: 4;
+  position: absolute; top: 0; bottom: 0; right: 360px; width: min(30rem, calc(100vw - 360px - 4.5rem)); z-index: 4;
   display: flex; flex-direction: column; gap: .6rem; padding: 1.1rem 1.25rem; overflow-y: auto;
   background: var(--panel); border-left: 1px solid var(--line);
   animation: detail-in 220ms var(--ease-out);
@@ -172,7 +181,8 @@ button:disabled { cursor: default; opacity: .4; }
 .detail-text p { margin: .2rem 0 0; color: var(--ink-faint); line-height: 1.4; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
 
 @media (max-width: 900px) {
-  .studio { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) minmax(0, 45%); }
+  .studio { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) minmax(0, 40%); }
+  .rail { flex-direction: row; justify-content: space-around; gap: 0; padding: .25rem; border-bottom: 1px solid var(--line); }
   .library { border-left: 0; border-top: 1px solid var(--line); }
   .bar, .hero, .row-head, .tiles { padding-inline: 1rem; }
   .row-empty, .home-empty, .rows-end, .drop-line { margin-inline: 1rem; }

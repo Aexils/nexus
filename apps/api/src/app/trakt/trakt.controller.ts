@@ -70,14 +70,14 @@ export class TraktController {
     return this.trakt.removeListItem(id, mediaKind(kind), tmdb);
   }
 
-  @Get('home')
-  home(): Promise<{ lists: number[]; slots: number }> {
-    return this.trakt.homeLists();
+  @Get('screens/:screen')
+  screen(@Param('screen') screen: string): Promise<{ lists: number[]; slots: number }> {
+    return this.trakt.screenLists(screen);
   }
 
-  @Put('home')
-  setHome(@Body('lists') lists: number[]): Promise<{ lists: number[]; slots: number }> {
-    return this.trakt.setHomeLists(lists);
+  @Put('screens/:screen')
+  setScreen(@Param('screen') screen: string, @Body('lists') lists: number[]): Promise<{ lists: number[]; slots: number }> {
+    return this.trakt.setScreenLists(screen, lists);
   }
 
   @Get('rows/:name')
