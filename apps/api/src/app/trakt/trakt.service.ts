@@ -17,6 +17,7 @@ import {
   TraktPreview,
   TraktProviderLogo,
   TraktRowItem,
+  TraktSnapshotItem,
   TraktStatus,
   TraktTitle,
 } from '@nexus/shared-types';
@@ -180,6 +181,10 @@ export class TraktService implements OnModuleInit {
 
   async orderScreens(ids: string[]): Promise<void> {
     await this.request('PUT', '/admin/screens/order', { ids });
+  }
+
+  rowSnapshots(): Promise<Record<string, TraktSnapshotItem[]>> {
+    return this.json('GET', '/admin/row-snapshots');
   }
 
   providerLogos(): Promise<TraktProviderLogo[]> {

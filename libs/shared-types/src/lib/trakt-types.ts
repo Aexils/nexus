@@ -119,9 +119,24 @@ export interface TraktCustomScreen {
 }
 
 export interface TraktCustomScreens {
+  builtin: TraktCustomScreen[];
   screens: TraktCustomScreen[];
   max_screens: number;
   max_rows: number;
+  max_builtin_rows: number;
+  catalog: { title: string; path: string }[];
+}
+
+/** Aperçu d'une rangée d'addon, envoyé par le rpi5. */
+export interface TraktSnapshotItem {
+  label: string;
+  title: string;
+  plot: string;
+  year: number;
+  rating: number;
+  runtime: number;
+  genres: string[];
+  art: TraktRowItem['art'];
 }
 
 export interface TraktProviderLogo {

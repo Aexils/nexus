@@ -22,6 +22,7 @@ import {
   TraktPreview,
   TraktProviderLogo,
   TraktRowItem,
+  TraktSnapshotItem,
   TraktTitle,
 } from '@nexus/shared-types';
 import { TraktService } from './trakt.service';
@@ -117,6 +118,11 @@ export class TraktController {
   @HttpCode(204)
   deleteScreen(@Param('id') id: string): Promise<void> {
     return this.trakt.deleteScreen(id);
+  }
+
+  @Get('row-snapshots')
+  rowSnapshots(): Promise<Record<string, TraktSnapshotItem[]>> {
+    return this.trakt.rowSnapshots();
   }
 
   @Get('provider-logos')

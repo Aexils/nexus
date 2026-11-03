@@ -21,6 +21,7 @@ import {
   TraktProviderLogo,
   TraktRowItem,
   TraktScreenRow,
+  TraktSnapshotItem,
 } from '@nexus/shared-types';
 import {
   BrandIcon,
@@ -58,22 +59,7 @@ const THEMES = [
   { value: 'superhero', label: 'Superheroes', fr: 'Super-héros' },
 ];
 
-/** Écrans de Bingie : mêmes noms et même ordre que sur la télé. */
-const SCREENS = [
-  { id: 'home', name: 'Home', hasNextEpisodes: true, after: 'Les rangées de Bingie (tendances, populaires, classiques) suivent sur la télé.' },
-  { id: 'new', name: 'New & Popular', hasNextEpisodes: false, after: 'Les rangées de nouveautés de Bingie suivent sur la télé.' },
-  { id: 'shows', name: 'Shows', hasNextEpisodes: false, after: 'Les rangées de séries de Bingie suivent sur la télé.' },
-  { id: 'movies', name: 'Movies', hasNextEpisodes: false, after: 'Les rangées de films de Bingie suivent sur la télé.' },
-] as const;
-
-// Rangées d'addons déjà utilisées sur la télé.
-const ADDON_ROWS = [
-  { title: 'My Subscriptions', provider: 'YouTube', path: 'plugin://plugin.video.youtube/special/my_subscriptions?category_label=My+Subscriptions' },
-  { title: 'Recommendations', provider: 'YouTube', path: 'plugin://plugin.video.youtube/special/recommendations?category_label=Recommendations' },
-];
-
 const BRAND_RESULTS = 48;
-
 const NEXT_EPISODES = 'next_episodes';
 const REFRESH_MS = 5000;
 const SEARCH_DELAY_MS = 300;
@@ -145,21 +131,23 @@ export class TraktStudio implements OnInit, OnDestroy {
   private readonly http = inject(HttpClient);
   private refreshTimer?: ReturnType<typeof setInterval>;
   private searchTimer?: ReturnType<typeof setTimeout>;
+  private saving = false;
   private messageTimer?: ReturnType<typeof setTimeout>;
 
-  readonly screens = SCREENS;
-  readonly addonRows = ADDON_ROWS;
+  readonly catalog = signal<{ title: string; path: string }[]>([]);
+  readonly snapshots = signal<Record<string, TraktSnapshotItem[]>>({});
+  readonly builtinScreens = signal<TraktCustomScreen[]>([]);
+  readonly maxBuiltinRows = signal(15);
   readonly nextEntry: Droppable = { kind: 'next' };
   readonly screen = signal<string>('home');
   readonly customScreens = signal<TraktCustomScreen[]>([]);
   readonly maxScreens = signal(6);
   readonly maxRows = signal(10);
   readonly customScreen = computed(() => this.customScreens().find(s => s.id === this.screen()) ?? null);
-  readonly screenInfo = computed(() => {
-    const custom = this.customScreen();
-    if (custom) return { id: custom.id, name: custom.name, hasNextEpisodes: false, after: '' };
-    return SCREENS.find(s => s.id === this.screen()) ?? SCREENS[0];
-  });
+  readonly currentScreen = computed(
+    () => this.customScreen() ?? this.builtinScreens().find(s => s.id === this.screen()) ?? null,
+  );
+  readonly screenInfo = computed(() => ({ name: this.currentScreen()?.name ?? '' }));
   readonly iconForBrowser = iconForBrowser;
 
   // Fenêtre de création et de modification d'un écran.
@@ -190,8 +178,6 @@ export class TraktStudio implements OnInit, OnDestroy {
   readonly themes = THEMES;
 
   readonly lists = signal<TraktList[]>([]);
-  readonly homeIds = signal<number[]>([]);
-  readonly homeSlots = signal(5);
   readonly rows = signal<Record<string, TraktRowItem[]>>({});
   readonly spotlight = signal<Spotlight | null>(null);
 
@@ -211,21 +197,14 @@ export class TraktStudio implements OnInit, OnDestroy {
   readonly failure = signal<string | null>(null);
 
   readonly next = computed(() => this.rows()[NEXT_EPISODES] ?? []);
-  readonly homeLists = computed(() =>
-    this.homeIds()
-      .map(id => this.lists().find(l => l.ids.trakt === id))
-      .filter((l): l is TraktList => !!l),
-  );
-  readonly entries = computed<Entry[]>(() => {
-    const custom = this.customScreen();
-    if (!custom) return this.homeLists().map(list => ({ kind: 'list', list }));
-    return custom.rows.flatMap((row): Entry[] => {
+  readonly entries = computed<Entry[]>(() =>
+    (this.currentScreen()?.rows ?? []).flatMap((row): Entry[] => {
       if (row.kind !== 'list') return [row];
       const list = this.lists().find(l => l.ids.trakt === row.list);
       return list ? [{ kind: 'list', list }] : [];
-    });
-  });
-  readonly rowLimit = computed(() => (this.customScreen() ? this.maxRows() : this.homeSlots()));
+    }),
+  );
+  readonly rowLimit = computed(() => (this.customScreen() ? this.maxRows() : this.maxBuiltinRows()));
   readonly libraryLists = computed(() => {
     const wanted = this.query().trim().toLocaleLowerCase();
     return this.lists().filter(l => !wanted || l.name.toLocaleLowerCase().includes(wanted));
@@ -260,22 +239,22 @@ export class TraktStudio implements OnInit, OnDestroy {
 
   private async refresh(): Promise<void> {
     try {
-      const screen = this.screen();
-      const isBuiltin = SCREENS.some(s => s.id === screen);
-      const [lists, home, custom] = await Promise.all([
+      const [lists, custom, snapshots] = await Promise.all([
         firstValueFrom(this.http.get<TraktList[]>('/api/trakt/lists')),
-        isBuiltin
-          ? firstValueFrom(this.http.get<{ lists: number[]; slots: number }>(`/api/trakt/screens/${screen}`))
-          : Promise.resolve(null),
         firstValueFrom(this.http.get<TraktCustomScreens>('/api/trakt/custom-screens')),
+        firstValueFrom(this.http.get<Record<string, TraktSnapshotItem[]>>('/api/trakt/row-snapshots')),
       ]);
       this.lists.set(lists);
-      this.customScreens.set(custom.screens);
+      // Un enregistrement en cours garde son affichage : le serveur n'a pas encore la nouvelle version.
+      if (!this.saving) {
+        this.customScreens.set(custom.screens);
+        this.builtinScreens.set(custom.builtin);
+      }
       this.maxScreens.set(custom.max_screens);
       this.maxRows.set(custom.max_rows);
-      // Une réponse pour l'écran qu'on vient de quitter ne doit pas remplacer le nouveau.
-      if (home && screen === this.screen()) this.homeIds.set(home.lists);
-      if (home) this.homeSlots.set(home.slots);
+      this.maxBuiltinRows.set(custom.max_builtin_rows);
+      this.catalog.set(custom.catalog);
+      this.snapshots.set(snapshots);
       const open = this.detail();
       if (open) this.detail.set(lists.find(l => l.ids.trakt === open.ids.trakt) ?? null);
       await this.loadRows(lists);
@@ -303,24 +282,49 @@ export class TraktStudio implements OnInit, OnDestroy {
 
   /** La bannière montre le premier titre de l'écran, comme la télé à l'ouverture. */
   private showFirstTitle(): void {
-    const first = this.screenInfo().hasNextEpisodes ? this.next()[0] : undefined;
-    const item = first ?? this.entries().map(e => this.entryItems(e)[0]).find(Boolean);
+    const item = this.entries().map(e => this.entryItems(e)[0]).find(Boolean);
     this.spotlight.set(item ? fromRow(item) : null);
   }
 
   async goTo(screen: string): Promise<void> {
     if (screen === this.screen()) return;
     this.screen.set(screen);
-    this.homeIds.set([]);
     this.spotlight.set(null);
     this.message.set(null);
-    await this.refresh();
     this.showFirstTitle();
+    await this.refresh();
   }
 
   entryItems(entry: Entry): TraktRowItem[] {
     if (entry.kind === 'next') return this.next();
-    return entry.kind === 'list' ? this.itemsOf(entry.list) : [];
+    if (entry.kind === 'list') return this.itemsOf(entry.list);
+    return (this.snapshots()[entry.path] ?? []).map((item, index) => ({
+      kind: 'movie',
+      label: item.label,
+      title: item.title,
+      plot: item.plot,
+      runtime: item.runtime,
+      rating: item.rating,
+      year: item.year,
+      genres: item.genres,
+      tmdb: index,
+      art: item.art,
+    }));
+  }
+
+  hasSnapshot(entry: Entry): boolean {
+    return entry.kind === 'addon' && entry.path in this.snapshots();
+  }
+
+  catalogFor(row: { title: string; path: string }): Droppable {
+    return { kind: 'addon', title: row.title, path: row.path };
+  }
+
+  /** Nom court de l'addon qui fournit une rangée. */
+  addonName(path: string): string {
+    if (path.includes('plugin.video.youtube')) return 'YouTube';
+    if (path.includes('themoviedb.helper')) return 'TMDb Helper';
+    return path.replace('plugin://', '').split('/')[0].replace('plugin.video.', '');
   }
 
   entryTitle(entry: Entry): string {
@@ -378,34 +382,26 @@ export class TraktStudio implements OnInit, OnDestroy {
     return this.entries().some(e => e.kind === 'list' && e.list.ids.trakt === list.ids.trakt);
   }
 
-  /** Enregistre les rangées de l'écran affiché, avec retour immédiat à l'écran. */
+  /** Enregistre les rangées de l'écran affiché : l'affichage change tout de suite. */
   private async saveEntries(entries: Entry[], message: string): Promise<void> {
-    const custom = this.customScreen();
-    if (!custom) {
-      await this.saveHome(entries.flatMap(e => (e.kind === 'list' ? [e.list.ids.trakt] : [])), message);
-      return;
-    }
+    const screen = this.currentScreen();
+    if (!screen) return;
     const rows: TraktScreenRow[] = entries.map(e => (e.kind === 'list' ? { kind: 'list', list: e.list.ids.trakt } : e));
-    const previous = this.customScreens();
-    this.customScreens.set(previous.map(s => (s.id === custom.id ? { ...s, rows } : s)));
+    const apply = (list: TraktCustomScreen[]) => list.map(s => (s.id === screen.id ? { ...s, rows } : s));
+    const custom = this.customScreens();
+    const builtin = this.builtinScreens();
+    this.customScreens.set(apply(custom));
+    this.builtinScreens.set(apply(builtin));
+    this.saving = true;
     try {
-      await firstValueFrom(this.http.put(`/api/trakt/custom-screens/${custom.id}`, { rows }));
+      await firstValueFrom(this.http.put(`/api/trakt/custom-screens/${screen.id}`, { rows }));
       this.say(message);
     } catch {
-      this.customScreens.set(previous);
+      this.customScreens.set(custom);
+      this.builtinScreens.set(builtin);
       this.failure.set("Le changement n'a pas été enregistré. Réessaie dans un instant.");
-    }
-  }
-
-  private async saveHome(ids: number[], message: string): Promise<void> {
-    const previous = this.homeIds();
-    this.homeIds.set(ids);
-    try {
-      await firstValueFrom(this.http.put(`/api/trakt/screens/${this.screen()}`, { lists: ids }));
-      this.say(message);
-    } catch {
-      this.homeIds.set(previous);
-      this.failure.set("Le changement n'a pas été enregistré. Réessaie dans un instant.");
+    } finally {
+      this.saving = false;
     }
   }
 
@@ -437,10 +433,6 @@ export class TraktStudio implements OnInit, OnDestroy {
   /** Place une rangée sur l'écran affiché, en créant d'abord la liste si c'est une suggestion. */
   async place(entry: Droppable, index = this.entries().length): Promise<void> {
     const screen = this.screenInfo().name;
-    if (entry.kind !== 'list' && entry.kind !== 'suggestion' && !this.customScreen()) {
-      this.failure.set(`${screen} n'accepte que des listes. Crée un écran pour y mettre cette rangée.`);
-      return;
-    }
     if (this.already(entry)) {
       this.say(`Cette rangée est déjà sur ${screen}.`);
       return;
@@ -624,10 +616,6 @@ export class TraktStudio implements OnInit, OnDestroy {
     const provider = PROVIDERS.find(p => p.id === source.provider)?.name ?? 'la plateforme';
     const theme = THEMES.find(t => t.value === source.theme);
     return theme?.value ? `sur ${provider}, thème ${theme.fr}` : `parmi les plus populaires sur ${provider}`;
-  }
-
-  addonFor(row: { title: string; path: string }): Droppable {
-    return { kind: 'addon', title: row.title, path: row.path };
   }
 
   listFor(list: TraktList): Droppable {
