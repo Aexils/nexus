@@ -10,7 +10,7 @@
       <button type="button" class="link" [class.is-on]="!searching() && !onlyChanged() && section() === 'kodi:' + name" (click)="section.set('kodi:' + name); onlyChanged.set(false); query.set('')">{{ name }}</button>
     }
     <h2>LibreELEC</h2>
-    <p class="side-note">Sur la télé : Réglages, puis LibreELEC. La version Nexus arrive ensuite.</p>
+    <p class="side-note">Sur la télé : Settings, puis LibreELEC. La version Nexus arrive ensuite.</p>
   </nav>
 
   <main class="main">
@@ -46,7 +46,7 @@
               @if (!row.editable) {
                 <span class="value">{{ row.type === 'action' ? 'Sur la télé' : currentValue(row) }}</span>
               } @else if (row.type === 'boolean') {
-                <button type="button" role="switch" class="switch" [id]="row.source + row.key" [class.is-on]="currentValue(row) === true" [attr.aria-checked]="currentValue(row) === true" (click)="change(row, currentValue(row) !== true)"><span></span></button>
+                <button type="button" role="switch" class="switch" [id]="row.source + row.key" [class.is-on]="isOn(row)" [attr.aria-checked]="isOn(row)" (click)="change(row, currentValue(row) !== true)"><span></span></button>
               } @else if (row.type === 'color') {
                 <input type="color" class="color" [id]="row.source + row.key" [value]="colorOf(row)" (change)="changeColor(row, $any($event.target).value)" />
               } @else if (row.options?.length) {

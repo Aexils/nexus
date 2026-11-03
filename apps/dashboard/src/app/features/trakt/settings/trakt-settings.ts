@@ -4,6 +4,8 @@ import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import { KodiSetting, SkinSetting, TraktSettings } from '@nexus/shared-types';
+import KODI_HELP_FR from './kodi-help-fr.json';
+import { SKIN_HELP_FR, colorHelpFr } from './skin-help-fr';
 
 const REFRESH_MS = 4000;
 const MAX_RESULTS = 120;
@@ -23,14 +25,18 @@ interface Row {
   minimum: number | null;
   maximum: number | null;
   editable: boolean;
+  /** L'interrupteur affiche le contraire du réglage enregistré. */
+  inverted: boolean;
 }
+
+const kodiHelp = KODI_HELP_FR as Record<string, string>;
 
 function fromKodi(s: KodiSetting): Row {
   return {
     source: 'kodi',
     key: s.id,
     label: s.label,
-    help: s.help,
+    help: kodiHelp[s.id] ?? s.help,
     group: s.category,
     section: `kodi:${s.section}`,
     type: s.type,
@@ -40,6 +46,7 @@ function fromKodi(s: KodiSetting): Row {
     minimum: s.minimum ?? null,
     maximum: s.maximum ?? null,
     editable: s.editable,
+    inverted: false,
   };
 }
 
@@ -48,7 +55,7 @@ function fromSkin(s: SkinSetting, section: string): Row {
     source: 'skin',
     key: s.setting,
     label: s.label,
-    help: '',
+    help: s.kind === 'color' ? colorHelpFr(s.group) : (SKIN_HELP_FR[s.setting] ?? ''),
     group: s.group,
     section: `skin:${section}`,
     type: s.kind === 'bool' ? 'boolean' : 'color',
@@ -58,6 +65,7 @@ function fromSkin(s: SkinSetting, section: string): Row {
     minimum: null,
     maximum: null,
     editable: true,
+    inverted: s.inverted === true,
   };
 }
 
@@ -165,6 +173,11 @@ export class TraktSettingsPage implements OnInit, OnDestroy {
   optionIndex(row: Row): number {
     const value = JSON.stringify(this.currentValue(row));
     return (row.options ?? []).findIndex(o => JSON.stringify(o.value) === value);
+  }
+
+  /** L'état de l'interrupteur tel que la personne le comprend, inversions comprises. */
+  isOn(row: Row): boolean {
+    return (this.currentValue(row) === true) !== row.inverted;
   }
 
   async change(row: Row, value: unknown): Promise<void> {

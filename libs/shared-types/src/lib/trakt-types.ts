@@ -178,6 +178,7 @@ export interface SkinSetting {
   label: string;
   group: string;
   value: boolean | string;
+  inverted?: boolean;
 }
 
 export interface TraktSettings {
