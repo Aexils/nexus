@@ -1,0 +1,39 @@
+<div class="tv" [style]="vars()" role="img" aria-label="Aperçu simplifié de l'écran de la télé avec les réglages actuels">
+  @if (showMenu()) {
+    <div class="menu" [class.is-zone]="zone() === 'menu'">
+      <span class="dot is-on"></span>
+      <span class="dot"></span>
+      <span class="dot"></span>
+      <span class="dot"></span>
+    </div>
+  }
+  <div class="screen">
+    @if (showSpotlight()) {
+      <div class="spotlight" [class.is-zone]="zone() === 'spotlight'">
+        @if (backdrop(); as src) { <img class="backdrop" [src]="src" alt="" /> }
+        <div class="info">
+          @if (showLogo()) {
+            <img class="logo" [src]="hero()!.art.clearlogo" alt="" />
+          } @else {
+            <strong class="title">{{ hero()?.title }}</strong>
+          }
+          <p class="plot">{{ hero()?.plot }}</p>
+          @if (showTrailer()) { <span class="trailer">Bande-annonce</span> }
+        </div>
+      </div>
+    }
+    <div class="row" [class.is-zone]="zone() === 'row'">
+      <span class="row-name">Your Next Episodes</span>
+      <div class="tiles" [class.is-moving]="movingFrame()">
+        @for (item of tiles(); track $index) {
+          <div class="tile">
+            @if (tileImage(item); as src) { <img [src]="src" alt="" loading="lazy" /> }
+            @if ($index === 1 && showWatched()) { <span class="watched"></span> }
+            @if ($index === 2 && showNew()) { <span class="new">Nouveaux</span> }
+            @if ($index === 0) { <span class="progress"><span></span></span> }
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+</div>

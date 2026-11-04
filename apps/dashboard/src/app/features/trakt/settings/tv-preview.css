@@ -1,0 +1,33 @@
+/* Une télé en miniature : tout est proportionnel à sa largeur, grâce à container-type. */
+:host { display: block; container-type: inline-size; }
+.tv { position: relative; display: flex; aspect-ratio: 16 / 9; overflow: hidden; border-radius: 6px; outline: 1px solid #333333; background: var(--tv-bg); transition: background-color 160ms ease-out; }
+.is-zone { outline: 2px solid #ffffff; outline-offset: -2px; z-index: 2; }
+
+.menu { flex: 0 0 5%; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 5cqw; }
+.dot { width: 1.6cqw; height: 1.6cqw; border-radius: 50%; background: var(--tv-icon); position: relative; }
+.dot.is-on { background: var(--tv-icon-on); }
+.dot.is-on::after { content: ''; position: absolute; left: -.3cqw; right: -.3cqw; bottom: -1cqw; height: .3cqw; background: var(--tv-line); }
+
+.screen { position: relative; flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: flex-end; }
+.spotlight { position: absolute; inset: 0 0 34% 0; display: flex; align-items: flex-end; }
+.backdrop { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; mask-image: linear-gradient(to right, transparent, #000 45%), linear-gradient(to top, transparent, #000 30%); mask-composite: intersect; }
+.info { position: relative; width: 46%; padding: 0 0 3cqw 2.5cqw; }
+.logo { display: block; max-width: 70%; max-height: 8cqw; object-fit: contain; object-position: left; }
+.title { display: block; font-size: 3.2cqw; line-height: 1.1; color: var(--tv-label); }
+.plot { display: -webkit-box; margin: 1cqw 0 0; font-size: 1.35cqw; line-height: 1.35; color: var(--tv-plot); overflow: hidden; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
+.trailer { display: inline-block; margin-top: 1cqw; padding: .3cqw .8cqw; border-radius: .3cqw; font-size: 1.15cqw; background: #ffffff; color: #000000; }
+
+.row { position: relative; padding: 0 0 2.5cqw 2.5cqw; }
+.row-name { display: block; margin-bottom: .8cqw; font-size: 1.6cqw; font-weight: 600; color: var(--tv-label); }
+.tiles { display: flex; gap: .8cqw; }
+.tile { position: relative; flex: 0 0 21%; aspect-ratio: 16 / 9; overflow: hidden; border-radius: .4cqw; background: #222222; }
+.tile img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* Cadre fixe : il reste sur la première tuile. Cadre mobile : il va jusqu'à la deuxième. */
+.tile:first-child { outline: .3cqw solid var(--tv-frame); outline-offset: -.3cqw; transition: outline-color 160ms ease-out; }
+.is-moving .tile:first-child { outline-color: transparent; }
+.is-moving .tile:nth-child(2) { outline: .3cqw solid var(--tv-frame); outline-offset: -.3cqw; }
+.watched { position: absolute; top: 0; right: 0; width: 0; height: 0; border-top: 2.4cqw solid var(--tv-watched); border-left: 2.4cqw solid transparent; }
+.new { position: absolute; left: 0; bottom: 0; padding: .15cqw .6cqw; font-size: 1cqw; background: var(--tv-new); color: var(--tv-new-text); }
+.progress { position: absolute; left: 6%; right: 6%; bottom: 6%; height: .4cqw; background: var(--tv-track); }
+.progress span { display: block; width: 55%; height: 100%; background: var(--tv-progress); }
+@media (prefers-reduced-motion: reduce) { .tv, .tile:first-child { transition: none; } }

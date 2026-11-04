@@ -86,5 +86,5 @@ const COLOR_GROUP_FR: Record<string, string> = {
 /** Le nom anglais dit déjà de quel élément il s'agit : on précise où cette couleur s'applique. */
 export function colorHelpFr(group: string): string {
   const where = COLOR_GROUP_FR[group];
-  return where ? `Change cette couleur dans ${where}. Le changement est immédiat sur la télé.` : 'Change cette couleur sur la télé.';
+  return where ? `Ces couleurs s'appliquent dans ${where}.` : 'Ces couleurs s\'appliquent sur la télé.';
 }
