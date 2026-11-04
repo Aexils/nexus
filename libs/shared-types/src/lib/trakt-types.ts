@@ -47,10 +47,13 @@ export interface TraktLoopShow {
 
 export type TraktMediaKind = 'movie' | 'show';
 
+export type TraktChart = 'trending' | 'popular' | 'favorited' | 'watched' | 'streaming';
+
 // Origine du contenu d'une liste ; null pour une liste tenue à la main.
 export type TraktListSource =
   | { type: 'provider'; provider: number; country: string; kinds: TraktMediaKind[]; theme?: string; keyword?: number }
-  | { type: 'netflix_top10'; country: string; kinds: TraktMediaKind[] };
+  | { type: 'netflix_top10'; country: string; kinds: TraktMediaKind[] }
+  | { type: 'chart'; chart: TraktChart; kinds: TraktMediaKind[] };
 
 export interface TraktList {
   name: string;

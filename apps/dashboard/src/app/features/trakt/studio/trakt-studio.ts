@@ -13,6 +13,7 @@ import { CdkDrag, CdkDragDrop, CdkDragHandle, CdkDragPlaceholder, CdkDropList, m
 import { firstValueFrom } from 'rxjs';
 
 import {
+  TraktChart,
   TraktCustomScreen,
   TraktCustomScreens,
   TraktList,
@@ -63,6 +64,14 @@ const THEMES = [
 const BRAND_RESULTS = 48;
 const NEXT_EPISODES = 'next_episodes';
 const REFRESH_MS = 5000;
+const CHART_LABELS: Record<TraktChart, string> = {
+  trending: 'parmi les tendances de la semaine',
+  popular: 'parmi les plus populaires',
+  favorited: 'parmi les mieux notés',
+  watched: 'parmi les tendances du jour',
+  streaming: 'parmi les nouveautés',
+};
+
 const SEARCH_DELAY_MS = 300;
 const MESSAGE_MS = 6000;
 
@@ -662,6 +671,7 @@ export class TraktStudio implements OnInit, OnDestroy {
     const source = list.source;
     if (!source) return 'choisis à la main';
     if (source.type === 'netflix_top10') return 'du classement Netflix de la semaine';
+    if (source.type === 'chart') return CHART_LABELS[source.chart];
     const provider = PROVIDERS.find(p => p.id === source.provider)?.name ?? 'la plateforme';
     const theme = THEMES.find(t => t.value === source.theme);
     return theme?.value ? `sur ${provider}, thème ${theme.fr}` : `parmi les plus populaires sur ${provider}`;
