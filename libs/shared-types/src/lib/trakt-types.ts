@@ -119,6 +119,8 @@ export interface TraktCustomScreen {
   name: string;
   icon: string;
   rows: TraktScreenRow[];
+  /** Écrans d'origine : le skin ne prévoit pas le même nombre de rangées partout. */
+  max_rows?: number;
 }
 
 export interface TraktCustomScreens {

@@ -218,7 +218,9 @@ export class TraktStudio implements OnInit, OnDestroy {
       return list ? [{ kind: 'list', list }] : [];
     }),
   );
-  readonly rowLimit = computed(() => (this.customScreen() ? this.maxRows() : this.maxBuiltinRows()));
+  readonly rowLimit = computed(() =>
+    this.customScreen() ? this.maxRows() : (this.currentScreen()?.max_rows ?? this.maxBuiltinRows()),
+  );
   readonly libraryLists = computed(() => {
     const wanted = this.query().trim().toLocaleLowerCase();
     return this.lists().filter(l => !wanted || l.name.toLocaleLowerCase().includes(wanted));
@@ -492,6 +494,16 @@ export class TraktStudio implements OnInit, OnDestroy {
     const entries = [...this.entries()];
     moveItemInArray(entries, index, target);
     await this.saveEntries(entries, 'Nouvel ordre envoyé à la télé.');
+  }
+
+  async renameEntry(index: number): Promise<void> {
+    const entry = this.entries()[index];
+    if (entry?.kind !== 'addon') return;
+    const title = window.prompt('Nom affiché sur la télé', entry.title)?.trim();
+    if (!title || title === entry.title) return;
+    const entries = [...this.entries()];
+    entries[index] = { ...entry, title };
+    await this.saveEntries(entries, `${title} envoyé à la télé.`);
   }
 
   // --- Écrans du rail ---

@@ -90,6 +90,7 @@
                 <button type="button" class="ghost" [disabled]="isFirst" (click)="move(i, -1)">Monter</button>
                 <button type="button" class="ghost" [disabled]="isLast" (click)="move(i, 1)">Descendre</button>
                 @if (entry.kind === 'list') { <button type="button" class="ghost" (click)="open(entry.list)">Voir la liste</button> }
+                @if (entry.kind === 'addon') { <button type="button" class="ghost" (click)="renameEntry(i)">Renommer</button> }
                 <button type="button" class="ghost" (click)="removeEntry(entry)">Retirer de {{ screenInfo().name }}</button>
               </span>
             </header>
