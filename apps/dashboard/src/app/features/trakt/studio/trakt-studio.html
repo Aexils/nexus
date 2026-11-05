@@ -272,6 +272,10 @@
         </label>
       </div>
 
+      @if (mode !== 'new' && !editingEntry()?.has_rows) {
+        <p class="editor-note">Cet écran est construit par le skin : ici, seule son entrée dans le menu se modifie.</p>
+      }
+
       <div class="tabs" role="tablist">
         <button type="button" role="tab" [class.is-on]="logoTab() === 'brands'" (click)="logoTab.set('brands')">Marques</button>
         <button type="button" role="tab" [class.is-on]="logoTab() === 'platforms'" (click)="logoTab.set('platforms')">Plateformes</button>
