@@ -3,6 +3,8 @@
   z-index: 1;
   display: grid;
   grid-template-rows: 68px 1fr;
+  /* Une barre du haut trop large ne doit jamais élargir les pages (débordement mobile). */
+  grid-template-columns: minmax(0, 1fr);
   height: 100vh;
   overflow: hidden;
 }

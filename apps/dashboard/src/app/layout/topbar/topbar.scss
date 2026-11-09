@@ -204,3 +204,10 @@
     min-width: auto;
   }
 }
+
+/* Très petits écrans : l'horloge laisse la place aux boutons (cloche coupée à 390 px). */
+@media (max-width: 420px) {
+  .clock {
+    display: none;
+  }
+}

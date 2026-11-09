@@ -37,8 +37,8 @@
             <span class="profile-name">{{ builtins[key].label }}</span>
             <span class="tag">intégré</span>
           </button>
-          <button class="star" [class.on]="d.active_profile === key" (click)="activate(key)"
-                  [attr.aria-label]="'Activer ' + builtins[key].label">{{ d.active_profile === key ? '●' : '○' }}</button>
+          <button class="state" [class.on]="d.active_profile === key" (click)="activate(key)" [attr.aria-pressed]="d.active_profile === key"
+                  [attr.aria-label]="(d.active_profile === key ? 'Profil actif : ' : 'Activer ') + builtins[key].label">{{ d.active_profile === key ? 'actif' : 'activer' }}</button>
         </li>
       }
       @for (key of customKeys(); track key) {
@@ -46,17 +46,17 @@
           <button class="profile" (click)="select(key)">
             <span class="profile-name">{{ profileLabel(key) }}</span>
           </button>
-          <button class="star" [class.on]="d.active_profile === key" (click)="activate(key)"
-                  [attr.aria-label]="'Activer ' + profileLabel(key)">{{ d.active_profile === key ? '●' : '○' }}</button>
+          <button class="state" [class.on]="d.active_profile === key" (click)="activate(key)" [attr.aria-pressed]="d.active_profile === key"
+                  [attr.aria-label]="(d.active_profile === key ? 'Profil actif : ' : 'Activer ') + profileLabel(key)">{{ d.active_profile === key ? 'actif' : 'activer' }}</button>
         </li>
       }
       <li [class.selected]="selected() === 'none'">
         <button class="profile" (click)="select('none')"><span class="profile-name">Aucun profil</span></button>
-        <button class="star" [class.on]="d.active_profile === 'none'" (click)="activate('none')"
-                aria-label="Désactiver les profils">{{ d.active_profile === 'none' ? '●' : '○' }}</button>
+        <button class="state" [class.on]="d.active_profile === 'none'" (click)="activate('none')" [attr.aria-pressed]="d.active_profile === 'none'"
+                aria-label="Désactiver les profils">{{ d.active_profile === 'none' ? 'actif' : 'activer' }}</button>
       </li>
     </ul>
-    <p class="hint">● profil actif dans Kodi et dans l’aperçu.</p>
+    <p class="hint">Le profil « actif » s’applique dans Kodi et dans l’aperçu.</p>
     <div class="actions">
       <button class="btn" (click)="createProfile()">Nouveau</button>
       <button class="btn" (click)="duplicate()" [disabled]="selected() === 'none'">Dupliquer</button>
@@ -288,17 +288,20 @@
     @if (preview(); as pv) {
       <p class="hint">{{ pv.releases.length }} releases · {{ pv.autoplay.length }} essayées par l’autoplay
         @for (entry of pv.refused | keyvalue; track entry.key) { · {{ entry.value }} {{ refusalLabel(entry.key) }} }</p>
-      <div class="table">
-        @for (r of pv.releases; track r.release_id) {
-          <div class="row" [class.first]="r.release_id === autoplayFirst()" [class.refused]="r.refusal">
-            <span class="pill" [class.rule]="r.rank < pv.rules.length">{{ r.rank < pv.rules.length ? 'règle ' + (r.rank + 1) : 'autre' }}</span>
-            <span class="row-name">{{ tierLabels[r.tier] }} · {{ r.resolution ?? '?' }} {{ r.hdr ?? '' }}
-              @if (r.languages.length) { · {{ r.languages.join(', ') }} }
-              @if (r.file_size_gb !== null) { · {{ r.file_size_gb }} Go }</span>
+      <div class="table" role="list" aria-label="Classement des releases">
+        @for (row of rows(); track row.release.release_id; let i = $index) {
+          @if (row.attempt === null && (i === 0 || rows()[i - 1].attempt !== null)) {
+            <div class="row group">Jamais essayées par l’autoplay</div>
+          }
+          <div class="row" role="listitem" [class.first]="row.attempt === 1" [class.refused]="row.attempt === null">
+            <span class="order" [class.none]="row.attempt === null">{{ row.attempt ?? '–' }}</span>
+            <span class="row-name">{{ tierLabels[row.release.tier] }} · {{ row.release.resolution ?? '?' }} {{ row.release.hdr ?? '' }}
+              @if (row.release.languages.length) { · {{ row.release.languages.join(', ') }} }
+              @if (row.release.file_size_gb !== null) { · {{ row.release.file_size_gb }} Go }</span>
+            <span class="pill" [class.rule]="row.release.rank < pv.rules.length">{{ row.release.rank < pv.rules.length ? 'règle ' + (row.release.rank + 1) : 'autre' }}</span>
             <span class="row-sub">
-              @if (r.release_id === autoplayFirst()) { <strong>lancée en premier</strong> }
-              @else if (r.refusal) { écartée : {{ refusalLabel(r.refusal) }} }
-              @else { {{ r.explanation }} }
+              @if (row.release.refusal) { écartée : {{ refusalLabel(row.release.refusal) }} }
+              @else { {{ row.attempt === 1 ? 'lancée en premier · ' : '' }}{{ row.release.explanation }} }
             </span>
           </div>
         } @empty { <div class="row empty">Aucune release pour ce contenu.</div> }
@@ -313,7 +316,7 @@
 <!-- Barre de synchronisation : toujours visible, en bas sur mobile -->
 <footer class="syncbar" [class.dirty]="dirty()" [class.error]="inError()">
   <div class="sync-state">
-    <strong>{{ statusLabel() }}</strong>
+    <strong>{{ statusLabel() }}@if (server(); as s) { <span class="ver">· v{{ s.version }}</span> }</strong>
     @if (server(); as s) {
       <span class="row-sub">version {{ s.version }}{{ s.version === 0 ? ' (jamais enregistrées : Kodi garde ses réglages)' : '' }}
         @if (s.updated_by) { · {{ s.updated_by }} {{ ago(s.updated_at) }} }</span>

@@ -16,6 +16,7 @@ import {
 import { PageHeaderComponent } from '../../shared/page-header/page-header';
 import { ApiError, PreferencesApi, PreferencesStore, SyncStatus, TIERS, TIER_LABELS } from './preferences-store';
 import { CODECS, DYNAMICS, RESOLUTIONS, RuleChips, describeRule, formatRule, parseRule, splitRules } from './rule-chips';
+import { previewRows } from './preview-view';
 
 /** Liste de mots d'une section (langues, codecs, formats) : les seuls champs tableaux. */
 function wordList(d: AggregatorPreferences, section: 'strict' | 'soft', key: string): string[] {
@@ -63,8 +64,11 @@ export class AggregatorPage implements OnInit, OnDestroy {
     { media_type: 'movie', tmdb: '', season: 1, episode: 1 });
   private previewTimer: ReturnType<typeof setTimeout> | null = null;
 
-  readonly draft = computed(() => { this.rev(); return this.store.draft; });
-  readonly server = computed(() => { this.rev(); return this.store.server; });
+  // Le magasin modifie ses objets sur place : même référence après une édition. Sans
+  // « equal: () => false », Angular jugerait la valeur inchangée et ne recalculerait ni la liste
+  // des profils ni les règles affichées.
+  readonly draft = computed(() => { this.rev(); return this.store.draft; }, { equal: () => false });
+  readonly server = computed(() => { this.rev(); return this.store.server; }, { equal: () => false });
   readonly status = computed(() => { this.rev(); return this.store.status; });
   readonly statusLabel = computed(() => STATUS_LABELS[this.status()]);
   readonly message = computed(() => { this.rev(); return this.store.message; });
@@ -79,11 +83,11 @@ export class AggregatorPage implements OnInit, OnDestroy {
   readonly selectedProfile = computed(() => {
     const key = this.selected();
     return this.draft()?.profiles[key] ?? AGGREGATOR_BUILTIN_PROFILES[key] ?? null;
-  });
+  }, { equal: () => false });
   readonly rules = computed<RuleChips[]>(() => splitRules(this.selectedProfile()?.rules ?? '').map(parseRule));
-  readonly enabledTiers = computed(() => this.draft()?.provider_order ?? []);
+  readonly enabledTiers = computed(() => [...(this.draft()?.provider_order ?? [])]);
   readonly disabledTiers = computed(() => TIERS.filter(t => !this.enabledTiers().includes(t)));
-  readonly autoplayFirst = computed(() => this.preview()?.autoplay[0] ?? null);
+  readonly rows = computed(() => { const pv = this.preview(); return pv ? previewRows(pv) : []; });
 
   async ngOnInit(): Promise<void> {
     await Promise.all([this.store.load(), this.loadSession()]);
