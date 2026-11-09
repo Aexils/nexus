@@ -40,7 +40,6 @@ nexus-expenses.db
 nexus-immigration.db
 nexus-logs.db
 nexus-link.db
-nexus-tyto.db
 
 # misc
 /.sass-cache

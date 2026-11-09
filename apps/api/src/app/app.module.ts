@@ -12,7 +12,6 @@ import { LinkModule } from './link/link.module';
 import { EventsModule } from './events/events.module';
 import { JobsModule } from './jobs/jobs.module';
 import { VzdumpModule } from './vzdump/vzdump.module';
-import { TytoModule } from './tyto/tyto.module';
 import { ImportModule } from './import/import.module';
 import { TraktModule } from './trakt/trakt.module';
 
@@ -31,7 +30,6 @@ import { TraktModule } from './trakt/trakt.module';
     EventsModule,
     JobsModule,
     VzdumpModule,
-    TytoModule,
     ImportModule,
     TraktModule,
   ],

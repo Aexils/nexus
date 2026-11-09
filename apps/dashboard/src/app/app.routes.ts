@@ -45,11 +45,6 @@ export const appRoutes: Route[] = [
           import('./features/trakt/trakt-page').then(m => m.TraktPage),
       },
       {
-        path: 'tyto',
-        loadComponent: () =>
-          import('./features/tyto/tyto-page').then(m => m.TytoPage),
-      },
-      {
         path: 'versions',
         loadComponent: () =>
           import('./features/versions/versions-page').then(m => m.VersionsPage),

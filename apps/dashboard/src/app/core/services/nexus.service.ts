@@ -2,7 +2,7 @@ import { Injectable, signal, inject } from '@angular/core';
 import { Socket } from 'ngx-socket-io';
 import {
   HostMetrics, NodeMetrics, WorkloadMetric, WS_EVENTS, LogEntry, VersionsReport,
-  SideloopStatus, TraktStatus, NextcloudStatus, LinkStatus, TytoStatus,
+  SideloopStatus, TraktStatus, NextcloudStatus, LinkStatus,
 } from '@nexus/shared-types';
 
 const MAX_LOGS = 500;
@@ -22,7 +22,6 @@ export class NexusService {
   readonly trakt             = signal<TraktStatus | null>(null);
   readonly nextcloud         = signal<NextcloudStatus | null>(null);
   readonly link              = signal<LinkStatus | null>(null);
-  readonly tyto              = signal<TytoStatus | null>(null);
 
   // ── Constructor ───────────────────────────────────────────────────────────
 
@@ -35,7 +34,6 @@ export class NexusService {
     this.socket.on(WS_EVENTS.TRAKT_STATUS,     (data: TraktStatus)       => this.trakt.set(data));
     this.socket.on(WS_EVENTS.NEXTCLOUD_STATUS, (data: NextcloudStatus)   => this.nextcloud.set(data));
     this.socket.on(WS_EVENTS.LINK_STATUS,      (data: LinkStatus)        => this.link.set(data));
-    this.socket.on(WS_EVENTS.TYTO_STATUS,      (data: TytoStatus)        => this.tyto.set(data));
 
     this.socket.on(WS_EVENTS.LOG_ENTRY, (entry: LogEntry) => {
       this.logs.update(prev => {
