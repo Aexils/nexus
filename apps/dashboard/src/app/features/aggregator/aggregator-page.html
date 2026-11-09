@@ -1,0 +1,328 @@
+<nxs-page-header
+  title="Aggregator" accent="préférences"
+  subtitle="Profils de qualité et priorités des sources, partagés avec Kodi">
+  <div class="conn" [class.off]="status() === 'unavailable'" [class.warn]="dirty()">
+    <span class="dot"></span>{{ statusLabel() }}
+  </div>
+</nxs-page-header>
+
+<!-- Accès en écriture : la lecture et l'aperçu restent ouverts, l'enregistrement exige une session. -->
+<section class="auth">
+  @if (!authConfigured()) {
+    <p class="hint">Enregistrement désactivé : l’authentification de Nexus n’est pas configurée.</p>
+  } @else if (canWrite()) {
+    <p class="hint ok">Session ouverte : les modifications peuvent être enregistrées.
+      <button class="btn small" (click)="logout()">Se déconnecter</button></p>
+  } @else {
+    <form class="login" (submit)="$event.preventDefault(); login()">
+      <label for="agg-password">Mot de passe d’administration</label>
+      <input id="agg-password" type="password" autocomplete="current-password"
+             [value]="password()" (input)="password.set($any($event.target).value)">
+      <button class="btn primary" type="submit" [disabled]="!password()">Se connecter</button>
+      @if (loginError()) { <span class="bad">{{ loginError() }}</span> }
+    </form>
+  }
+</section>
+
+@if (draft(); as d) {
+<div class="grid">
+
+  <!-- Profils -->
+  <section class="card profiles">
+    <h2 class="card-title">Profils</h2>
+    <ul class="profile-list" role="listbox" aria-label="Profils de qualité">
+      @for (key of ['preferred', 'max_quality', 'fast_start']; track key) {
+        <li [class.selected]="selected() === key" role="option" [attr.aria-selected]="selected() === key">
+          <button class="profile" (click)="select(key)">
+            <span class="profile-name">{{ builtins[key].label }}</span>
+            <span class="tag">intégré</span>
+          </button>
+          <button class="star" [class.on]="d.active_profile === key" (click)="activate(key)"
+                  [attr.aria-label]="'Activer ' + builtins[key].label">{{ d.active_profile === key ? '●' : '○' }}</button>
+        </li>
+      }
+      @for (key of customKeys(); track key) {
+        <li [class.selected]="selected() === key" role="option" [attr.aria-selected]="selected() === key">
+          <button class="profile" (click)="select(key)">
+            <span class="profile-name">{{ profileLabel(key) }}</span>
+          </button>
+          <button class="star" [class.on]="d.active_profile === key" (click)="activate(key)"
+                  [attr.aria-label]="'Activer ' + profileLabel(key)">{{ d.active_profile === key ? '●' : '○' }}</button>
+        </li>
+      }
+      <li [class.selected]="selected() === 'none'">
+        <button class="profile" (click)="select('none')"><span class="profile-name">Aucun profil</span></button>
+        <button class="star" [class.on]="d.active_profile === 'none'" (click)="activate('none')"
+                aria-label="Désactiver les profils">{{ d.active_profile === 'none' ? '●' : '○' }}</button>
+      </li>
+    </ul>
+    <p class="hint">● profil actif dans Kodi et dans l’aperçu.</p>
+    <div class="actions">
+      <button class="btn" (click)="createProfile()">Nouveau</button>
+      <button class="btn" (click)="duplicate()" [disabled]="selected() === 'none'">Dupliquer</button>
+      @if (!isBuiltin() && selected() !== 'none') {
+        <button class="btn danger" (click)="remove()">Supprimer</button>
+      }
+    </div>
+  </section>
+
+  <!-- Règles ordonnées du profil choisi -->
+  <section class="card rules">
+    @if (selected() === 'none') {
+      <h2 class="card-title">Aucun profil</h2>
+      <p class="hint">Les releases ne sont classées que par les préférences souples et les sources.</p>
+    } @else if (selectedProfile(); as p) {
+      <h2 class="card-title">
+        @if (isBuiltin()) { {{ p.label }} }
+        @else {
+          <input class="title-input" [value]="p.label" maxlength="40" aria-label="Nom du profil"
+                 (change)="rename($any($event.target).value)">
+        }
+      </h2>
+      <p class="hint">Une release prend la place de la première règle qu’elle remplit entièrement ;
+        une information absente ne remplit jamais une règle. Les autres viennent ensuite.</p>
+      @if (isBuiltin()) { <p class="hint">Profil intégré, en lecture seule : le dupliquer pour le modifier.</p> }
+
+      <ol class="rule-list" cdkDropList [cdkDropListDisabled]="isBuiltin()" (cdkDropListDropped)="dropRule($event)">
+        @for (rule of rules(); track $index; let i = $index; let last = $last) {
+          <li class="rule" cdkDrag [cdkDragDisabled]="isBuiltin()">
+            <div class="rule-head">
+              @if (!isBuiltin()) { <span class="handle" cdkDragHandle aria-hidden="true">⠿</span> }
+              <span class="rank">{{ i + 1 }}</span>
+              <span class="rule-desc">{{ describe(rule) }}</span>
+              @if (!isBuiltin()) {
+                <span class="row-actions">
+                  <button class="btn icon" (click)="moveRule(i, -1)" [disabled]="i === 0" aria-label="Monter">↑</button>
+                  <button class="btn icon" (click)="moveRule(i, 1)" [disabled]="last" aria-label="Descendre">↓</button>
+                  <button class="btn icon danger" (click)="removeRule(i)" [disabled]="rules().length === 1" aria-label="Retirer la règle">✕</button>
+                </span>
+              }
+            </div>
+            <div class="chips" [class.readonly]="isBuiltin()">
+              @for (r of resolutions; track r) {
+                <button class="chip" [class.on]="rule.resolutions.includes(r)" [disabled]="isBuiltin()"
+                        (click)="toggleChip(i, 'resolutions', r)">{{ r === '2160p' ? '4K' : r }}</button>
+              }
+              <span class="sep"></span>
+              @for (dyn of dynamics; track dyn) {
+                <button class="chip" [class.on]="rule.dynamics.includes(dyn)" [disabled]="isBuiltin()"
+                        (click)="toggleChip(i, 'dynamics', dyn)">{{ dyn }}</button>
+              }
+              <button class="chip" [class.on]="rule.multi" [disabled]="isBuiltin()"
+                      (click)="toggleMulti(i)">MULTi</button>
+              <span class="sep"></span>
+              @for (codec of codecs; track codec) {
+                <button class="chip" [class.on]="rule.codecs.includes(codec)" [disabled]="isBuiltin()"
+                        (click)="toggleChip(i, 'codecs', codec)">{{ codec }}</button>
+              }
+              @for (lang of rule.languages; track lang) {
+                <button class="chip on lang" [disabled]="isBuiltin()" (click)="toggleChip(i, 'languages', lang)"
+                        [attr.aria-label]="'Retirer la langue ' + lang">{{ lang }} ✕</button>
+              }
+              @for (word of rule.extra; track word) { <span class="chip raw" title="Mot transmis tel quel au moteur">{{ word }}</span> }
+              @if (!isBuiltin()) {
+                <input #lang class="mini" placeholder="langue" maxlength="3" aria-label="Ajouter une langue audio"
+                       (keydown.enter)="addWord(i, 'languages', lang)" (blur)="addWord(i, 'languages', lang)">
+                <label class="mini-label">≤
+                  <input class="mini" type="number" min="0.1" step="0.5" [value]="rule.maxSize ?? ''"
+                         aria-label="Taille maximale en Go" (change)="setSize(i, $any($event.target).value)"> Go</label>
+              }
+            </div>
+            <div class="rule-placeholder" *cdkDragPlaceholder></div>
+          </li>
+        }
+      </ol>
+      @if (!isBuiltin()) { <button class="btn" (click)="addRule()">Ajouter une règle</button> }
+    }
+  </section>
+
+  <!-- Sources -->
+  <section class="card tiers">
+    <h2 class="card-title">Sources</h2>
+    <p class="hint">Une source plus haute l’emporte dès qu’une de ses releases passe les filtres ; POV n’est
+      essayé qu’en dernier recours s’il est placé en dernier.</p>
+    <ol class="tier-list" cdkDropList (cdkDropListDropped)="dropTier($event)">
+      @for (tier of enabledTiers(); track tier; let i = $index; let last = $last) {
+        <li class="tier" cdkDrag>
+          <span class="handle" cdkDragHandle aria-hidden="true">⠿</span>
+          <span class="rank">{{ i + 1 }}</span>
+          <span class="tier-name">{{ tierLabels[tier] }}</span>
+          <span class="row-actions">
+            <button class="btn icon" (click)="moveTier(i, -1)" [disabled]="i === 0" aria-label="Monter">↑</button>
+            <button class="btn icon" (click)="moveTier(i, 1)" [disabled]="last" aria-label="Descendre">↓</button>
+            <button class="btn small" (click)="toggleTier(tier)" [disabled]="enabledTiers().length === 1">Désactiver</button>
+          </span>
+          <div class="tier-placeholder" *cdkDragPlaceholder></div>
+        </li>
+      }
+    </ol>
+    @for (tier of disabledTiers(); track tier) {
+      <div class="tier off"><span class="tier-name">{{ tierLabels[tier] }}</span>
+        <button class="btn small" (click)="toggleTier(tier)">Activer</button></div>
+    }
+  </section>
+
+  <!-- Filtres stricts -->
+  <section class="card strict">
+    <h2 class="card-title">Filtres stricts</h2>
+    <p class="hint">Une release qui ne les passe pas n’est jamais lancée automatiquement ; elle reste visible
+      dans le choix manuel.</p>
+    <div class="field">
+      <label for="agg-min">Qualité minimale</label>
+      <select id="agg-min" [value]="d.strict.min_resolution ?? ''" (change)="setStrict('min_resolution', $any($event.target).value || null)">
+        <option value="">aucune</option>
+        @for (r of resolutions; track r) { <option [value]="r">{{ r === '2160p' ? '4K' : r }}</option> }
+      </select>
+    </div>
+    <div class="field">
+      <label for="agg-hdr">HDR</label>
+      <select id="agg-hdr" [value]="d.strict.hdr" (change)="setStrict('hdr', $any($event.target).value)">
+        <option value="any">indifférent</option><option value="prefer">préférer</option>
+        <option value="require">exiger</option><option value="forbid">exclure</option>
+      </select>
+    </div>
+    <div class="field">
+      <span class="label">Langues exigées</span>
+      <div class="chips">
+        @for (lang of d.strict.required_languages; track lang) {
+          <button class="chip on" (click)="removeListWord('strict', 'required_languages', lang)">{{ lang }} ✕</button>
+        }
+        <input #req class="mini" placeholder="fr" maxlength="3" aria-label="Ajouter une langue exigée"
+               (keydown.enter)="addListWord('strict', 'required_languages', req)">
+      </div>
+    </div>
+    <div class="field">
+      <span class="label">Codecs autorisés</span>
+      <div class="chips">
+        @for (codec of codecs; track codec) {
+          <button class="chip" [class.on]="d.strict.allowed_codecs.includes(codec)"
+                  (click)="toggleWord('strict', 'allowed_codecs', codec)">{{ codec }}</button>
+        }
+      </div>
+    </div>
+    <div class="field two">
+      <label>Taille min. (Go)
+        <input type="number" min="0" step="0.5" [value]="d.strict.min_size_gb ?? ''"
+               (change)="setStrict('min_size_gb', sizeValue($any($event.target).value))"></label>
+      <label>Taille max. (Go)
+        <input type="number" min="0" step="0.5" [value]="d.strict.max_size_gb ?? ''"
+               (change)="setStrict('max_size_gb', sizeValue($any($event.target).value))"></label>
+    </div>
+    <div class="field">
+      <span class="label">Formats exclus</span>
+      <div class="chips">
+        @for (word of d.strict.excluded_formats; track word) {
+          <button class="chip on" (click)="removeListWord('strict', 'excluded_formats', word)">{{ word }} ✕</button>
+        }
+        <input #fmt class="mini" placeholder="cam" maxlength="24" aria-label="Exclure un format"
+               (keydown.enter)="addListWord('strict', 'excluded_formats', fmt)">
+      </div>
+    </div>
+    <label class="switch"><input type="checkbox" [checked]="d.strict.require_known_availability"
+           (change)="setStrict('require_known_availability', $any($event.target).checked)"> Disponibilité connue exigée</label>
+    <label class="switch"><input type="checkbox" [checked]="d.profile_strict"
+           (change)="setProfileStrict($any($event.target).checked)"> Profil strict : seulement les releases qui remplissent une règle</label>
+
+    <h3 class="sub-title">Métadonnées inconnues</h3>
+    <div class="segmented" role="radiogroup" aria-label="Métadonnées inconnues face à un filtre strict">
+      <button role="radio" [attr.aria-checked]="d.unknown === 'accept'" [class.on]="d.unknown === 'accept'"
+              (click)="setUnknown('accept')">Accepter</button>
+      <button role="radio" [attr.aria-checked]="d.unknown === 'reject'" [class.on]="d.unknown === 'reject'"
+              (click)="setUnknown('reject')">Refuser</button>
+    </div>
+    <p class="hint">Une résolution, une langue ou une taille absente n’est jamais devinée :
+      {{ d.unknown === 'accept' ? 'la release passe le filtre.' : 'la release est écartée de l’autoplay.' }}</p>
+  </section>
+
+  <!-- Préférences souples -->
+  <section class="card soft">
+    <h2 class="card-title">Préférences souples</h2>
+    <p class="hint">Elles départagent seulement, sans jamais écarter une release.</p>
+    <div class="field">
+      <label for="agg-pref-res">Résolution préférée</label>
+      <select id="agg-pref-res" [value]="d.soft.preferred_resolution ?? ''"
+              (change)="setSoft('preferred_resolution', $any($event.target).value || null)">
+        <option value="">aucune</option>
+        @for (r of resolutions; track r) { <option [value]="r">{{ r === '2160p' ? '4K' : r }}</option> }
+      </select>
+    </div>
+    <div class="field">
+      <span class="label">Langues préférées (dans l’ordre)</span>
+      <div class="chips">
+        @for (lang of d.soft.preferred_languages; track lang) {
+          <button class="chip on" (click)="removeListWord('soft', 'preferred_languages', lang)">{{ lang }} ✕</button>
+        }
+        <input #pl class="mini" placeholder="fr" maxlength="3" aria-label="Ajouter une langue préférée"
+               (keydown.enter)="addListWord('soft', 'preferred_languages', pl)">
+      </div>
+    </div>
+    <div class="field">
+      <span class="label">Codecs préférés</span>
+      <div class="chips">
+        @for (codec of codecs; track codec) {
+          <button class="chip" [class.on]="d.soft.preferred_codecs.includes(codec)"
+                  (click)="toggleWord('soft', 'preferred_codecs', codec)">{{ codec }}</button>
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- Aperçu calculé par kube-aggregator (même moteur que Kodi), avant tout enregistrement -->
+  <section class="card preview">
+    <h2 class="card-title">Aperçu du classement</h2>
+    <p class="hint">Calculé par kube-aggregator avec les réglages ci-dessus, même non enregistrés.
+      Rien n’est lu ni débridé.</p>
+    <div class="query">
+      <select aria-label="Type de contenu" [value]="query().media_type" (change)="setQuery({ media_type: $any($event.target).value })">
+        <option value="movie">Film</option><option value="episode">Épisode</option>
+      </select>
+      <input inputmode="numeric" placeholder="TMDb (ex. 27205)" aria-label="Identifiant TMDb"
+             [value]="query().tmdb" (input)="setQuery({ tmdb: $any($event.target).value.trim() })">
+      @if (query().media_type === 'episode') {
+        <input type="number" min="0" aria-label="Saison" [value]="query().season" (change)="setNumber('season', $any($event.target).value)">
+        <input type="number" min="0" aria-label="Épisode" [value]="query().episode" (change)="setNumber('episode', $any($event.target).value)">
+      }
+      <button class="btn" (click)="runPreview()" [disabled]="previewing() || !query().tmdb">Actualiser</button>
+    </div>
+    @if (previewError()) { <p class="bad">{{ previewError() }}</p> }
+    @if (preview(); as pv) {
+      <p class="hint">{{ pv.releases.length }} releases · {{ pv.autoplay.length }} essayées par l’autoplay
+        @for (entry of pv.refused | keyvalue; track entry.key) { · {{ entry.value }} {{ refusalLabel(entry.key) }} }</p>
+      <div class="table">
+        @for (r of pv.releases; track r.release_id) {
+          <div class="row" [class.first]="r.release_id === autoplayFirst()" [class.refused]="r.refusal">
+            <span class="pill" [class.rule]="r.rank < pv.rules.length">{{ r.rank < pv.rules.length ? 'règle ' + (r.rank + 1) : 'autre' }}</span>
+            <span class="row-name">{{ tierLabels[r.tier] }} · {{ r.resolution ?? '?' }} {{ r.hdr ?? '' }}
+              @if (r.languages.length) { · {{ r.languages.join(', ') }} }
+              @if (r.file_size_gb !== null) { · {{ r.file_size_gb }} Go }</span>
+            <span class="row-sub">
+              @if (r.release_id === autoplayFirst()) { <strong>lancée en premier</strong> }
+              @else if (r.refusal) { écartée : {{ refusalLabel(r.refusal) }} }
+              @else { {{ r.explanation }} }
+            </span>
+          </div>
+        } @empty { <div class="row empty">Aucune release pour ce contenu.</div> }
+      </div>
+    }
+  </section>
+</div>
+} @else if (status() === 'loading') {
+  <p class="hint">Chargement des préférences…</p>
+}
+
+<!-- Barre de synchronisation : toujours visible, en bas sur mobile -->
+<footer class="syncbar" [class.dirty]="dirty()" [class.error]="inError()">
+  <div class="sync-state">
+    <strong>{{ statusLabel() }}</strong>
+    @if (server(); as s) {
+      <span class="row-sub">version {{ s.version }}{{ s.version === 0 ? ' (jamais enregistrées : Kodi garde ses réglages)' : '' }}
+        @if (s.updated_by) { · {{ s.updated_by }} {{ ago(s.updated_at) }} }</span>
+    }
+    @if (message()) { <span class="msg">{{ message() }}</span> }
+  </div>
+  <div class="sync-actions">
+    @if (status() === 'conflict' || status() === 'unavailable') { <button class="btn" (click)="reload()">Recharger</button> }
+    <button class="btn" (click)="discard()" [disabled]="!dirty()">Annuler</button>
+    <button class="btn primary" (click)="save()" [disabled]="!dirty() || !canWrite() || status() === 'saving'">Enregistrer</button>
+  </div>
+</footer>

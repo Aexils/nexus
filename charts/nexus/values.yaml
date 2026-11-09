@@ -23,6 +23,16 @@ api:
   # Noms de Secrets du namespace injectés en env (tokens d'intégration — voir
   # le repo d'infra pour les SealedSecrets). Vide par défaut.
   envFromSecrets: []
+  # Préférences Aggregator (désactivé). Activé : Secret mTLS « kagg-private-nexus » (ca.crt,
+  # client.crt, client.key) et, dans envFromSecrets, un Secret portant NEXUS_ADMIN_PASSWORD_HASH
+  # et NEXUS_SESSION_SECRET. Sans eux, Nexus lit et prévisualise mais n'écrit jamais.
+  aggregator:
+    enabled: false
+    url: https://kagg-private.kube-aggregator-dev-three-sources.svc.cluster.local:8765
+    serverName: kagg-api
+    tlsSecret: kagg-private-nexus
+    writeOrigins: http://nexus.10.10.10.210.nip.io
+    secureCookie: false
   resources:
     requests:
       cpu: 50m

@@ -14,6 +14,8 @@ import { JobsModule } from './jobs/jobs.module';
 import { VzdumpModule } from './vzdump/vzdump.module';
 import { ImportModule } from './import/import.module';
 import { TraktModule } from './trakt/trakt.module';
+import { AuthModule } from './auth/auth.module';
+import { AggregatorModule } from './aggregator/aggregator.module';
 
 @Module({
   imports: [
@@ -32,6 +34,8 @@ import { TraktModule } from './trakt/trakt.module';
     VzdumpModule,
     ImportModule,
     TraktModule,
+    AuthModule,
+    AggregatorModule,
   ],
 })
 export class AppModule {}

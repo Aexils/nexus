@@ -45,6 +45,11 @@ export const appRoutes: Route[] = [
           import('./features/trakt/trakt-page').then(m => m.TraktPage),
       },
       {
+        path: 'aggregator',
+        loadComponent: () =>
+          import('./features/aggregator/aggregator-page').then(m => m.AggregatorPage),
+      },
+      {
         path: 'versions',
         loadComponent: () =>
           import('./features/versions/versions-page').then(m => m.VersionsPage),

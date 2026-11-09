@@ -17,3 +17,4 @@ export * from './lib/booklore-types';
 export * from './lib/body-types';
 export * from './lib/link-types';
 export * from './lib/import-types';
+export * from './lib/aggregator-types';

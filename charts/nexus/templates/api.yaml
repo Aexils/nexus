@@ -32,6 +32,21 @@ spec:
             - name: {{ $k }}
               value: {{ $v | quote }}
             {{- end }}
+            {{- with .Values.api.aggregator }}
+            {{- if .enabled }}
+            # Préférences Aggregator : API privée kube-aggregator, certificat client DÉDIÉ.
+            - name: KAGG_URL
+              value: {{ .url | quote }}
+            - name: KAGG_SERVER_NAME
+              value: {{ .serverName | quote }}
+            - name: KAGG_TLS_DIR
+              value: /kagg-tls
+            - name: NEXUS_WRITE_ORIGINS
+              value: {{ .writeOrigins | quote }}
+            - name: NEXUS_SECURE_COOKIE
+              value: {{ .secureCookie | quote }}
+            {{- end }}
+            {{- end }}
           {{- if .Values.api.envFromSecrets }}
           # Tokens d'intégration : jamais dans les values — des Secrets du
           # namespace (SealedSecrets côté infra), injectés tels quels.
@@ -44,6 +59,11 @@ spec:
           volumeMounts:
             - name: state
               mountPath: /nexus-state
+            {{- if .Values.api.aggregator.enabled }}
+            - name: kagg-tls
+              mountPath: /kagg-tls
+              readOnly: true
+            {{- end }}
           readinessProbe:
             tcpSocket:
               port: 3000
@@ -58,6 +78,16 @@ spec:
         - name: state
           persistentVolumeClaim:
             claimName: nexus-state
+        {{- if .Values.api.aggregator.enabled }}
+        - name: kagg-tls
+          secret:
+            secretName: {{ .Values.api.aggregator.tlsSecret }}
+            defaultMode: 0400
+            items:
+              - { key: ca.crt, path: ca.crt }
+              - { key: client.crt, path: client.crt }
+              - { key: client.key, path: client.key }
+        {{- end }}
 ---
 apiVersion: v1
 kind: Service
