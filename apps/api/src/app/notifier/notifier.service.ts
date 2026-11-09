@@ -28,7 +28,9 @@ export class NotifierService {
       || (level === 'warn' && (source === 'sideloop' || source === 'system'));
     if (!worthy) return;
 
-    const key = `${source}:${message}`;
+    // Sans les chiffres : les messages portent des compteurs (« depuis 41 min »,
+    // « expiration dans 142 h ») qui changeaient la clé à chaque envoi → un push par minute.
+    const key = `${source}:${message.replace(/\d+/g, '#')}`;
     const now = Date.now();
     const prev = this.lastSent.get(key);
     if (prev && now - prev < this.DEDUP_MS) return;
