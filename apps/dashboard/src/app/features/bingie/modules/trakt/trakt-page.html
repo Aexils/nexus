@@ -1,7 +1,7 @@
 <nxs-page-header
   title="Trakt" accent="service"
   subtitle="État du suivi de visionnage, appareils et réglages par série">
-  <a class="btn" routerLink="/trakt">Ouvrir l'écran de la télé</a>
+  <a class="btn" routerLink="/bingie/ecrans">Ouvrir l'écran de la télé</a>
   <div class="conn" [class.off]="!reachable()">
     <span class="dot"></span>{{ reachable() ? 'connecté' : 'injoignable' }}
   </div>

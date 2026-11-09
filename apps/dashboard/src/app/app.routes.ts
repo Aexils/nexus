@@ -1,18 +1,14 @@
 import { Route } from '@angular/router';
 import { LayoutComponent } from './layout/layout';
+import { bingieLegacyRedirects } from './features/bingie/bingie-registry';
 
 export const appRoutes: Route[] = [
+  // Anciennes adresses Trakt et Aggregator -> espace Bingie (générées depuis le registre).
+  ...bingieLegacyRedirects(),
   {
-    // Plein écran, hors de la mise en page : c'est la télé qu'on édite.
-    path: 'trakt',
-    pathMatch: 'full',
-    loadComponent: () =>
-      import('./features/trakt/studio/trakt-studio').then(m => m.TraktStudio),
-  },
-  {
-    path: 'trakt/reglages',
-    loadComponent: () =>
-      import('./features/trakt/settings/trakt-settings').then(m => m.TraktSettingsPage),
+    // Espace multimédia Bingie : son propre cadre, hors de la mise en page Nexus ; chargé à la demande.
+    path: 'bingie',
+    loadChildren: () => import('./features/bingie/bingie.routes').then(m => m.BINGIE_ROUTES),
   },
   {
     path: '',
@@ -38,16 +34,6 @@ export const appRoutes: Route[] = [
         path: 'sideloop',
         loadComponent: () =>
           import('./features/sideloop/sideloop-page').then(m => m.SideloopPage),
-      },
-      {
-        path: 'trakt/service',
-        loadComponent: () =>
-          import('./features/trakt/trakt-page').then(m => m.TraktPage),
-      },
-      {
-        path: 'aggregator',
-        loadComponent: () =>
-          import('./features/aggregator/aggregator-page').then(m => m.AggregatorPage),
       },
       {
         path: 'versions',

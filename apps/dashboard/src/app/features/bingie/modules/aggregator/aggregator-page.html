@@ -1,28 +1,17 @@
 <nxs-page-header
-  title="Aggregator" accent="préférences"
-  subtitle="Profils de qualité et priorités des sources, partagés avec Kodi">
+  title="Sources" accent="et qualité"
+  subtitle="Profils de qualité et priorités des sources, partagés avec Kodi (kube-aggregator)">
   <div class="conn" [class.off]="status() === 'unavailable'" [class.warn]="dirty()">
     <span class="dot"></span>{{ statusLabel() }}
   </div>
 </nxs-page-header>
 
-<!-- Accès en écriture : la lecture et l'aperçu restent ouverts, l'enregistrement exige une session. -->
-<section class="auth">
-  @if (!authConfigured()) {
-    <p class="hint">Enregistrement désactivé : l’authentification de Nexus n’est pas configurée.</p>
-  } @else if (canWrite()) {
-    <p class="hint ok">Session ouverte : les modifications peuvent être enregistrées.
-      <button class="btn small" (click)="logout()">Se déconnecter</button></p>
-  } @else {
-    <form class="login" (submit)="$event.preventDefault(); login()">
-      <label for="agg-password">Mot de passe d’administration</label>
-      <input id="agg-password" type="password" autocomplete="current-password"
-             [value]="password()" (input)="password.set($any($event.target).value)">
-      <button class="btn primary" type="submit" [disabled]="!password()">Se connecter</button>
-      @if (loginError()) { <span class="bad">{{ loginError() }}</span> }
-    </form>
-  }
-</section>
+<!-- Accès en écriture : session commune de Bingie (connexion dans la barre du haut). -->
+@if (!authConfigured()) {
+  <p class="hint">Enregistrement désactivé : l’authentification de Nexus n’est pas configurée.</p>
+} @else if (!canWrite()) {
+  <p class="hint">Lecture et aperçu libres ; <button class="link" (click)="session.loginNeeded.set(true)">se connecter</button> pour enregistrer.</p>
+}
 
 @if (draft(); as d) {
 <div class="grid">
@@ -326,6 +315,6 @@
   <div class="sync-actions">
     @if (status() === 'conflict' || status() === 'unavailable') { <button class="btn" (click)="reload()">Recharger</button> }
     <button class="btn" (click)="discard()" [disabled]="!dirty()">Annuler</button>
-    <button class="btn primary" (click)="save()" [disabled]="!dirty() || !canWrite() || status() === 'saving'">Enregistrer</button>
+    <button class="btn primary" (click)="save()" [disabled]="!dirty() || !authConfigured() || status() === 'saving'">Enregistrer</button>
   </div>
 </footer>

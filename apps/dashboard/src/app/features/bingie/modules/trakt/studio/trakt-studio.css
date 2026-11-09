@@ -12,7 +12,7 @@
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   /* Au-dessus de la grille décorative que Nexus pose sur le fond de toutes ses pages. */
   position: fixed;
-  inset: 0;
+  inset: var(--bingie-top, 0px) 0 0 0;
   z-index: 10;
   display: block;
   color: var(--ink);
@@ -29,7 +29,7 @@ button { cursor: pointer; background: none; border: 0; padding: 0; }
 button:disabled { cursor: default; opacity: .4; }
 :focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 
-.studio { display: grid; grid-template-columns: 4.5rem minmax(0, 1fr) 360px; height: 100vh; height: 100dvh; overflow: clip; position: relative; }
+.studio { display: grid; grid-template-columns: 4.5rem minmax(0, 1fr) 360px; height: calc(100vh - var(--bingie-top, 0px)); height: calc(100dvh - var(--bingie-top, 0px)); overflow: clip; position: relative; }
 
 /* ---- Les écrans, comme le menu de gauche de Bingie ---- */
 .rail { display: flex; flex-direction: column; justify-content: center; align-items: stretch; gap: 1.1rem; background: var(--tv-black); z-index: 5; }

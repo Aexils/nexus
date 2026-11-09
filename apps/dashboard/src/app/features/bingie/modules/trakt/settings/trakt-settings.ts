@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import { KodiSetting, SkinSetting, TraktSettings, TraktSnapshotItem } from '@nexus/shared-types';
@@ -10,6 +9,7 @@ import SKIN_DEFAULTS from './skin-defaults.json';
 import { SKIN_HELP_FR, colorHelpFr } from './skin-help-fr';
 import { SKIN_GROUP_FR, SKIN_LABEL_FR, SKIN_SECTION_FR } from './skin-labels-fr';
 import { TvPreview, TvZone } from './tv-preview';
+import { writeFailure } from '../../../bingie-session';
 
 const REFRESH_MS = 4000;
 const MAX_RESULTS = 120;
@@ -147,7 +147,7 @@ function sameValue(a: unknown, b: unknown): boolean {
 @Component({
   selector: 'app-trakt-settings',
   standalone: true,
-  imports: [RouterLink, TvPreview],
+  imports: [TvPreview],
   templateUrl: './trakt-settings.html',
   styleUrl: './trakt-settings.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -269,8 +269,8 @@ export class TraktSettingsPage implements OnInit, OnDestroy {
       this.data.set(data);
       this.settlePending();
       this.failure.set(null);
-    } catch {
-      this.failure.set('Le service ne répond pas. Les réglages affichés sont peut-être anciens.');
+    } catch (error) {
+      this.failure.set(writeFailure(error, 'Le service ne répond pas. Les réglages affichés sont peut-être anciens.'));
     }
   }
 
@@ -375,12 +375,12 @@ export class TraktSettingsPage implements OnInit, OnDestroy {
       await firstValueFrom(this.http.post('/api/trakt/settings', { source: row.source, id: row.key, value }));
       this.failure.set(null);
       return true;
-    } catch {
+    } catch (error) {
       const waiting = { ...this.pending() };
       delete waiting[key];
       this.pending.set(waiting);
       this.sentAt.delete(key);
-      this.failure.set(`${row.label} : envoi refusé par le service. Réessaie dans un instant.`);
+      this.failure.set(writeFailure(error, `${row.label} : envoi refusé par le service. Réessaie dans un instant.`));
       return false;
     }
   }

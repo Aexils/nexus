@@ -15,7 +15,7 @@ async function eventually(read, test, ms = 3000) {
 async function overflow(page) {
   return page.evaluate(() => {
     const view = innerWidth;
-    const wide = [...document.querySelectorAll('app-aggregator-page *')]
+    const wide = [...document.querySelectorAll('app-bingie-shell *')]
       .filter(e => { const r = e.getBoundingClientRect(); return r.width && (r.right > view + 1 || r.left < -1); })
       .map(e => e.tagName.toLowerCase() + '.' + [...e.classList].join('.')).slice(0, 5);
     return { page: document.scrollingElement.scrollWidth > view, wide };
@@ -123,10 +123,10 @@ async function flow(browser, name, viewport, mobile) {
   await page.getByRole('button', { name: 'Enregistrer' }).click(); await page.waitForTimeout(500);
   check(`${name} : session expirée -> connexion proposée`, /connexion requise/.test(await syncText(page)) && await page.locator('form.login').count() === 1);
   await shot('6-session-expiree');
-  await page.getByLabel('Mot de passe d’administration').fill('faux'); await page.getByRole('button', { name: 'Se connecter' }).click();
+  await page.getByLabel('Mot de passe d’administration').fill('faux'); await page.locator('form.login').getByRole('button', { name: 'Se connecter' }).click();
   await page.waitForTimeout(300);
   check(`${name} : mauvais mot de passe signalé`, (await page.locator('form.login .bad').innerText()).includes('incorrect'));
-  await page.getByLabel('Mot de passe d’administration').fill('fictif'); await page.getByRole('button', { name: 'Se connecter' }).click();
+  await page.getByLabel('Mot de passe d’administration').fill('fictif'); await page.locator('form.login').getByRole('button', { name: 'Se connecter' }).click();
   await page.waitForTimeout(300);
   check(`${name} : reconnecté`, await page.locator('form.login').count() === 0);
 

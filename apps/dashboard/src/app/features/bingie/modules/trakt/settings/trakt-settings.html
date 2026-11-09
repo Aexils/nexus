@@ -1,6 +1,5 @@
 <div class="page">
   <nav class="side" aria-label="Sections des réglages">
-    <a class="back" routerLink="/trakt">Retour à l'écran de la télé</a>
     <button type="button" class="link is-top" [class.is-on]="isCurrent('essentiel')" (click)="open('essentiel')">L'essentiel</button>
     <button type="button" class="link is-top" [class.is-on]="isCurrent('modifies')" (click)="open('modifies')">
       Modifiés <span class="count">{{ changedCount() }}</span>

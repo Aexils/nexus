@@ -8,7 +8,6 @@ import {
   signal,
 } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { RouterLink } from '@angular/router';
 import { CdkDrag, CdkDragDrop, CdkDragHandle, CdkDragPlaceholder, CdkDropList, moveItemInArray } from '@angular/cdk/drag-drop';
 import { firstValueFrom } from 'rxjs';
 
@@ -37,6 +36,7 @@ import {
   loadBrands,
   svgToPng,
 } from './logos';
+import { writeFailure } from '../../../bingie-session';
 
 // Identifiants TMDb, mêmes valeurs que PROVIDERS côté kube-trakt.
 const PROVIDERS = [
@@ -132,7 +132,7 @@ function fromPreview(item: TraktPreview): Spotlight {
 @Component({
   selector: 'app-trakt-studio',
   standalone: true,
-  imports: [RouterLink, CdkDropList, CdkDrag, CdkDragHandle, CdkDragPlaceholder],
+  imports: [CdkDropList, CdkDrag, CdkDragHandle, CdkDragPlaceholder],
   templateUrl: './trakt-studio.html',
   styleUrl: './trakt-studio.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -277,8 +277,8 @@ export class TraktStudio implements OnInit, OnDestroy {
       if (open) this.detail.set(lists.find(l => l.ids.trakt === open.ids.trakt) ?? null);
       await this.loadRows(lists);
       this.failure.set(null);
-    } catch {
-      this.failure.set('Le suivi de visionnage ne répond pas. Les changements ne seront pas enregistrés.');
+    } catch (error) {
+      this.failure.set(writeFailure(error, 'Le suivi de visionnage ne répond pas. Les changements ne seront pas enregistrés.'));
     }
   }
 
@@ -414,10 +414,10 @@ export class TraktStudio implements OnInit, OnDestroy {
     try {
       await firstValueFrom(this.http.put(`/api/trakt/custom-screens/${screen.id}`, { rows }));
       this.say(message);
-    } catch {
+    } catch (error) {
       this.customScreens.set(custom);
       this.builtinScreens.set(builtin);
-      this.failure.set("Le changement n'a pas été enregistré. Réessaie dans un instant.");
+      this.failure.set(writeFailure(error, "Le changement n'a pas été enregistré. Réessaie dans un instant."));
     } finally {
       this.saving = false;
     }
@@ -465,8 +465,8 @@ export class TraktStudio implements OnInit, OnDestroy {
       entries.splice(index, 0, placed);
       await this.saveEntries(entries, `${this.entryTitle(placed)} arrive sur ${screen} dans quelques secondes.`);
       await this.refresh();
-    } catch {
-      this.failure.set("La rangée n'a pas pu être ajoutée. Réessaie dans un instant.");
+    } catch (error) {
+      this.failure.set(writeFailure(error, "La rangée n'a pas pu être ajoutée. Réessaie dans un instant."));
     }
   }
 
@@ -554,9 +554,9 @@ export class TraktStudio implements OnInit, OnDestroy {
       );
       this.nav.set(saved);
       this.say(message);
-    } catch {
+    } catch (error) {
       this.nav.set(previous);
-      this.failure.set("Le menu n'a pas été enregistré. Réessaie dans un instant.");
+      this.failure.set(writeFailure(error, "Le menu n'a pas été enregistré. Réessaie dans un instant."));
     } finally {
       this.saving = false;
     }
@@ -585,8 +585,8 @@ export class TraktStudio implements OnInit, OnDestroy {
       if (!this.platforms().length) {
         this.platforms.set(await firstValueFrom(this.http.get<TraktProviderLogo[]>('/api/trakt/provider-logos')));
       }
-    } catch {
-      this.failure.set('La librairie de logos ne répond pas. Tu peux importer ton image.');
+    } catch (error) {
+      this.failure.set(writeFailure(error, 'La librairie de logos ne répond pas. Tu peux importer ton image.'));
     }
   }
 
@@ -598,8 +598,8 @@ export class TraktStudio implements OnInit, OnDestroy {
   async chooseBrand(brand: BrandIcon): Promise<void> {
     try {
       await this.upload(await svgToPng(await brandSvg(brand.slug)));
-    } catch {
-      this.failure.set(`Le logo ${brand.title} n'a pas pu être préparé.`);
+    } catch (error) {
+      this.failure.set(writeFailure(error, `Le logo ${brand.title} n'a pas pu être préparé.`));
     }
   }
 
@@ -608,8 +608,8 @@ export class TraktStudio implements OnInit, OnDestroy {
     if (!icon) return;
     try {
       await this.upload(await svgToPng(generalSvg(icon.data)));
-    } catch {
-      this.failure.set("L'icône n'a pas pu être préparée.");
+    } catch (error) {
+      this.failure.set(writeFailure(error, "L'icône n'a pas pu être préparée."));
     }
   }
 
@@ -621,8 +621,8 @@ export class TraktStudio implements OnInit, OnDestroy {
     if (!file) return;
     try {
       await this.upload(await fileToPng(file));
-    } catch {
-      this.failure.set("Cette image n'a pas pu être lue. Essaie un PNG ou un JPEG.");
+    } catch (error) {
+      this.failure.set(writeFailure(error, "Cette image n'a pas pu être lue. Essaie un PNG ou un JPEG."));
     }
   }
 
@@ -649,8 +649,8 @@ export class TraktStudio implements OnInit, OnDestroy {
         await this.refresh();
         this.say(`${name} mis à jour.`);
       }
-    } catch {
-      this.failure.set("L'écran n'a pas pu être enregistré.");
+    } catch (error) {
+      this.failure.set(writeFailure(error, "L'écran n'a pas pu être enregistré."));
     }
   }
 
@@ -663,8 +663,8 @@ export class TraktStudio implements OnInit, OnDestroy {
       if (this.screen() === entry.key) await this.goTo('home');
       await this.refresh();
       this.say(`${entry.name} retiré du menu de la télé. Tes listes sont conservées.`);
-    } catch {
-      this.failure.set(`${entry.name} n'a pas pu être supprimé.`);
+    } catch (error) {
+      this.failure.set(writeFailure(error, `${entry.name} n'a pas pu être supprimé.`));
     }
   }
 
@@ -711,8 +711,8 @@ export class TraktStudio implements OnInit, OnDestroy {
         this.http.get<TraktPreview[]>('/api/trakt/titles', { params: { q: query } }),
       );
       if (this.query().trim() === query) this.results.set(found);
-    } catch {
-      this.failure.set('La recherche ne répond pas pour le moment.');
+    } catch (error) {
+      this.failure.set(writeFailure(error, 'La recherche ne répond pas pour le moment.'));
     } finally {
       this.searching.set(false);
     }
@@ -749,8 +749,8 @@ export class TraktStudio implements OnInit, OnDestroy {
       await this.refresh();
       this.detail.set(list);
       this.say(`${name} créée. Cherche des titres pour la remplir.`);
-    } catch {
-      this.failure.set("La liste n'a pas pu être créée.");
+    } catch (error) {
+      this.failure.set(writeFailure(error, "La liste n'a pas pu être créée."));
     }
   }
 
@@ -774,8 +774,8 @@ export class TraktStudio implements OnInit, OnDestroy {
       await firstValueFrom(this.http.post(`/api/trakt/lists/${list.ids.trakt}/titles`, title));
       this.say(`${title.title} ajouté à ${list.name}.`);
       await this.refresh();
-    } catch {
-      this.failure.set(`${title.title} n'a pas pu être ajouté.`);
+    } catch (error) {
+      this.failure.set(writeFailure(error, `${title.title} n'a pas pu être ajouté.`));
     }
   }
 
@@ -786,8 +786,8 @@ export class TraktStudio implements OnInit, OnDestroy {
       await firstValueFrom(this.http.delete(`/api/trakt/lists/${list.ids.trakt}/items/${item.kind}/${item.tmdb}`));
       this.say(`${item.title} retiré de ${list.name}.`);
       await this.refresh();
-    } catch {
-      this.failure.set(`${item.title} n'a pas pu être retiré.`);
+    } catch (error) {
+      this.failure.set(writeFailure(error, `${item.title} n'a pas pu être retiré.`));
     }
   }
 
@@ -804,8 +804,8 @@ export class TraktStudio implements OnInit, OnDestroy {
       this.confirmingDelete.set(false);
       this.say(`${list.name} supprimée.`);
       await this.refresh();
-    } catch {
-      this.failure.set(`${list.name} n'a pas pu être supprimée.`);
+    } catch (error) {
+      this.failure.set(writeFailure(error, `${list.name} n'a pas pu être supprimée.`));
     }
   }
 }

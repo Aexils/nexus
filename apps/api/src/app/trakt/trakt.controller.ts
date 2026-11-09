@@ -11,6 +11,7 @@ import {
   Put,
   Query,
   Res,
+  UseGuards,
 } from '@nestjs/common';
 import type { Response } from 'express';
 import {
@@ -27,6 +28,7 @@ import {
   TraktSnapshotItem,
   TraktTitle,
 } from '@nexus/shared-types';
+import { WriteGuard } from '../auth/write.guard';
 import { TraktService } from './trakt.service';
 
 function mediaKind(kind: string): TraktMediaKind {
@@ -39,6 +41,7 @@ export class TraktController {
   constructor(private readonly trakt: TraktService) {}
 
   @Delete('devices/:device')
+  @UseGuards(WriteGuard)
   @HttpCode(204)
   revoke(@Param('device') device: string): Promise<void> {
     return this.trakt.revokeDevice(device);
@@ -50,11 +53,13 @@ export class TraktController {
   }
 
   @Post('lists')
+  @UseGuards(WriteGuard)
   createList(@Body() list: TraktNewList): Promise<TraktList> {
     return this.trakt.createList(list);
   }
 
   @Delete('lists/:id')
+  @UseGuards(WriteGuard)
   @HttpCode(204)
   deleteList(@Param('id', ParseIntPipe) id: number): Promise<void> {
     return this.trakt.deleteList(id);
@@ -66,6 +71,7 @@ export class TraktController {
   }
 
   @Post('lists/:id/items/:kind/:tmdb')
+  @UseGuards(WriteGuard)
   @HttpCode(204)
   addItem(
     @Param('id', ParseIntPipe) id: number,
@@ -76,6 +82,7 @@ export class TraktController {
   }
 
   @Delete('lists/:id/items/:kind/:tmdb')
+  @UseGuards(WriteGuard)
   @HttpCode(204)
   removeItem(
     @Param('id', ParseIntPipe) id: number,
@@ -91,6 +98,7 @@ export class TraktController {
   }
 
   @Put('screens/:screen')
+  @UseGuards(WriteGuard)
   setScreen(@Param('screen') screen: string, @Body('lists') lists: number[]): Promise<{ lists: number[]; slots: number }> {
     return this.trakt.setScreenLists(screen, lists);
   }
@@ -101,22 +109,26 @@ export class TraktController {
   }
 
   @Post('custom-screens')
+  @UseGuards(WriteGuard)
   createScreen(@Body() screen: { name: string; icon: string }): Promise<TraktCustomScreen> {
     return this.trakt.createScreen(screen);
   }
 
   @Put('custom-screens/order')
+  @UseGuards(WriteGuard)
   @HttpCode(204)
   orderScreens(@Body('ids') ids: string[]): Promise<void> {
     return this.trakt.orderScreens(ids);
   }
 
   @Put('custom-screens/:id')
+  @UseGuards(WriteGuard)
   updateScreen(@Param('id') id: string, @Body() change: Partial<TraktCustomScreen>): Promise<TraktCustomScreen> {
     return this.trakt.updateScreen(id, change);
   }
 
   @Delete('custom-screens/:id')
+  @UseGuards(WriteGuard)
   @HttpCode(204)
   deleteScreen(@Param('id') id: string): Promise<void> {
     return this.trakt.deleteScreen(id);
@@ -133,6 +145,7 @@ export class TraktController {
   }
 
   @Put('nav')
+  @UseGuards(WriteGuard)
   saveNav(@Body('entries') entries: { key: string; hidden: boolean; name: string; icon: string }[]): Promise<TraktNavEntry[]> {
     return this.trakt.saveNav(entries);
   }
@@ -143,6 +156,7 @@ export class TraktController {
   }
 
   @Post('settings')
+  @UseGuards(WriteGuard)
   @HttpCode(204)
   changeSetting(@Body() command: { source: string; id: string; value: unknown }): Promise<void> {
     return this.trakt.changeSetting(command);
@@ -154,6 +168,7 @@ export class TraktController {
   }
 
   @Post('icons')
+  @UseGuards(WriteGuard)
   uploadIcon(@Body('png') png: string): Promise<{ url: string }> {
     return this.trakt.uploadIcon(Buffer.from(png ?? '', 'base64'));
   }
@@ -184,6 +199,7 @@ export class TraktController {
   }
 
   @Post('lists/:id/titles')
+  @UseGuards(WriteGuard)
   @HttpCode(204)
   addTitle(
     @Param('id', ParseIntPipe) id: number,
@@ -198,12 +214,14 @@ export class TraktController {
   }
 
   @Put('shows/:slug/loop')
+  @UseGuards(WriteGuard)
   @HttpCode(204)
   addLoop(@Param('slug') slug: string): Promise<void> {
     return this.trakt.setLoop(slug, true);
   }
 
   @Delete('shows/:slug/loop')
+  @UseGuards(WriteGuard)
   @HttpCode(204)
   removeLoop(@Param('slug') slug: string): Promise<void> {
     return this.trakt.setLoop(slug, false);
@@ -215,12 +233,14 @@ export class TraktController {
   }
 
   @Put('hidden/:tmdb')
+  @UseGuards(WriteGuard)
   @HttpCode(204)
   hide(@Param('tmdb', ParseIntPipe) tmdb: number): Promise<void> {
     return this.trakt.setHidden(tmdb, true);
   }
 
   @Delete('hidden/:tmdb')
+  @UseGuards(WriteGuard)
   @HttpCode(204)
   unhide(@Param('tmdb', ParseIntPipe) tmdb: number): Promise<void> {
     return this.trakt.setHidden(tmdb, false);

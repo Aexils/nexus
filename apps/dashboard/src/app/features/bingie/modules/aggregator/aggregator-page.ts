@@ -1,22 +1,19 @@
-import { ChangeDetectionStrategy, Component, HostListener, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { KeyValuePipe } from '@angular/common';
-import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { CdkDrag, CdkDragDrop, CdkDragHandle, CdkDragPlaceholder, CdkDropList, moveItemInArray } from '@angular/cdk/drag-drop';
-import { firstValueFrom } from 'rxjs';
 import {
   AGGREGATOR_BUILTIN_PROFILES,
-  AggregatorError,
   AggregatorPreferences,
-  AggregatorPreferencesState,
   AggregatorPreview,
   AggregatorPreviewRequest,
   AggregatorTier,
-  NexusSession,
 } from '@nexus/shared-types';
-import { PageHeaderComponent } from '../../shared/page-header/page-header';
-import { ApiError, PreferencesApi, PreferencesStore, SyncStatus, TIERS, TIER_LABELS } from './preferences-store';
+import { PageHeaderComponent } from '../../../../shared/page-header/page-header';
+import { ApiError, SyncStatus, TIERS, TIER_LABELS } from './preferences-store';
 import { CODECS, DYNAMICS, RESOLUTIONS, RuleChips, describeRule, formatRule, parseRule, splitRules } from './rule-chips';
 import { previewRows } from './preview-view';
+import { AggregatorDraft } from './aggregator-draft';
+import { BingieSession } from '../../bingie-session';
 
 /** Liste de mots d'une section (langues, codecs, formats) : les seuls champs tableaux. */
 function wordList(d: AggregatorPreferences, section: 'strict' | 'soft', key: string): string[] {
@@ -42,11 +39,13 @@ const REFUSALS: Record<string, string> = {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AggregatorPage implements OnInit, OnDestroy {
-  private readonly http = inject(HttpClient);
-  private readonly session = signal<NexusSession | null>(null);
+  /** Session commune de Bingie : une seule connexion, gérée par le cadre. */
+  readonly session = inject(BingieSession);
   /** Révision locale : la page relit le magasin (objets mutables) quand elle change. */
-  private readonly rev = signal(0);
-  readonly store = new PreferencesStore(this.api(), () => this.rev.update(n => n + 1));
+  /** Brouillon partagé : survit à la navigation entre modules Bingie. */
+  private readonly draftService = inject(AggregatorDraft);
+  private readonly rev = this.draftService.rev;
+  readonly store = this.draftService.store;
 
   readonly resolutions = RESOLUTIONS;
   readonly dynamics = DYNAMICS;
@@ -55,8 +54,6 @@ export class AggregatorPage implements OnInit, OnDestroy {
   readonly builtins = AGGREGATOR_BUILTIN_PROFILES;
 
   readonly selected = signal<string>('preferred');
-  readonly password = signal('');
-  readonly loginError = signal<string | null>(null);
   readonly preview = signal<AggregatorPreview | null>(null);
   readonly previewError = signal<string | null>(null);
   readonly previewing = signal(false);
@@ -73,8 +70,8 @@ export class AggregatorPage implements OnInit, OnDestroy {
   readonly statusLabel = computed(() => STATUS_LABELS[this.status()]);
   readonly message = computed(() => { this.rev(); return this.store.message; });
   readonly dirty = computed(() => { this.rev(); return this.store.dirty; });
-  readonly canWrite = computed(() => !!this.session()?.authenticated);
-  readonly authConfigured = computed(() => this.session()?.configured ?? false);
+  readonly canWrite = computed(() => this.session.authenticated());
+  readonly authConfigured = computed(() => this.session.configured());
   readonly inError = computed(() =>
     ['conflict', 'invalid', 'forbidden', 'unavailable', 'unauthenticated'].includes(this.status()));
 
@@ -90,7 +87,7 @@ export class AggregatorPage implements OnInit, OnDestroy {
   readonly rows = computed(() => { const pv = this.preview(); return pv ? previewRows(pv) : []; });
 
   async ngOnInit(): Promise<void> {
-    await Promise.all([this.store.load(), this.loadSession()]);
+    await Promise.all([this.draftService.open(), this.session.refresh()]);
     this.selected.set(this.store.draft?.active_profile ?? 'preferred');
   }
 
@@ -98,65 +95,16 @@ export class AggregatorPage implements OnInit, OnDestroy {
     if (this.previewTimer) clearTimeout(this.previewTimer);
   }
 
-  @HostListener('window:beforeunload', ['$event'])
-  warnBeforeLeaving(event: BeforeUnloadEvent): void {
-    if (this.store.dirty) event.preventDefault();
-  }
-
   // --- Transport vers l'API Nexus (qui relaie kube-aggregator) ---------------------------------
-
-  private api(): PreferencesApi {
-    const call = async <T>(request: () => Promise<T>): Promise<T> => {
-      try {
-        return await request();
-      } catch (error) {
-        if (error instanceof HttpErrorResponse) {
-          const body = (error.error && typeof error.error === 'object' ? error.error : { status: 'unavailable' }) as AggregatorError;
-          throw new ApiError(error.status, body);
-        }
-        throw error;
-      }
-    };
-    return {
-      get: () => call(() => firstValueFrom(this.http.get<AggregatorPreferencesState>('/api/aggregator/preferences'))),
-      put: (version, preferences) => call(() => firstValueFrom(this.http.put<AggregatorPreferencesState>(
-        '/api/aggregator/preferences', { version, preferences },
-        { headers: new HttpHeaders({ 'X-CSRF-Token': this.session()?.csrf ?? '' }), withCredentials: true }))),
-      preview: request => call(() => firstValueFrom(this.http.post<AggregatorPreview>('/api/aggregator/preview', request))),
-    };
-  }
-
-  private async loadSession(): Promise<void> {
-    try {
-      this.session.set(await firstValueFrom(this.http.get<NexusSession>('/api/auth/session', { withCredentials: true })));
-    } catch {
-      this.session.set({ authenticated: false, csrf: null, configured: false });
-    }
-  }
-
-  async login(): Promise<void> {
-    this.loginError.set(null);
-    try {
-      this.session.set(await firstValueFrom(this.http.post<NexusSession>(
-        '/api/auth/login', { password: this.password() }, { withCredentials: true })));
-      this.password.set('');
-      if (this.store.status === 'unauthenticated') this.store.edit(() => undefined);
-    } catch (error) {
-      const body = error instanceof HttpErrorResponse ? (error.error as AggregatorError | null) : null;
-      this.loginError.set(body?.error ?? 'connexion impossible');
-    }
-  }
-
-  async logout(): Promise<void> {
-    await firstValueFrom(this.http.post('/api/auth/logout', {}, { withCredentials: true })).catch(() => undefined);
-    await this.loadSession();
-  }
 
   // --- Enregistrement ---------------------------------------------------------------------------
 
   async save(): Promise<void> {
+    if (!this.session.authenticated()) {
+      this.session.loginNeeded.set(true);  // le cadre ouvre la connexion ; le brouillon est gardé
+      return;
+    }
     await this.store.save();
-    if (this.store.status === 'unauthenticated') await this.loadSession();
   }
 
   async reload(): Promise<void> {
@@ -371,7 +319,7 @@ export class AggregatorPage implements OnInit, OnDestroy {
       ...(q.media_type === 'episode' ? { season: q.season, episode: q.episode } : {}) };
     this.previewing.set(true);
     try {
-      this.preview.set(await this.api().preview(request));
+      this.preview.set(await this.draftService.api().preview(request));
       this.previewError.set(null);
     } catch (error) {
       this.previewError.set(error instanceof ApiError ? (error.body.error ?? error.body.status) : 'aperçu impossible');

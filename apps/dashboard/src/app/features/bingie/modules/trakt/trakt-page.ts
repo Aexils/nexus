@@ -3,9 +3,10 @@ import { HttpClient } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
-import { NexusService } from '../../core/services/nexus.service';
-import { PageHeaderComponent } from '../../shared/page-header/page-header';
+import { NexusService } from '../../../../core/services/nexus.service';
+import { PageHeaderComponent } from '../../../../shared/page-header/page-header';
 import { TraktDevice, TraktTitle } from '@nexus/shared-types';
+import { writeFailure } from '../../bingie-session';
 
 // Sans ces jetons, Nexus perdrait son accès ou les sauvegardes s'arrêteraient.
 const PROTECTED_DEVICES = ['nexus', 'sauvegarde-rpi5'];
@@ -79,8 +80,8 @@ export class TraktPage implements OnInit {
     this.error.set(null);
     try {
       await action();
-    } catch {
-      this.error.set(message);
+    } catch (error) {
+      this.error.set(writeFailure(error, message));
     }
   }
 
@@ -93,8 +94,8 @@ export class TraktPage implements OnInit {
     try {
       await firstValueFrom(this.http.delete(`/api/trakt/devices/${encodeURIComponent(device)}`));
       this.confirming.set(null);
-    } catch {
-      this.error.set(`Impossible de révoquer ${device}`);
+    } catch (error) {
+      this.error.set(writeFailure(error, `Impossible de révoquer ${device}`));
     }
   }
 

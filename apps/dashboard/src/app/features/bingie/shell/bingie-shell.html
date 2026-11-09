@@ -1,0 +1,37 @@
+<div class="bingie" [class.is-screen]="current()?.layout === 'screen'">
+  <header class="bar">
+    <a class="brand" routerLink="/bingie" aria-label="Bingie, accueil">BINGIE</a>
+    <nav class="tabs" aria-label="Modules Bingie">
+      @for (m of modules; track m.path) {
+        <a class="tab" [routerLink]="['/bingie', m.path]" routerLinkActive="is-on" ariaCurrentWhenActive="page"
+           [title]="m.description"><span class="long">{{ m.label }}</span><span class="short">{{ m.short ?? m.label }}</span>@if (unsaved.has(m.path)) { <span class="dirty" aria-label="modifications non enregistrées">●</span> }</a>
+      }
+    </nav>
+    <div class="side">
+      @if (!session.configured()) {
+        <span class="who off" title="Authentification non configurée sur ce déploiement">lecture seule</span>
+      } @else if (session.authenticated()) {
+        <button type="button" class="who on" (click)="session.logout()" title="Se déconnecter">● admin</button>
+      } @else {
+        <button type="button" class="who" (click)="loginOpen.set(!loginOpen())" [attr.aria-expanded]="showLogin()">Se connecter</button>
+      }
+      <a class="back" routerLink="/dashboard">Nexus</a>
+    </div>
+  </header>
+
+  @if (showLogin() && session.configured() && !session.authenticated()) {
+    <form class="login" (submit)="$event.preventDefault(); login()" aria-label="Connexion d’administration">
+      <p class="login-why">{{ session.loginNeeded() ? 'Session expirée ou absente : se connecter pour enregistrer.' : 'Connexion requise pour modifier Bingie.' }}</p>
+      <label for="bingie-password" class="visually-hidden">Mot de passe d’administration</label>
+      <input id="bingie-password" type="password" autocomplete="current-password" placeholder="Mot de passe d’administration"
+             [value]="password()" (input)="password.set($any($event.target).value)">
+      <button type="submit" class="primary" [disabled]="!password()">Se connecter</button>
+      <button type="button" class="ghost" (click)="closeLogin()">Fermer</button>
+      @if (session.error()) { <span class="bad" role="alert">{{ session.error() }}</span> }
+    </form>
+  }
+
+  <main class="content">
+    <router-outlet />
+  </main>
+</div>

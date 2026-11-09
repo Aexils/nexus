@@ -40,14 +40,11 @@
 
   <main class="tv">
     <nav class="bar" aria-label="Navigation">
-      <a class="bar-link" routerLink="/dashboard">Retour à Nexus</a>
       <p class="bar-status" role="status">
         @if (failure(); as f) { <span class="is-bad">{{ f }}</span> }
         @else if (message(); as m) { {{ m }} }
       </p>
       <button type="button" class="bar-link" (click)="openEditScreen()">Modifier cet écran</button>
-      <a class="bar-link" routerLink="/trakt/reglages">Réglages</a>
-      <a class="bar-link" routerLink="/trakt/service">État du service</a>
     </nav>
 
     <section class="hero" aria-label="Titre sélectionné">
