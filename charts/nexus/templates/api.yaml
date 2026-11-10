@@ -41,11 +41,12 @@ spec:
               value: {{ .serverName | quote }}
             - name: KAGG_TLS_DIR
               value: /kagg-tls
+            {{- end }}
+            # Session Bingie : nécessaire aussi aux écritures Trakt, sans Aggregator.
             - name: NEXUS_WRITE_ORIGINS
               value: {{ .writeOrigins | quote }}
             - name: NEXUS_SECURE_COOKIE
               value: {{ .secureCookie | quote }}
-            {{- end }}
             {{- end }}
           {{- if .Values.api.envFromSecrets }}
           # Tokens d'intégration : jamais dans les values — des Secrets du

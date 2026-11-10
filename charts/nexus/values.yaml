@@ -31,6 +31,7 @@ api:
     url: https://kagg-private.kube-aggregator-dev-three-sources.svc.cluster.local:8765
     serverName: kagg-api
     tlsSecret: kagg-private-nexus
+    # Session Bingie (Trakt compris), injectée même si aggregator.enabled=false.
     writeOrigins: http://nexus.10.10.10.210.nip.io
     secureCookie: false
   resources:

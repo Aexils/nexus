@@ -64,34 +64,37 @@ Inventaire (vérifié par réflexion dans `apps/api/src/app/auth/write-routes.sp
 
 ## Déploiement (préparé, rien d'appliqué)
 
-Prérequis, **avant** de déployer les images Bingie (sinon l'édition Trakt casse) :
+Procédure vérifiée, prérequis, ordre des opérations et accords nécessaires :
+[`BINGIE_DEPLOIEMENT.md`](BINGIE_DEPLOIEMENT.md). Les secrets locaux existent déjà et sont
+valides : ne pas les régénérer. `.local/` est exclu de Git et du contexte Docker.
 
-1. Secrets d'administration, générés localement sans affichage :
-   `tools/nexus-admin-secret.sh` → `.local/nexus-admin/` (ignoré par Git, mode 600) :
-   `password` (à ranger dans le gestionnaire de mots de passe : `pbcopy < …/password`) et
-   `nexus-admin.env`. Secret Kubernetes, sans afficher les valeurs :
-   `kubectl --context homelab -n nexus create secret generic nexus-admin --from-env-file=.local/nexus-admin/nexus-admin.env --dry-run=client -o yaml | kubeseal …`
-   (SealedSecret dans le dépôt d'infrastructure).
-2. Values Nexus : `api.envFromSecrets: [nexus-admin]`, `writeOrigins` = URL publique de Nexus.
-   `CORS_ORIGIN` reste inchangé.
-3. Images api et dashboard reconstruites depuis cette branche (ArgoCD).
-4. Optionnel, pour l'onglet Sources en écriture : étapes 1 et 4 de `docs/AGGREGATOR.md`
-   (certificat `kagg-private-nexus`, `api.aggregator.enabled: true`, écrivain déclaré dans
-   kube-aggregator). Sans elles, l'onglet Sources affiche « backend injoignable » ; les autres
-   modules fonctionnent.
-5. Vérifier : `/trakt` → `/bingie/ecrans` ; lecture sans connexion ; masquer/réafficher une
-   entrée de menu → connexion demandée, puis acceptée ; `curl -X DELETE …/api/trakt/devices/x`
-   sans cookie → 401.
+1. Contrôler ImageUpdater/ArgoCD avant toute publication d'image ; la CI actuelle ne se
+   déclenche que sur `main`. Aucun push ou déploiement sans accord explicite.
+2. Livrer le SealedSecret admin, attendre le Secret ; **ajouter** `nexus-admin` à
+   `api.envFromSecrets` sans remplacer les autres références. Configurer
+   `api.aggregator.writeOrigins` et `secureCookie` (session Bingie, même avec Aggregator
+   désactivé). `CORS_ORIGIN` reste inchangé.
+3. Déployer l'API avec cette configuration ; valider la connexion et les refus d'écriture
+   avant de basculer le dashboard. Sans Secret et origine admise, l'édition Trakt répond 503.
+4. Raccordement Sources ensuite : certificat dédié signé par la CA existante, SealedSecret,
+   `api.aggregator.enabled: true`, lecture/aperçu vérifiés ; déclarer l'écrivain côté
+   kube-aggregator en dernier. Sans raccordement, les autres modules fonctionnent.
+5. Vérifier les redirections, lectures publiques et navigation. Pour un refus sans session,
+   fournir une `Origin` admise : 401 ; sans `Origin`, la garde répond 403. Aucun changement
+   réel de réglage Kodi ou de préférences n'est nécessaire à cette validation.
 
 ## Retour arrière
 
-- Images : revenir aux images Nexus précédentes (révision ArgoCD précédente). Les routes
+- Images : verrouiller ImageUpdater et revenir aux images Nexus précédentes par GitOps
+  (référence exacte dans la procédure). Les routes
   `/trakt…` et `/aggregator` d'origine reviennent ; les signets `/bingie…` mènent alors à
   l'accueil.
-- Code : `git revert` du commit Bingie (aucune migration de données, aucun changement de
-  schéma, aucune donnée stockée dans le tableau de bord).
+- Le seul revert du commit Bingie ne retire pas l'éditeur/authentification des commits
+  précédents. Aucun changement de schéma ni migration de données Trakt/Aggregator à annuler.
 - Secret `nexus-admin` : peut rester (inutilisé par les anciennes images, sauf Aggregator).
-- kube-trakt, kube-aggregator, Kodi : non modifiés, rien à défaire.
+- Si le droit Nexus a été accordé : retirer la paire `--preference-writer
+  kagg-private-nexus=nexus` côté kube-aggregator (révision 14 sans écrivain comme référence).
+  Préserver les données et les autres clients ; aucune action sur Kodi ou kube-trakt.
 
 ## Tests
 

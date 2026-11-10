@@ -19,23 +19,30 @@ une modification enregistrée est visible sans redémarrage.
 | Connexion | mot de passe d'administration (scrypt) ; 5 échecs / 10 min par adresse → 429 ; `Origin` vérifiée |
 | Sans configuration | connexion et écriture désactivées (503) ; lecture et aperçu seuls |
 
-Les autres routes de Nexus ne changent pas de règles (garde appliquée à cette seule route).
+Les 18 écritures Trakt utilisent aussi cette session ; les autres modules Nexus ne changent
+pas de règles (voir `docs/BINGIE.md`).
 Recommandé ensuite, hors de ce chantier : `CORS_ORIGIN` limité à l'origine de Nexus au lieu de `*`
 (sans effet sur cette route : cookie `SameSite=Strict` et contrôle d'`Origin` suffisent).
 
 ## Déploiement (préparé, rien d'appliqué)
 
+Ordre de livraison, contrôle des automatismes GitOps et retour arrière vérifiés :
+[`BINGIE_DEPLOIEMENT.md`](BINGIE_DEPLOIEMENT.md). L'authentification Bingie doit être validée
+avant d'accorder l'écriture à Nexus ; les secrets administrateur locaux existent déjà.
+
 1. Certificat `kagg-private-nexus` signé par la CA privée existante (hors Git), extension
    `clientAuth` ; Secret `kagg-private-nexus` (ca.crt, client.crt, client.key) dans le namespace
    `nexus`, en SealedSecret dans le dépôt d'infrastructure.
-2. Secret `nexus-admin` : `NEXUS_ADMIN_PASSWORD_HASH` et `NEXUS_SESSION_SECRET`, générés sans
-   affichage par `tools/nexus-admin-secret.sh` (voir `docs/BINGIE.md`).
-3. Values Nexus : `api.aggregator.enabled: true`, `api.envFromSecrets: [nexus-admin]`
+2. Secret `nexus-admin` : `NEXUS_ADMIN_PASSWORD_HASH` et `NEXUS_SESSION_SECRET`, réutilisés
+   depuis `.local/nexus-admin/` sans affichage (voir `docs/BINGIE.md`).
+3. Values Nexus : `api.aggregator.enabled: true`, ajouter `nexus-admin` à `api.envFromSecrets`
+   en conservant les autres références
    (`writeOrigins` = URL publique de Nexus). Image api et dashboard reconstruites (ArgoCD).
-4. kube-aggregator : ajouter l'argument `--preference-writer kagg-private-nexus=nexus` au
-   Deployment `kagg-api` (nouvelle révision ; retour arrière : révision précédente).
-5. Vérifier : lecture, aperçu, `PUT` sans session → 401, avec session → 200 et version + 1 ;
-   Kodi voit le profil dans la minute.
+4. kube-aggregator, en dernier : ajouter `--preference-writer kagg-private-nexus=nexus` à la
+   commande de démarrage du Deployment `kagg-api` (nouvelle révision ; référence sans écrivain
+   actuellement : 14). Préserver tous les autres paramètres, notamment AllDebrid.
+5. Vérifier lecture, aperçu, `PUT` avec origine admise mais sans session → 401. Un enregistrement
+   réussi et sa synchronisation Kodi sont une étape ultérieure, soumise à accord distinct.
 
 Ressources : aucun pod ni service nouveau ; quelques Ko de mémoire dans le pod `api` existant ;
 réseau déjà ouvert (Nexus sans politique de sortie, kagg-api admet le réseau des pods).
