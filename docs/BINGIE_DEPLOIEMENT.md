@@ -47,9 +47,11 @@ comme point de retour. Relever de nouveau les versions juste avant toute mise en
 
 ## Chemin de livraison et verrou préalable
 
-La CI `.github/workflows/docker.yml` ne construit et ne publie que sur push de `main`.
-`deploy.sh` vise Docker Compose local, pas le cluster. Aucun de ces chemins ne peut être
-lancé tel quel sous les contraintes actuelles.
+La CI initiale `.github/workflows/docker.yml` ne publiait que sur push de `main`.
+Pour la livraison autorisée, elle accepte aussi `release/bingie-api-*` : mêmes Dockerfiles
+et jobs, tags SHA uniquement sur ces branches (aucune mise à jour de `latest`), label de
+révision égal au commit construit. Le gel GitOps doit précéder le push qui déclenche ce build.
+`deploy.sh` vise Docker Compose local, pas le cluster ; ne pas l'utiliser pour cette livraison.
 
 L'application ArgoCD `homelab/argocd/nexus-app.yaml` lit trois sources : chart dans
 `Aexils/nexus` sur `main`, valeurs et manifests dans `Aexils/homelab` sur `main`.

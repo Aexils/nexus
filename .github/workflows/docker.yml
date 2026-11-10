@@ -2,7 +2,7 @@ name: docker
 
 on:
   push:
-    branches: [main]
+    branches: [main, 'release/bingie-api-*']
     paths-ignore:
       - "charts/**"
       - "**.md"
@@ -37,9 +37,10 @@ jobs:
           file: apps/${{ matrix.app }}/Dockerfile
           push: true
           tags: |
-            ${{ env.REGISTRY }}/aexils/nexus-${{ matrix.app }}:latest
             ${{ env.REGISTRY }}/aexils/nexus-${{ matrix.app }}:${{ github.sha }}
+            ${{ github.ref == 'refs/heads/main' && format('ghcr.io/aexils/nexus-{0}:latest', matrix.app) || '' }}
           cache-from: type=gha,scope=${{ matrix.app }}
           cache-to: type=gha,scope=${{ matrix.app }},mode=max
           labels: |
             org.opencontainers.image.source=https://github.com/Aexils/nexus
+            org.opencontainers.image.revision=${{ github.sha }}
