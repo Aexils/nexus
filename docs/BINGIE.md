@@ -62,7 +62,11 @@ Inventaire (vérifié par réflexion dans `apps/api/src/app/auth/write-routes.sp
 - Signets `/trakt…` et `/aggregator` : redirigés, rien à changer.
 - La page Services n'est plus celle qu'ouvre `/trakt` (c'est l'atelier, comme avant).
 
-## Déploiement (préparé, rien d'appliqué)
+## Déploiement (API seule en service, dashboard en attente)
+
+API validée le 9 novembre 2026, dashboard précédent conservé au point d'arrêt obligatoire :
+voir le [bilan de livraison](BINGIE_API_20261109.md). Les étapes suivantes restent la procédure
+générale ; aucune autorisation pour le dashboard ou le raccordement Aggregator n'est acquise.
 
 Procédure vérifiée, prérequis, ordre des opérations et accords nécessaires :
 [`BINGIE_DEPLOIEMENT.md`](BINGIE_DEPLOIEMENT.md). Les secrets locaux existent déjà et sont

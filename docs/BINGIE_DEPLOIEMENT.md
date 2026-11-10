@@ -1,5 +1,10 @@
 # Mise en service Bingie — préparation du 9 novembre 2026
 
+**Point d'arrêt atteint : API seule en service et validée ; dashboard en attente d'accord.**
+Voir le [bilan de livraison](BINGIE_API_20261109.md) pour les commits, images, verrous,
+contrôles et mesure de l'interruption. Les observations de préparation ci-dessous sont
+historiques ; elles ne remplacent pas ce bilan de l'état déployé.
+
 ## Accord de livraison reçu après la préparation
 
 Le propriétaire autorise la publication de la branche de livraison Nexus et des changements
@@ -10,10 +15,10 @@ publication. **Arrêt obligatoire après validation API** : le dashboard conserv
 Les sections suivantes décrivent la préparation et le chemin complet ; leurs étapes dashboard
 et phase 2 restent non autorisées.
 
-**Aucune mise en service effectuée. Toute opération distante ci-dessous attend un accord explicite.**
+**État lors de la préparation : aucune mise en service encore effectuée.**
 Périmètre : Nexus, puis raccordement de ses préférences à kube-aggregator. Aucun changement
 sur le Pi, les sources, AllDebrid, ntfy ou kagg-watchdog. Tous les appels Kubernetes utilisent
-`--context homelab`. Aucune fusion dans `main`, aucun push Git autorisé à ce stade.
+`--context homelab`. Aucune fusion dans `main` ; l'accord reçu ensuite borne les push Git.
 
 ## Point de départ vérifié
 
