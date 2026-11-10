@@ -31,6 +31,12 @@
     </form>
   }
 
+  @if (current()?.path === 'reglages') {
+    <nav class="settings-nav" aria-label="Réglages par application">
+      <a routerLink="/bingie/reglages" [routerLinkActiveOptions]="{exact: true}" routerLinkActive="is-on">Kodi et skin · Trakt</a>
+      <a routerLink="/bingie/reglages/aggregator" routerLinkActive="is-on">Aggregator</a>
+    </nav>
+  }
   <main class="content">
     <router-outlet />
   </main>

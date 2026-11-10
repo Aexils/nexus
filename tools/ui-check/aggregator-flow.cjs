@@ -31,16 +31,24 @@ async function flow(browser, name, viewport, mobile) {
     if (d.type() === 'beforeunload') { leaveWarnings++; return d.accept(); }  // quitter avec des modifications : avertissement voulu
     errors.push('dialogue ' + d.type()); d.dismiss();
   });
-  await page.goto(BASE + '/aggregator', { waitUntil: 'load' });
+  await page.goto(BASE + '/bingie/reglages', { waitUntil: 'load' });
+  await page.getByRole('navigation', { name: 'Réglages par application' }).getByRole('link', { name: 'Aggregator' }).click();
+  await page.waitForURL('**/bingie/reglages/aggregator');
+  await page.locator('app-aggregator-page').waitFor();
   await control(page, { authenticated: true, down: false, next_put: null, csrf: 'csrf-fictif' });
-  await page.reload({ waitUntil: 'load' });
+  await page.goto(BASE + '/bingie/reglages/aggregator', { waitUntil: 'load' });
   const shot = async step => page.screenshot({ path: `${OUT}/${name}-${step}.png`, fullPage: !mobile });
 
   // 1. Version 0
   // Ouverture : « chargement… » puis l'état réel ; on attend celui-ci, sans relâcher la condition.
-  const opened = await eventually(() => syncText(page), t => /v0\b/.test(t) && /synchronisé/.test(t));
-  check(`${name} : version 0 chargée`, /v0\b/.test(opened) && /synchronisé/.test(opened), opened.replace(/\n/g, ' | '));
+  const opened = await eventually(() => syncText(page), t => /v0\b/.test(t) && /non publié/.test(t));
+  check(`${name} : version 0 chargée`, /v0\b/.test(opened) && /non publié/.test(opened), opened.replace(/\n/g, ' | '));
+  const duration = page.getByRole('spinbutton', { name: 'Durée de confirmation' });
+  check(`${name} : durée proposée 20 s, bornes 2–60`, await duration.inputValue() === '20'
+    && await duration.getAttribute('min') === '2' && await duration.getAttribute('max') === '60');
   await shot('1-chargement');
+  await duration.fill('10'); await duration.press('Tab');
+  check(`${name} : durée 10 s en brouillon`, /non enregistrées/.test(await eventually(() => syncText(page), t => /non enregistrées/.test(t))));
 
   // 2. Création et modification d'un profil
   await page.getByRole('button', { name: 'Nouveau' }).click();
@@ -98,7 +106,8 @@ async function flow(browser, name, viewport, mobile) {
   // 5. Enregistrement réussi (faux Nexus seulement)
   await page.getByRole('button', { name: 'Enregistrer' }).click();
   await page.waitForTimeout(400);
-  check(`${name} : enregistré, version 1`, /v1\b/.test(await syncText(page)) && /synchronisé/.test(await syncText(page)), await syncText(page));
+  check(`${name} : enregistré, version 1`, /v1\b/.test(await syncText(page)) && /enregistré dans le backend/.test(await syncText(page)), await syncText(page));
+  check(`${name} : durée confirmée par le backend`, (await mockState(page)).state.preferences.playback.confirm_duration === 10);
 
   // 6. Validation 422 : taille minimale au-dessus de la maximale
   await page.getByLabel('Taille min. (Go)').fill('10'); await page.getByLabel('Taille min. (Go)').press('Tab');
@@ -144,7 +153,7 @@ async function flow(browser, name, viewport, mobile) {
   await shot('7-indisponible');
   await control(page, { down: false });
   await page.getByRole('button', { name: 'Recharger' }).click(); await page.waitForTimeout(400);
-  check(`${name} : rechargé après retour du backend`, /synchronisé/.test(await syncText(page)));
+  check(`${name} : rechargé après retour du backend`, /enregistré dans le backend/.test(await syncText(page)));
 
   // Clavier : un bouton de puce reçoit le focus et l'active avec Espace
   await page.locator('.profile-list li').last().locator('.profile').focus();
@@ -165,4 +174,5 @@ async function flow(browser, name, viewport, mobile) {
   else await flow(browser, 'bureau', { width: 1440, height: 900 }, false);
   await browser.close();
   for (const [ok, label, detail] of results) console.log(ok, label, detail ? '— ' + detail : '');
+  if (results.some(([status]) => status === 'ÉCHEC')) process.exitCode = 1;
 })();

@@ -59,3 +59,7 @@
   .tab .short { display: inline; }
   .side { justify-self: end; }
 }
+.settings-nav { position: absolute; top: var(--bingie-top); left: 0; right: 0; height: 48px; z-index: 20; display: flex; align-items: center; gap: 16px; padding: 0 24px; background: var(--bg); border-bottom: 1px solid var(--border); }
+.settings-nav + .content { top: calc(var(--bingie-top) + 48px); }
+.settings-nav a { color: inherit; padding: 6px 10px; text-decoration: none; }
+.settings-nav a.is-on { color: var(--accent, #e50914); border-bottom: 2px solid currentColor; }

@@ -14,6 +14,35 @@
 }
 
 @if (draft(); as d) {
+<section class="card playback-settings" aria-label="Confirmation de lecture Aggregator">
+  <h2 class="card-title">Lecture · Aggregator</h2>
+  <p class="hint">Kodi relit les préférences au prochain autoplay, sans redémarrage.
+    Sans action, la proposition démarre après le délai. « Lire maintenant » lance immédiatement ;
+    « Choisir une source » ouvre le choix manuel.</p>
+  <label class="toggle"><input type="checkbox" [checked]="d.playback?.confirm_enabled ?? true"
+    (change)="setPlayback('confirm_enabled', $any($event.target).checked)"> Afficher la confirmation avant lecture</label>
+  @if (d.playback?.confirm_enabled === undefined) { <p class="hint">Confirmation non synchronisée : valeur locale Kodi ; proposition initiale activée.</p> }
+  <label class="field">Durée de confirmation (secondes)
+    <input type="number" min="2" max="60" step="1" aria-label="Durée de confirmation"
+      [value]="d.playback?.confirm_duration ?? 20" (change)="duration($any($event.target).value)">
+  </label>
+  <p class="hint">De 2 à 60 secondes, 20 par défaut.
+    @if (d.playback?.confirm_duration === undefined) { Non synchronisée : Kodi conserve sa durée locale jusqu’à l’enregistrement d’une valeur. }
+  </p>
+  <label class="field">Touche Retour
+    <select aria-label="Comportement de Retour" [value]="d.playback?.confirm_back ?? 'cancel'"
+      (change)="setPlayback('confirm_back', $any($event.target).value)">
+      <option value="cancel">Annuler sans lecture</option><option value="play">Lire immédiatement</option>
+    </select>
+  </label>
+  <label class="toggle"><input type="checkbox" [checked]="d.playback?.confirm_details ?? true"
+    (change)="setPlayback('confirm_details', $any($event.target).checked)"> Afficher les détails et statistiques</label>
+  <label class="toggle"><input type="checkbox" [checked]="d.playback?.live_list ?? false"
+    (change)="setPlayback('live_list', $any($event.target).checked)"> Fenêtre vivante de choix des sources</label>
+  <p class="hint">Un champ non enregistré garde sa valeur locale. Le partage peut être désactivé sur Kodi ;
+    hors ligne, sa dernière configuration valide est conservée. Les délais techniques de lecture et les
+    réglages personnels des addons restent locaux. Le choix manuel est toujours accessible, sans interrupteur séparé.</p>
+</section>
 <div class="grid">
 
   <!-- Profils -->

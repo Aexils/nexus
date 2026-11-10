@@ -119,6 +119,18 @@ describe('routes Aggregator de Nexus', () => {
     expect(fake.calls).toEqual([]);
   });
 
+  it('un HTTP 200 sans nouvelle version confirmée ne devient pas un succès', async () => {
+    const fake: Fake = { replies: [{ status: 200, body: { version: 0, preferences: PREFS } }], calls: [] };
+    const { app, call } = await start(fake, CONFIGURED);
+    close = () => app.close();
+    const { cookie, csrf } = await login(call);
+    const response = await call('PUT', '/api/aggregator/preferences',
+      { version: 0, preferences: { ...PREFS, playback: { confirm_duration: 10 } } },
+      { Origin: ORIGIN, Cookie: cookie, 'X-CSRF-Token': csrf });
+    expect(response.status).toBe(503);
+    expect(await response.json()).toMatchObject({ status: 'unavailable' });
+  });
+
   it('limite les tentatives de connexion et refuse une connexion d’une autre origine', async () => {
     const { app, call } = await start({ replies: [], calls: [] }, CONFIGURED);
     close = () => app.close();

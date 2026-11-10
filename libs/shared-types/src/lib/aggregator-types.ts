@@ -34,6 +34,16 @@ export interface AggregatorPreferences {
     preferred_languages: string[];
     preferred_codecs: string[];
   };
+  /** Champs absents : préférence locale de Kodi conservée. Aucun défaut implicite à l'écriture. */
+  playback?: AggregatorPlaybackPreferences;
+}
+
+export interface AggregatorPlaybackPreferences {
+  confirm_enabled?: boolean;
+  confirm_duration?: number;
+  confirm_back?: 'cancel' | 'play';
+  confirm_details?: boolean;
+  live_list?: boolean;
 }
 
 export interface AggregatorPreferencesState {

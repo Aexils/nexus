@@ -46,6 +46,8 @@ export const BINGIE_MODULES: BingieModule[] = [
 export function bingieChildRoutes(modules = BINGIE_MODULES): Route[] {
   return [
     { path: '', pathMatch: 'full', redirectTo: modules[0].path },
+    { path: 'reglages/aggregator', loadComponent: () => import('./modules/aggregator/aggregator-page').then(m => m.AggregatorPage),
+      data: { bingie: 'reglages', layout: 'page' }, title: 'Bingie · Réglages Aggregator' },
     ...modules.map(m => ({ path: m.path, loadComponent: m.load, data: { bingie: m.path, layout: m.layout }, title: `Bingie · ${m.label}` })),
   ];
 }

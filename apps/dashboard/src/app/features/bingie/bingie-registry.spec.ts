@@ -5,7 +5,8 @@ describe('registre Bingie', () => {
   it('une route chargée à la demande par module, et l’accueil ouvre le premier', () => {
     const routes = bingieChildRoutes();
     expect(routes[0]).toEqual({ path: '', pathMatch: 'full', redirectTo: 'ecrans' });
-    expect(routes.slice(1).map(r => r.path)).toEqual(['ecrans', 'reglages', 'sources', 'services']);
+    expect(routes.slice(1).map(r => r.path)).toEqual(['reglages/aggregator', 'ecrans', 'reglages', 'sources', 'services']);
+    expect(routes[1].data).toEqual({ bingie: 'reglages', layout: 'page' });
     expect(routes.slice(1).every(r => typeof r.loadComponent === 'function')).toBe(true);
   });
 

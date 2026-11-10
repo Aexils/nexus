@@ -4,6 +4,7 @@ import { CdkDrag, CdkDragDrop, CdkDragHandle, CdkDragPlaceholder, CdkDropList, m
 import {
   AGGREGATOR_BUILTIN_PROFILES,
   AggregatorPreferences,
+  AggregatorPlaybackPreferences,
   AggregatorPreview,
   AggregatorPreviewRequest,
   AggregatorTier,
@@ -67,7 +68,9 @@ export class AggregatorPage implements OnInit, OnDestroy {
   readonly draft = computed(() => { this.rev(); return this.store.draft; }, { equal: () => false });
   readonly server = computed(() => { this.rev(); return this.store.server; }, { equal: () => false });
   readonly status = computed(() => { this.rev(); return this.store.status; });
-  readonly statusLabel = computed(() => STATUS_LABELS[this.status()]);
+  readonly statusLabel = computed(() => this.status() === 'synced'
+    ? (this.server()?.version ? 'enregistré dans le backend' : 'non publié · réglages Kodi locaux')
+    : STATUS_LABELS[this.status()]);
   readonly message = computed(() => { this.rev(); return this.store.message; });
   readonly dirty = computed(() => { this.rev(); return this.store.dirty; });
   readonly canWrite = computed(() => this.session.authenticated());
@@ -120,6 +123,15 @@ export class AggregatorPage implements OnInit, OnDestroy {
   private change(edit: (d: AggregatorPreferences) => void): void {
     this.store.edit(edit);
     this.schedulePreview();
+  }
+
+  setPlayback<K extends keyof AggregatorPlaybackPreferences>(key: K, value: AggregatorPlaybackPreferences[K]): void {
+    this.change(d => { (d.playback ??= {})[key] = value; });
+  }
+
+  duration(value: string): void {
+    const seconds = Number(value);
+    if (Number.isInteger(seconds) && seconds >= 2 && seconds <= 60) this.setPlayback('confirm_duration', seconds);
   }
 
   // --- Profils ------------------------------------------------------------------------------------

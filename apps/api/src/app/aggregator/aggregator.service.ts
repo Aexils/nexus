@@ -50,12 +50,20 @@ export class AggregatorService {
     throw this.failure(503, { status: 'unavailable', error: `kube-aggregator : HTTP ${reply.status}` });
   }
 
-  get(): Promise<AggregatorPreferencesState> {
-    return this.call('GET', '/v1/preferences');
+  private confirmed(state: AggregatorPreferencesState, expectedVersion?: number): AggregatorPreferencesState {
+    if (!Number.isInteger(state?.version) || state.version < 0 || state.preferences?.schema !== 1
+        || (expectedVersion !== undefined && (state.version !== expectedVersion + 1 || state.updated_by !== 'nexus'))) {
+      throw this.failure(503, { status: 'unavailable', error: 'confirmation du backend invalide' });
+    }
+    return state;
+  }
+
+  async get(): Promise<AggregatorPreferencesState> {
+    return this.confirmed(await this.call('GET', '/v1/preferences'));
   }
 
   async save(version: number, preferences: AggregatorPreferences): Promise<AggregatorPreferencesState> {
-    const state = await this.call<AggregatorPreferencesState>('PUT', '/v1/preferences', { version, preferences });
+    const state = this.confirmed(await this.call<AggregatorPreferencesState>('PUT', '/v1/preferences', { version, preferences }), version);
     this.logger.log(`préférences Aggregator enregistrées, version ${state.version}`);
     return state;
   }
