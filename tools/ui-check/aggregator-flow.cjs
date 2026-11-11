@@ -109,6 +109,31 @@ async function flow(browser, name, viewport, mobile) {
   check(`${name} : enregistré, version 1`, /v1\b/.test(await syncText(page)) && /enregistré dans le backend/.test(await syncText(page)), await syncText(page));
   check(`${name} : durée confirmée par le backend`, (await mockState(page)).state.preferences.playback.confirm_duration === 10);
 
+  // 5 bis. Profil de compatibilité matérielle : Standard par défaut, Raspberry Pi 5 sur demande
+  const hardware = page.getByLabel('Profil de compatibilité matérielle');
+  const playbackSaved = async () => (await mockState(page)).state.preferences.playback || {};
+  check(`${name} : profil matériel Standard par défaut, rien d’enregistré`, await hardware.inputValue() === 'standard'
+    && !('hardware_profile' in await playbackSaved()));
+  const attempts = async () => page.locator('.preview .row:not(.refused):not(.group) .row-name').allInnerTexts();
+  const position = (rows, codec) => rows.findIndex(r => r.includes('2160p ' + codec));
+  const standard = await attempts();
+  check(`${name} : Standard, H.264 4K essayée avant HEVC 4K`, position(standard, 'h264') >= 0
+    && position(standard, 'h264') < position(standard, 'hevc'), standard.join(' / '));
+  await hardware.selectOption('rpi5');
+  const rpi5 = await eventually(attempts, r => position(r, 'hevc') < position(r, 'h264'));
+  check(`${name} : Raspberry Pi 5, HEVC 4K avant H.264 4K dans l’aperçu`, position(rpi5, 'hevc') >= 0
+    && position(rpi5, 'hevc') < position(rpi5, 'h264') && rpi5.length === standard.length, rpi5.join(' / '));
+  check(`${name} : explication du décodage logiciel`, /décodage logiciel/.test(await page.locator('.preview').innerText()));
+  await page.locator('.playback-settings').scrollIntoViewIfNeeded();
+  await shot('3b-profil-materiel');
+  await page.getByRole('button', { name: 'Enregistrer' }).click(); await page.waitForTimeout(400);
+  check(`${name} : Raspberry Pi 5 enregistré dans playback.hardware_profile`, (await playbackSaved()).hardware_profile === 'rpi5'
+    && (await playbackSaved()).confirm_duration === 10);
+  await hardware.selectOption('standard');
+  await page.getByRole('button', { name: 'Enregistrer' }).click(); await page.waitForTimeout(400);
+  check(`${name} : Standard retire le champ, les autres réglages restent`, !('hardware_profile' in await playbackSaved())
+    && (await playbackSaved()).confirm_duration === 10);
+
   // 6. Validation 422 : taille minimale au-dessus de la maximale
   await page.getByLabel('Taille min. (Go)').fill('10'); await page.getByLabel('Taille min. (Go)').press('Tab');
   await page.getByLabel('Taille max. (Go)').fill('2'); await page.getByLabel('Taille max. (Go)').press('Tab');

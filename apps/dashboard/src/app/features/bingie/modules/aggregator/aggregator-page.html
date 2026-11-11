@@ -42,6 +42,18 @@
   <p class="hint">Un champ non enregistré garde sa valeur locale. Le partage peut être désactivé sur Kodi ;
     hors ligne, sa dernière configuration valide est conservée. Les délais techniques de lecture et les
     réglages personnels des addons restent locaux. Le choix manuel est toujours accessible, sans interrupteur séparé.</p>
+  <label class="field">Profil de compatibilité matérielle
+    <select aria-label="Profil de compatibilité matérielle" [value]="d.playback?.hardware_profile === 'rpi5' ? 'rpi5' : 'standard'"
+      (change)="hardwareProfile($any($event.target).value)">
+      <option value="standard">Standard (comportement actuel)</option>
+      <option value="rpi5">Raspberry Pi 5 — Lecture fluide</option>
+    </select>
+  </label>
+  <p class="hint">Raspberry Pi 5 : à source égale, une release H.264, AV1 ou VP9 en 4K (décodée par le processeur)
+    passe après la première alternative HEVC 4K ou 1080p au codec connu, sans perdre MULTi, langue ni SDR/HDR déclarés.
+    Ordre d’essai seulement : aucune release écartée, filtres stricts et ordre des fournisseurs inchangés ; codec inconnu jamais
+    supposé compatible. Standard n’enregistre rien : Kodi garde son réglage local.
+    Exige Kodi Aggregator 0.1.8~beta11 ou plus récent : une version antérieure ignorerait tout le document et garderait sa dernière copie.</p>
 </section>
 <div class="grid">
 
@@ -313,7 +325,7 @@
           }
           <div class="row" role="listitem" [class.first]="row.attempt === 1" [class.refused]="row.attempt === null">
             <span class="order" [class.none]="row.attempt === null">{{ row.attempt ?? '–' }}</span>
-            <span class="row-name">{{ tierLabels[row.release.tier] }} · {{ row.release.resolution ?? '?' }} {{ row.release.hdr ?? '' }}
+            <span class="row-name">{{ tierLabels[row.release.tier] }} · {{ row.release.resolution ?? '?' }} {{ row.release.codec ?? '' }} {{ row.release.hdr ?? '' }}
               @if (row.release.languages.length) { · {{ row.release.languages.join(', ') }} }
               @if (row.release.file_size_gb !== null) { · {{ row.release.file_size_gb }} Go }</span>
             <span class="pill" [class.rule]="row.release.rank < pv.rules.length">{{ row.release.rank < pv.rules.length ? 'règle ' + (row.release.rank + 1) : 'autre' }}</span>

@@ -163,6 +163,22 @@ export class PreferencesStore {
     this.edit(d => { if (d.profiles[key]) d.profiles[key].rules = rules.map(r => r.trim()).filter(Boolean).join(' | '); });
   }
 
+  // --- Compatibilité matérielle -----------------------------------------------------------
+
+  /** Standard retire le champ (comportement actuel, et document lisible par Kodi beta10) ;
+   *  seul le profil Raspberry Pi 5 l'écrit. Aucun autre champ de lecture n'est touché. */
+  setHardwareProfile(profile: 'standard' | 'rpi5'): void {
+    this.edit(d => {
+      if (profile === 'rpi5') {
+        (d.playback ??= {}).hardware_profile = 'rpi5';
+        return;
+      }
+      if (!d.playback) return;
+      delete d.playback.hardware_profile;
+      if (!Object.keys(d.playback).length) delete d.playback;
+    });
+  }
+
   // --- Fournisseurs ----------------------------------------------------------------------------
 
   setProviderOrder(order: AggregatorTier[]): void {

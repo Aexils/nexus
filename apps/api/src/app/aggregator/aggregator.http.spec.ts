@@ -131,6 +131,21 @@ describe('routes Aggregator de Nexus', () => {
     expect(await response.json()).toMatchObject({ status: 'unavailable' });
   });
 
+  it('relaie le profil matériel tel quel, seulement avec session et jeton anti-CSRF', async () => {
+    const doc = { ...PREFS, playback: { confirm_duration: 20, hardware_profile: 'rpi5' } };
+    const fake: Fake = { replies: [{ status: 200, body: { version: 6, updated_by: 'nexus', preferences: doc } }], calls: [] };
+    const { app, call } = await start(fake, CONFIGURED);
+    close = () => app.close();
+    const { cookie, csrf } = await login(call);
+    expect((await call('PUT', '/api/aggregator/preferences', { version: 5, preferences: doc },
+      { Origin: ORIGIN, Cookie: cookie })).status).toBe(403); // sans jeton : refusé avant le backend
+    expect(fake.calls).toEqual([]);
+    const saved = await call('PUT', '/api/aggregator/preferences', { version: 5, preferences: doc },
+      { Origin: ORIGIN, Cookie: cookie, 'X-CSRF-Token': csrf });
+    expect(saved.status).toBe(200);
+    expect(fake.calls).toEqual([{ method: 'PUT', path: '/v1/preferences', body: { version: 5, preferences: doc } }]);
+  });
+
   it('limite les tentatives de connexion et refuse une connexion d’une autre origine', async () => {
     const { app, call } = await start({ replies: [], calls: [] }, CONFIGURED);
     close = () => app.close();

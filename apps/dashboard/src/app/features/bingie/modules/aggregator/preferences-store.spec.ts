@@ -117,6 +117,34 @@ describe('éditeur de préférences', () => {
     expect(store.draft?.provider_order).toEqual(['vstream', 'pov']);
   });
 
+  it('profil matériel : Raspberry Pi 5 écrit le seul champ, Standard le retire sans toucher au reste', async () => {
+    const playback = { confirm_duration: 20, confirm_enabled: true };
+    const v5 = { ...v0, version: 5, updated_by: 'nexus', preferences: { ...prefs(), playback: { ...playback } } };
+    const saved = { ...v5, version: 6, preferences: { ...prefs(), playback: { ...playback, hardware_profile: 'rpi5' as const } } };
+    const { fake, calls } = api({ get: [v5], put: [saved] });
+    const store = new PreferencesStore(fake);
+    await store.load();
+    store.setHardwareProfile('standard');
+    expect([store.dirty, store.draft?.playback]).toEqual([false, playback]); // Standard : rien à écrire
+    store.setHardwareProfile('rpi5');
+    expect(store.draft?.playback).toEqual({ ...playback, hardware_profile: 'rpi5' });
+    await store.save();
+    expect(calls).toEqual([{ version: 5, preferences: { ...prefs(), playback: { ...playback, hardware_profile: 'rpi5' } } }]);
+    store.setHardwareProfile('standard');
+    expect(store.draft?.playback).toEqual(playback); // champ retiré : Kodi beta10 relit le document
+  });
+
+  it('Standard sans autre réglage de lecture laisse le document sans « playback »', async () => {
+    const { fake } = api({ get: [v0] });
+    const store = new PreferencesStore(fake);
+    await store.load();
+    store.setHardwareProfile('rpi5');
+    expect(store.draft?.playback).toEqual({ hardware_profile: 'rpi5' });
+    store.setHardwareProfile('standard');
+    expect(store.draft && 'playback' in store.draft).toBe(false);
+    expect([store.status, store.dirty]).toEqual(['synced', false]);
+  });
+
   it('clés de profil sûres et uniques, jamais réservées', () => {
     expect(slug('Préféré', [])).toBe('prefere');
     expect(slug('preferred', [])).toBe('preferred-2');

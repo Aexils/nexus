@@ -134,6 +134,11 @@ export class AggregatorPage implements OnInit, OnDestroy {
     if (Number.isInteger(seconds) && seconds >= 2 && seconds <= 60) this.setPlayback('confirm_duration', seconds);
   }
 
+  hardwareProfile(value: string): void {
+    this.store.setHardwareProfile(value === 'rpi5' ? 'rpi5' : 'standard');
+    this.schedulePreview();
+  }
+
   // --- Profils ------------------------------------------------------------------------------------
 
   select(key: string): void {

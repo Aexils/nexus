@@ -8,6 +8,16 @@ Nexus ne classe rien : il édite le document, l'envoie avec la version lue et af
 calculé par le moteur commun. Kodi relit les préférences partagées au plus toutes les 60 s :
 une modification enregistrée est visible sans redémarrage.
 
+## Profil de compatibilité matérielle (2026-11-11)
+
+Réglages › Aggregator › « Profil de compatibilité matérielle » : Standard ou Raspberry Pi 5 — Lecture
+fluide, stocké dans `playback.hardware_profile` du document partagé (aucun autre stockage). Standard
+retire le champ : Kodi garde son réglage local (désactivé par défaut) et le document reste lisible par
+Kodi Aggregator 0.1.8~beta10, qui refuse tout document contenant ce champ. Raspberry Pi 5 exige
+kube-aggregator révision 16 (validation et aperçu) et Kodi Aggregator 0.1.8~beta11. Ordre d'essai
+seulement : aucun refus, filtres stricts et ordre des fournisseurs inchangés. L'aperçu affiche le codec
+déclaré de chaque release.
+
 ## Sécurité
 
 | Couche | Règle |

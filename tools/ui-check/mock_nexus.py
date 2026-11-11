@@ -5,13 +5,14 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 ROOT, ENGINE, PORT = sys.argv[1], sys.argv[2], int(sys.argv[3])
 spec = importlib.util.spec_from_file_location("quality_rules", ENGINE); qr = importlib.util.module_from_spec(spec); spec.loader.exec_module(qr)
 
-def release(rid, origin, res, hdr, langs, size, label=None, access=None):
-    return {"release_id": rid, "catalog_origin": origin, "resolution": res, "hdr": hdr, "languages": langs,
+def release(rid, origin, res, hdr, langs, size, label=None, access=None, codec=None):
+    return {"release_id": rid, "catalog_origin": origin, "resolution": res, "hdr": hdr, "languages": langs, "codec": codec,
             "file_size_gb": size, "file_label": label, "access": access, "source": {"jellycon": "Jellyfin", "vstream": "vStream"}.get(origin, "Autre")}
 CONTENT = {"items": [{"title": "Film fictif", "releases": [
     release("j-4k", "jellycon", "2160p", "SDR", ["fr", "en"], 21.4),
     release("j-1080", "jellycon", "1080p", None, ["fr"], 6.2),
-    release("v-4k-hdr", "vstream", "2160p", "HDR10", ["fr", "en"], 27.0, "Film.MULTi.2160p.HDR"),
+    release("v-4k-hdr", "vstream", "2160p", "HDR10", ["fr", "en"], 27.0, "Film.MULTi.2160p.HDR", codec="h264"),
+    release("v-4k-hevc", "vstream", "2160p", "HDR10", ["fr", "en"], 19.0, "Film.MULTi.2160p.HDR.x265", codec="hevc"),
     release("v-4k-dv", "vstream", "2160p", "DV", [], 31.0, "Film.2160p.DV", access="not_authorized"),
     release("v-1080-sdr", "vstream", "1080p", "SDR", ["fre", "eng"], 3.9),
     release("v-720", "vstream", "720p", None, ["fr"], 1.1, "Film.720p.CAM"),
@@ -75,7 +76,7 @@ class H(SimpleHTTPRequestHandler):
             return self.j(200, {"profile": prof.key if prof else "none", "rules": [r.label for r in prof.rules] if prof else [],
                                 "autoplay": d["autoplay"], "refused": d["refused"],
                                 "releases": [{"release_id": r["ref"], "tier": r["tier"], "rank": pos, "explanation": why, "refusal": reason,
-                                              "source": r["release"]["source"], "resolution": r["resolution"], "hdr": r["hdr"],
+                                              "source": r["release"]["source"], "resolution": r["resolution"], "hdr": r["hdr"], "codec": r["codec"],
                                               "languages": r["languages"], "file_size_gb": r["size_gb"], "access": r["access"]}
                                              for r, reason, pos, why in d["manual"]]})
         return self.j(404, {})

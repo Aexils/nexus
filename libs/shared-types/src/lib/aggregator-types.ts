@@ -44,7 +44,13 @@ export interface AggregatorPlaybackPreferences {
   confirm_back?: 'cancel' | 'play';
   confirm_details?: boolean;
   live_list?: boolean;
+  /** Ordre d'essai selon le décodage de l'appareil, jamais un refus. Absent = Standard : Kodi
+   *  garde son réglage local (désactivé par défaut). Kodi 0.1.8~beta10 et antérieurs refusent un
+   *  document qui contient ce champ et conservent leur dernière copie valide. */
+  hardware_profile?: AggregatorHardwareProfile;
 }
+
+export type AggregatorHardwareProfile = 'none' | 'rpi5';
 
 export interface AggregatorPreferencesState {
   /** 0 : jamais enregistrées, Kodi garde ses réglages locaux. */
@@ -71,6 +77,8 @@ export interface AggregatorPreviewRelease {
   source: string | null;
   resolution: string | null;
   hdr: string | null;
+  /** Codec déclaré, renvoyé par kube-aggregator à partir de la révision 16. */
+  codec?: string | null;
   languages: string[];
   file_size_gb: number | null;
   access: string | null;
